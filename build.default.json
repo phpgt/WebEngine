@@ -1,23 +1,11 @@
 {
 	"script/**/*.es6": {
 		"require": {
-			"node": "*",
-			"babel": "*",
-			"webpack": "*"
+			"node_modules/.bin/esbuild": "*"
 		},
 		"execute": {
-			"command": "webpack",
-			"arguments": ["--entry","./script/script.es6", "--output-path", "./www", "--output-filename", "script.js", "--devtool", "source-map", "--mode", "development"]
-		}
-	},
-
-	"script/*sw.js": {
-		"require": {
-			"vendor/bin/sync": "*"
-		},
-		"execute": {
-			"command": "vendor/bin/sync",
-			"arguments": ["--pattern", "*sw.js", "script", "www/"]
+			"command": "./node_modules/.bin/esbuild",
+			"arguments": ["script/script.es6", "--bundle", "--sourcemap", "--outfile=www/script.js", "--loader:.es6=js", "--target=chrome105,firefox105,edge105,safari15"]
 		}
 	},
 
@@ -33,10 +21,10 @@
 
 	"style/**/*.scss": {
 		"require": {
-			"sass": "*"
+			"node_modules/.bin/sass": "*"
 		},
 		"execute": {
-			"command": "sass",
+			"command": "./node_modules/.bin/sass",
 			"arguments": ["./style/style.scss", "www/style.css"]
 		}
 	},
@@ -53,11 +41,21 @@
 
 	"asset/**/*": {
 		"require": {
-			"vendor/bin/sync": ">=1.3.0"
+			"vendor/bin/sync": "*"
 		},
 		"execute": {
 			"command": "vendor/bin/sync",
-			"arguments": ["./asset", "./www/asset", "--symlink"]
+			"arguments": ["asset/", "www/asset", "--delete", "--symlink"]
+		}
+	},
+
+	"data/**/*": {
+		"require": {
+			"vendor/bin/sync": "*"
+		},
+		"execute": {
+			"command": "vendor/bin/sync",
+			"arguments": ["data/", "www/data", "--delete", "--symlink"]
 		}
 	}
 }

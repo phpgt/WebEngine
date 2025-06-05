@@ -130,7 +130,7 @@ class RequestHandler implements RequestHandlerInterface {
 
 		$this->handleProtectedGlobals();
 
-		if(isset($this->viewModel) && instanceof HTMLDocument) {
+		if(isset($this->viewModel) && $this->viewModel instanceof HTMLDocument) {
 			$this->handleHTMLDocumentViewModel();
 //			$this->handleCsrf($request);
 		}

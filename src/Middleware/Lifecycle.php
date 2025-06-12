@@ -99,8 +99,9 @@ class Lifecycle implements MiddlewareInterface {
 		catch(Throwable $throwable) {
 			echo "<pre>";
 			echo get_class($throwable), " - ";
-			echo $throwable->getMessage(), " ", $throwable->getFile(), ":", $throwable->getLine(), PHP_EOL;
-			var_dump($throwable);
+			$filePath = $throwable->getFile();
+			$filePath = str_replace(getcwd(), '', $filePath);
+			echo strip_tags($throwable->getMessage() . " " . $filePath . ":" . $throwable->getLine()), PHP_EOL;
 			die();
 			$this->throwable = $throwable;
 

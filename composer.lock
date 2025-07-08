@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ec240c182c83b8f751030b91c417237e",
+    "content-hash": "8eb8ac3a26a6e2cff7eb82c54a7e2de7",
     "packages": [
         {
             "name": "composer/semver",
@@ -479,6 +479,58 @@
                 }
             ],
             "time": "2021-01-30T14:24:07+00:00"
+        },
+        {
+            "name": "phpgt/cookie",
+            "version": "v1.0.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpgt/Cookie.git",
+                "reference": "6c80638745ce4538aa397843e7c0b760b60a08c5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpgt/Cookie/zipball/6c80638745ce4538aa397843e7c0b760b60a08c5",
+                "reference": "6c80638745ce4538aa397843e7c0b760b60a08c5",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1"
+            },
+            "require-dev": {
+                "phpmd/phpmd": "^2.13",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^10.1",
+                "squizlabs/php_codesniffer": "^3.7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Gt\\Cookie\\": "./src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Greg Bowler",
+                    "email": "greg.bowler@g105b.com"
+                }
+            ],
+            "description": "Object oriented cookie handler.",
+            "support": {
+                "issues": "https://github.com/phpgt/Cookie/issues",
+                "source": "https://github.com/phpgt/Cookie/tree/v1.0.3"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sponsors/PhpGt",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-03-07T17:42:38+00:00"
         },
         {
             "name": "phpgt/cron",
@@ -1014,46 +1066,44 @@
             "time": "2024-11-25T09:59:24+00:00"
         },
         {
-            "name": "phpgt/gtcommand",
-            "version": "v1.1.1",
+            "name": "phpgt/domvalidation",
+            "version": "v1.0.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/PhpGt/GtCommand.git",
-                "reference": "5f08e08408d6885dab4da380c2e1dcaeea670251"
+                "url": "https://github.com/PhpGt/DomValidation.git",
+                "reference": "28604ad1a22127e4c23a664f3558ae1dfdd3215a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PhpGt/GtCommand/zipball/5f08e08408d6885dab4da380c2e1dcaeea670251",
-                "reference": "5f08e08408d6885dab4da380c2e1dcaeea670251",
+                "url": "https://api.github.com/repos/PhpGt/DomValidation/zipball/28604ad1a22127e4c23a664f3558ae1dfdd3215a",
+                "reference": "28604ad1a22127e4c23a664f3558ae1dfdd3215a",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.2",
-                "phpgt/build": "^1.0",
-                "phpgt/cli": "^1.3",
-                "phpgt/cron": "^1.0",
-                "phpgt/database": "^1.6",
-                "phpgt/server": "^1.1"
+                "php": ">=8.1",
+                "phpgt/cssxpath": "1.*",
+                "phpgt/dom": "^4.1"
             },
             "require-dev": {
                 "phpmd/phpmd": "^2.13",
-                "phpstan/phpstan": "^v1.10",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^10.0",
                 "squizlabs/php_codesniffer": "^3.7"
             },
-            "bin": [
-                "bin/gt"
-            ],
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\GtCommand\\": "./src"
+                    "Gt\\DomValidation\\": "./src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
-            "description": "Provides the `gt` command for automating WebEngine development.",
+            "license": [
+                "MIT"
+            ],
+            "description": "Server side form validation using web standards.",
             "support": {
-                "issues": "https://github.com/PhpGt/GtCommand/issues",
-                "source": "https://github.com/PhpGt/GtCommand/tree/v1.1.1"
+                "issues": "https://github.com/PhpGt/DomValidation/issues",
+                "source": "https://github.com/PhpGt/DomValidation/tree/v1.0.1"
             },
             "funding": [
                 {
@@ -1061,7 +1111,80 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-12-03T18:08:52+00:00"
+            "time": "2023-03-02T14:56:58+00:00"
+        },
+        {
+            "name": "phpgt/fetch",
+            "version": "v1.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpgt/Fetch.git",
+                "reference": "ccb3b3f11384ddd560331f9e46e5d534befa112b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpgt/Fetch/zipball/ccb3b3f11384ddd560331f9e46e5d534befa112b",
+                "reference": "ccb3b3f11384ddd560331f9e46e5d534befa112b",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "php": ">=8.3",
+                "phpgt/async": "^1.0",
+                "phpgt/curl": "^3.1.1",
+                "phpgt/http": "^1.3",
+                "phpgt/json": "^1.2",
+                "phpgt/promise": "^2.3",
+                "phpgt/propfunc": "^1.0"
+            },
+            "require-dev": {
+                "phpmd/phpmd": "^2.13",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^10.2",
+                "squizlabs/php_codesniffer": "^3.7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Gt\\Fetch\\": "./src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Greg Bowler",
+                    "email": "greg.bowler@g105b.com"
+                }
+            ],
+            "description": "Asynchronous HTTP client with promises.",
+            "keywords": [
+                "ajax",
+                "async",
+                "asynchronous",
+                "curl",
+                "curl_multi",
+                "fetch",
+                "get",
+                "http",
+                "http-client",
+                "post",
+                "xmlhttprequest"
+            ],
+            "support": {
+                "issues": "https://github.com/phpgt/Fetch/issues",
+                "source": "https://github.com/phpgt/Fetch/tree/v1.2.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sponsors/PhpGt",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-05-02T12:21:25+00:00"
         },
         {
             "name": "phpgt/http",
@@ -1589,16 +1712,16 @@
         },
         {
             "name": "phpgt/session",
-            "version": "v1.2.2",
+            "version": "v1.2.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Session.git",
-                "reference": "4de609d9745143ac5fe990734ed67eab8f0ff2e9"
+                "reference": "ddf4b53920445240410719f1e2b24194b6eb311d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Session/zipball/4de609d9745143ac5fe990734ed67eab8f0ff2e9",
-                "reference": "4de609d9745143ac5fe990734ed67eab8f0ff2e9",
+                "url": "https://api.github.com/repos/phpgt/Session/zipball/ddf4b53920445240410719f1e2b24194b6eb311d",
+                "reference": "ddf4b53920445240410719f1e2b24194b6eb311d",
                 "shasum": ""
             },
             "require": {
@@ -1607,7 +1730,7 @@
             },
             "require-dev": {
                 "phpmd/phpmd": "^2.13",
-                "phpstan/phpstan": "^1.10",
+                "phpstan/phpstan": "^2.1",
                 "phpunit/phpunit": "^10.1",
                 "squizlabs/php_codesniffer": "^3.7"
             },
@@ -1624,7 +1747,7 @@
             "description": "Encapsulated user sessions.",
             "support": {
                 "issues": "https://github.com/phpgt/Session/issues",
-                "source": "https://github.com/phpgt/Session/tree/v1.2.2"
+                "source": "https://github.com/phpgt/Session/tree/v1.2.3"
             },
             "funding": [
                 {
@@ -1632,7 +1755,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-05-05T12:07:57+00:00"
+            "time": "2025-06-12T10:37:30+00:00"
         },
         {
             "name": "phpgt/sync",
@@ -2354,16 +2477,16 @@
         },
         {
             "name": "myclabs/deep-copy",
-            "version": "1.13.1",
+            "version": "1.13.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/myclabs/DeepCopy.git",
-                "reference": "1720ddd719e16cf0db4eb1c6eca108031636d46c"
+                "reference": "faed855a7b5f4d4637717c2b3863e277116beb36"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/myclabs/DeepCopy/zipball/1720ddd719e16cf0db4eb1c6eca108031636d46c",
-                "reference": "1720ddd719e16cf0db4eb1c6eca108031636d46c",
+                "url": "https://api.github.com/repos/myclabs/DeepCopy/zipball/faed855a7b5f4d4637717c2b3863e277116beb36",
+                "reference": "faed855a7b5f4d4637717c2b3863e277116beb36",
                 "shasum": ""
             },
             "require": {
@@ -2402,7 +2525,7 @@
             ],
             "support": {
                 "issues": "https://github.com/myclabs/DeepCopy/issues",
-                "source": "https://github.com/myclabs/DeepCopy/tree/1.13.1"
+                "source": "https://github.com/myclabs/DeepCopy/tree/1.13.3"
             },
             "funding": [
                 {
@@ -2410,7 +2533,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-04-29T12:36:36+00:00"
+            "time": "2025-07-05T12:25:42+00:00"
         },
         {
             "name": "nikic/php-parser",

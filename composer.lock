@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8eb8ac3a26a6e2cff7eb82c54a7e2de7",
+    "content-hash": "9014fd487ed3412ffc4227421a85b632",
     "packages": [
         {
             "name": "composer/semver",
@@ -1185,6 +1185,61 @@
                 }
             ],
             "time": "2025-05-02T12:21:25+00:00"
+        },
+        {
+            "name": "phpgt/filecache",
+            "version": "v1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpgt/FileCache.git",
+                "reference": "607077f0f0263ba6a45f055184d7d97881722b77"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpgt/FileCache/zipball/607077f0f0263ba6a45f055184d7d97881722b77",
+                "reference": "607077f0f0263ba6a45f055184d7d97881722b77",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1",
+                "phpgt/typesafegetter": "^v1.2.4"
+            },
+            "require-dev": {
+                "phpmd/phpmd": "^2.13",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^10.1",
+                "squizlabs/php_codesniffer": "^3.7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Gt\\FileCache\\": "./src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Greg Bowler",
+                    "email": "greg.bowler@g105b.com",
+                    "homepage": "https://www.g105b.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": " Cache data in local files.",
+            "support": {
+                "issues": "https://github.com/phpgt/FileCache/issues",
+                "source": "https://github.com/phpgt/FileCache/tree/v1.2.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sponsors/PhpGt",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-07-08T20:46:43+00:00"
         },
         {
             "name": "phpgt/http",

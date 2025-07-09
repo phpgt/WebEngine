@@ -27,6 +27,7 @@
 		"phpgt/domtemplate": "^3.3",
 		"phpgt/domvalidation": "^1.0",
 		"phpgt/fetch": "^1.2",
+		"phpgt/filecache": "^1.2",
 		"phpgt/http": "^1.2",
 		"phpgt/input": "^1.3",
 		"phpgt/logger": "^1.0",

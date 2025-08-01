@@ -245,8 +245,8 @@ class Lifecycle implements MiddlewareInterface {
 
 	private function handleRedirects():void {
 		$redirectFiles = [
-			"\t" => "redirects.tsv",
-			"," => "redirects.csv",
+			"\t" => "redirect.tsv",
+			"," => "redirect.csv",
 		];
 		foreach($redirectFiles as $separatorCharacter => $fileName) {
 			if(!is_file($fileName)) {

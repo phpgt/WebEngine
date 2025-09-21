@@ -97,13 +97,7 @@ class Lifecycle implements MiddlewareInterface {
 			$response = $this->process($request, $handler);
 		}
 		catch(Throwable $throwable) {
-			echo "<pre>";
-			echo get_class($throwable), " - ";
-			$filePath = $throwable->getFile();
-			$filePath = str_replace(getcwd(), '', $filePath);
-			echo strip_tags($throwable->getMessage() . " " . $filePath . ":" . $throwable->getLine()), PHP_EOL;
-			die();
-			$this->throwable = $throwable;
+			Log::critical($throwable->getMessage(), ["uri" => $request->getUri()] + $request->getHeaders() + $throwable->getTrace()[0]);
 
 			$errorHandler = new ErrorRequestHandler(
 				ConfigFactory::createForProject(
@@ -119,11 +113,6 @@ class Lifecycle implements MiddlewareInterface {
 				$originalGlobals["server"],
 			);
 			$response = $this->process($request, $errorHandler);
-
-			trigger_error(
-				$throwable->getMessage(),
-				E_USER_ERROR,
-			);
 		}
 
 // Now we can finish the HTTP lifecycle by providing the HTTP response for
@@ -206,6 +195,9 @@ class Lifecycle implements MiddlewareInterface {
 
 		foreach($response->getHeaders() as $key => $value) {
 			$stringValue = implode(", ", $value);
+			if(strtolower($key) === "location" && str_starts_with($stringValue, "/_")) {
+				continue;
+			}
 			header("$key: $stringValue", true);
 		}
 

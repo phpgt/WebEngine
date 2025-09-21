@@ -48,6 +48,7 @@ use Gt\WebEngine\View\NullView;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Throwable;
 
 class RequestHandler implements RequestHandlerInterface {
 	/** @var callable(ResponseInterface,ConfigSection) */
@@ -105,7 +106,8 @@ class RequestHandler implements RequestHandlerInterface {
 	}
 
 	protected function completeRequestHandling(
-		ServerRequestInterface $request
+		ServerRequestInterface $request,
+		bool $ignoreLogicErrors = false,
 	):void {
 		$this->setupResponse($request);
 		$this->forceTrailingSlashes($request);
@@ -130,12 +132,19 @@ class RequestHandler implements RequestHandlerInterface {
 
 		$this->handleProtectedGlobals();
 
-		if(isset($this->viewModel) && $this->viewModel instanceof HTMLDocument) {
-			$this->handleHTMLDocumentViewModel();
+		try {
+			if(isset($this->viewModel) && $this->viewModel instanceof HTMLDocument) {
+				$this->handleHTMLDocumentViewModel();
 //			$this->handleCsrf($request);
-		}
+			}
 
-		$this->handleLogicExecution($this->logicAssembly);
+			$this->handleLogicExecution($this->logicAssembly);
+		}
+		catch(Throwable $throwable) {
+			if(!$ignoreLogicErrors) {
+				throw $throwable;
+			}
+		}
 
 // TODO: Why is this in the handle function?
 		$documentBinder = $this->serviceContainer->get(Binder::class);
@@ -277,9 +286,6 @@ class RequestHandler implements RequestHandlerInterface {
 
 		foreach($expandedLogicAssemblyList as $i => $assembly) {
 			$componentElement = $expandedComponentList[$i];
-			if(!$componentElement) {
-				var_dump($assembly);die();
-			}
 			$this->handleLogicExecution($assembly, $componentElement);
 		}
 	}

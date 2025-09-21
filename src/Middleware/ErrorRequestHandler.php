@@ -43,8 +43,7 @@ class ErrorRequestHandler extends RequestHandler {
 		$this->originalUri = $request->getUri();
 		$errorUri = new Uri("/_$errorCode");
 		$errorRequest = $request->withUri($errorUri);
-
-		$this->completeRequestHandling($errorRequest);
+		$this->completeRequestHandling($errorRequest, true);
 		$this->response = $this->response->withStatus($errorCode);
 		return $this->response;
 	}

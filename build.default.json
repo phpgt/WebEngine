@@ -25,7 +25,7 @@
 		},
 		"execute": {
 			"command": "./node_modules/.bin/sass",
-			"arguments": ["./style/style.scss", "www/style.css"]
+			"arguments": ["./style/style.scss", "www/style.css", "--source-map", "--embed-sources", "--embed-source-map"]
 		}
 	},
 

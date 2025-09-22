@@ -357,6 +357,11 @@ class RequestHandler implements RequestHandlerInterface {
 	}
 
 	protected function handleProtectedGlobals():void {
+		if($this instanceof ErrorRequestHandler) {
+// ErrorRequestHandler extends RequestHander, so this has already been done.
+			return;
+		}
+
 		Protection::overrideInternals(
 			Protection::removeGlobals($GLOBALS, [
 					"_ENV" => explode(",", $this->config->getString("app.globals_whitelist_env") ?? ""),
@@ -366,7 +371,8 @@ class RequestHandler implements RequestHandlerInterface {
 					"_FILES" => explode(",", $this->config->getString("app.globals_whitelist_files") ?? ""),
 					"_COOKIES" => explode(",", $this->config->getString("app.globals_whitelist_cookies") ?? ""),
 				]
-			));
+			)
+		);
 	}
 
 	protected function handleLogicExecution(Assembly $logicAssembly, ?Element $component = null):void {

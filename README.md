@@ -93,3 +93,9 @@ A hands-on dev chat system is currently being planned
 [tutorials]: https://github.com/PhpGt/WebEngine/wiki/hello-world-tutorial
 [contributing]: https://github.com/PhpGt/WebEngine/blob/master/CONTRIBUTING.md
 [issues]: https://github.com/PhpGt/WebEngine/issues
+
+# Proudly sponsored by
+
+[JetBrains Open Source sponsorship program](https://www.jetbrains.com/community/opensource/)
+
+[![JetBrains logo.](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://www.jetbrains.com/community/opensource/)

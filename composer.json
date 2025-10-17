@@ -1,6 +1,6 @@
 {
 	"name": "phpgt/webengine",
-	"description": "Rapid development engine.",
+	"description": "Minimalistic, ergonomic PHP toolkit.",
 
 	"license": [
 		"MIT"

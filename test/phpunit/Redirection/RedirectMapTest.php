@@ -50,8 +50,12 @@ class RedirectMapTest extends TestCase {
 			$map->match('/broken/anything');
 		}
 		finally {
-			// Always restore the previous error handler to avoid risky tests.
-			restore_error_handler();
+			if($prevHandler !== null) {
+				set_error_handler($prevHandler);
+			}
+			else {
+				restore_error_handler();
+			}
 		}
 	}
 

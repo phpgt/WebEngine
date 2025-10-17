@@ -109,7 +109,7 @@ class Redirect {
 		string $glob = "redirect.{csv,tsv,ini}",
 		?Closure $redirectHandler = null,
 	) {
-		$matches = glob($glob, GLOB_BRACE) ?: [];
+		$matches = $this->expandBraceGlob($glob);
 		if (count($matches) > 1) {
 			throw new RedirectException("Multiple redirect files in project root");
 		}
@@ -125,7 +125,7 @@ class Redirect {
 			$loader = $this->createLoader($extension);
 			$loader?->load($this->redirectFile, $this->map);
 		}
-	}
+ }
 
 	private function createLoader(string $extension):?RedirectLoader {
 		return match($extension) {
@@ -134,6 +134,31 @@ class Redirect {
 			'tsv' => new DelimitedRedirectLoader("\t"),
 			default => null,
 		};
+	}
+
+	/**
+	 * Cross-platform brace expansion for glob patterns.
+	 * Supports a single {a,b,c} segment. Falls back to plain glob when no braces.
+	 * Returns a sorted, unique list of matches.
+	 *
+	 * @return array<int, string>
+	 */
+	private function expandBraceGlob(string $pattern): array {
+		if(preg_match('/\{([^}]+)\}/', $pattern, $braceMatch)) {
+			$options = array_map('trim', explode(',', $braceMatch[1]));
+			$all = [];
+			foreach($options as $option) {
+				$subPattern = str_replace($braceMatch[0], $option, $pattern);
+				$subMatches = glob($subPattern) ?: [];
+				if(!empty($subMatches)) {
+					$all = array_merge($all, $subMatches);
+				}
+			}
+			$all = array_values(array_unique($all));
+			sort($all);
+			return $all;
+		}
+		return glob($pattern) ?: [];
 	}
 
 	public function execute(string $uri = "/"):void {

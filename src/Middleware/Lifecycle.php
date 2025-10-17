@@ -88,13 +88,17 @@ class Lifecycle implements MiddlewareInterface {
 			$originalGlobals["server"],
 		);
 
+		set_error_handler(function(int $errno, string $errstr, ?string $errFile = null, ?int $errLine = null, ?array $errContext = null):bool {
+			return true;
+		});
+
 // The request and request handler are passed to the PSR-15 process function,
 // which will return our PSR-7 HTTP Response.
 		try {
 			$response = $this->process($request, $handler);
 		}
 		catch(Throwable $throwable) {
-			$ipSesss = $originalGlobals["server"]["REMOTE_ADDR"] . "#" . substr(session_id(), 0, 4);
+			$ipSess = $originalGlobals["server"]["REMOTE_ADDR"] . "#" . substr(session_id(), 0, 4);
 			$trace = $throwable->getTrace();
 			$stopTraceAt = null;
 			foreach($trace as $i => $traceItem) {
@@ -131,7 +135,7 @@ class Lifecycle implements MiddlewareInterface {
 			}
 
 			Log::critical($throwable->getMessage(), [
-				"session" => $ipSesss,
+				"session" => $ipSess,
 				"uri" => $request->getUri(),
 				"file" => $file,
 				"line" => $throwable->getLine(),

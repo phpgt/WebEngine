@@ -26,7 +26,7 @@ class DefaultServiceLoader {
 	public function __construct(
 		protected Config $config,
 		protected Container $container
-	) {	}
+	) {}
 
 	public function loadResponseHeaders():ResponseHeaders {
 		$response = $this->container->get(Response::class);

@@ -85,10 +85,6 @@ The [Github issue tracker][issues] is used to submit bug reports, feature reques
 
 It would be helpful if you could create your issue in the appropriate repository - for instance, if the issue/question is regarding using a database in WebEngine, https://github.com/phpgt/Database/issues would be the best place - but it's fine to create the issue on WebEngine's issue tracker, and someone can then move the issue if necessary.
 
-### Chat to a developer
-
-A hands-on dev chat system is currently being planned
-
 [quick-start]: https://github.com/PhpGt/WebEngine/wiki/Quick-start
 [tutorials]: https://github.com/PhpGt/WebEngine/wiki/hello-world-tutorial
 [contributing]: https://github.com/PhpGt/WebEngine/blob/master/CONTRIBUTING.md

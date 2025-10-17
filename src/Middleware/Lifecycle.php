@@ -4,11 +4,9 @@ namespace Gt\WebEngine\Middleware;
 use Gt\Config\ConfigFactory;
 use Gt\Config\ConfigSection;
 use Gt\Http\RequestFactory;
-use Gt\Http\Response;
-use Gt\Http\ResponseFactory;
 use Gt\Http\StatusCode;
-use Gt\Http\Stream;
 use Gt\Logger\Log;
+use Gt\Session\Session;
 use Gt\WebEngine\Debug\Timer;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -42,7 +40,6 @@ use Throwable;
  */
 class Lifecycle implements MiddlewareInterface {
 	private Timer $timer;
-	private Throwable $throwable;
 
 	public function start():void {
 // Before we start, we check if the current URI should be redirected. If it
@@ -97,7 +94,50 @@ class Lifecycle implements MiddlewareInterface {
 			$response = $this->process($request, $handler);
 		}
 		catch(Throwable $throwable) {
-			Log::critical($throwable->getMessage(), ["uri" => $request->getUri()] + $request->getHeaders() + $throwable->getTrace()[0]);
+			$ipSesss = $originalGlobals["server"]["REMOTE_ADDR"] . "#" . substr(session_id(), 0, 4);
+			$trace = $throwable->getTrace();
+			$stopTraceAt = null;
+			foreach($trace as $i => $traceItem) {
+				if(str_contains($traceItem["file"] ?? "", "vendor/phpgt/")) {
+					$stopTraceAt = $i;
+					break;
+				}
+
+				$orderedItem = [];
+				foreach(["class", "function", "type", "file", "line"] as $key) {
+					if(isset($traceItem[$key])) {
+						$orderedItem[$key] = $traceItem[$key];
+					}
+				}
+				$trace[$i] = $orderedItem + $traceItem;
+
+				if(str_starts_with($traceItem["file"] ?? "", "gt-logic-stream://")) {
+					$trace[$i]["file"] = substr($traceItem["file"], strlen("gt-logic-stream://"));
+				}
+				if(str_starts_with($traceItem["function"], "Gt\\AppLogic\\")) {
+					$trace[$i]["function"] = substr($traceItem["function"], strlen("Gt\\AppLogic\\"));
+					$trace[$i]["function"] = str_replace("_php\\", ".php\\", $trace[$i]["function"]);
+				}
+			}
+			if($stopTraceAt) {
+				$trace = array_slice($trace, 0, $stopTraceAt);
+			}
+			
+			$cwd = getcwd();
+			$file = $throwable->getFile();
+			if(str_starts_with($file, $cwd)) {
+				$file = substr($file, strlen($cwd));
+				$file = trim($file, "/");
+			}
+
+			Log::critical($throwable->getMessage(), [
+				"session" => $ipSesss,
+				"uri" => $request->getUri(),
+				"file" => $file,
+				"line" => $throwable->getLine(),
+				"trace" => $trace,
+				"body" => file_get_contents("php://input"),
+			]);
 
 			$errorHandler = new ErrorRequestHandler(
 				ConfigFactory::createForProject(
@@ -112,6 +152,7 @@ class Lifecycle implements MiddlewareInterface {
 				$originalGlobals["files"],
 				$originalGlobals["server"],
 			);
+
 			$response = $this->process($request, $errorHandler);
 		}
 
@@ -133,21 +174,6 @@ class Lifecycle implements MiddlewareInterface {
 		RequestHandlerInterface $handler,
 	):ResponseInterface {
 		return $handler->handle($request);
-	}
-
-	public function error(
-		int $errno,
-		string $errstr,
-		?string $errfile = null,
-		?int $errline = null,
-		?array $errcontext = null,
-	):bool {
-		$params = ["error", $errstr];
-		if(isset($this->throwable)) {
-			array_push($params, $this->throwable, get_class($this->throwable));
-		}
-		call_user_func_array($this->debugOutput(...), $params);
-		return true;
 	}
 
 	public function debugOutput(
@@ -176,14 +202,6 @@ class Lifecycle implements MiddlewareInterface {
 			JS;
 //		$js = str_replace("</script", "<\\/script", $js);
 		echo $js;
-	}
-
-	public function responseFromThrowable(Throwable $throwable):Response {
-		$response = new Response();
-		$body = new Stream();
-		$body->write("errrrrrrrrrrror!");
-		$response = $response->withBody($body);
-		return $response;
 	}
 
 	public function finish(

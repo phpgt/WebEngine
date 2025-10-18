@@ -32,6 +32,9 @@ class Timer {
 		}
 
 		$this->timeGetter = $timeGetter ?? fn() => microtime(true);
+	}
+
+	public function start():void {
 		$this->startTime = ($this->timeGetter)();
 	}
 

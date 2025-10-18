@@ -1,18 +1,21 @@
 <?php
 namespace GT\WebEngine;
 
-use GT\Config\Config;
-use GT\Config\ConfigFactory;
-use GT\Http\Response;
-use Gt\Http\ServerRequest;
-use GT\Http\Stream;
-use GT\ProtectedGlobal\Protection;
+use Closure;
+use Throwable;
+use ErrorException;
 use GT\WebEngine\Debug\OutputBuffer;
 use GT\WebEngine\Debug\Timer;
 use GT\WebEngine\Redirection\Redirect;
-use GT\Http\RequestFactory;
-use ErrorException;
-use Throwable;
+use GT\WebEngine\Dispatch\Dispatcher;
+use GT\WebEngine\Dispatch\DispatcherFactory;
+use Gt\Config\Config;
+use Gt\Config\ConfigFactory;
+use Gt\Http\RequestFactory;
+use Gt\Http\Response;
+use Gt\Http\ServerRequest;
+use Gt\Http\Stream;
+use Gt\ProtectedGlobal\Protection;
 
 /**
  * The fundamental purpose of any PHP framework is to provide a mechanism for
@@ -26,9 +29,11 @@ class Application {
 	private Redirect $redirect;
 	private Timer $timer;
 	private OutputBuffer $outputBuffer;
+	private RequestFactory $requestFactory;
 	/** @var array<string, array<string, string>> */
 	private array $globals;
 	private Config $config;
+	private DispatcherFactory $dispatcherFactory;
 	private Dispatcher $dispatcher;
 	private bool $finished = false;
 
@@ -39,13 +44,25 @@ class Application {
 	public function __construct(
 		?Redirect $redirect = null,
 		?Config $config = null,
+		?Timer $timer = null,
+		?OutputBuffer $outputBuffer = null,
+		?RequestFactory $requestFactory = null,
+		?DispatcherFactory $dispatcherFactory = null,
 		?array $globals = null,
+		?Closure $handleShutdown = null,
 	) {
 		$this->gtCompatibility();
-		$this->config = $config ?? $this->loadConfig();
 		$this->redirect = $redirect ?? new Redirect();
+		$this->config = $config ?? $this->loadConfig();
+		$this->timer = $timer ?? new Timer(
+			$this->config->getFloat("app.slow_delta"),
+			$this->config->getFloat("app.very_slow_delta"),
+		);
+		$this->outputBuffer = $outputBuffer ?? new OutputBuffer();
+		$this->requestFactory = $requestFactory ?? new RequestFactory();
+		$this->dispatcherFactory = $dispatcherFactory ?? new DispatcherFactory();
 		$this->globals = $globals ?? $GLOBALS;
-		register_shutdown_function($this->handleShutdown(...));
+		register_shutdown_function($handleShutdown ?? $this->handleShutdown(...));
 	}
 
 	public function start():void {
@@ -56,37 +73,32 @@ class Application {
 // This timer is only used again at the end of the call, when finish() is
 // called - at which point the entire duration of the request is logged out (and
 // slow requests are highlighted as a NOTICE).
-		$this->timer = new Timer(
-			$this->config->getFloat("app.slow_delta"),
-			$this->config->getFloat("app.very_slow_delta"),
-		);
+		$this->timer->start();
 
 // Starting the output buffer is done before any logic is executed, so any calls
 // to any area of code will not accidentally send output to the web browser.
-		$this->outputBuffer = new OutputBuffer();
+		$this->outputBuffer->start();
 
 // PHP.GT provides object-oriented interfaces to all values stored in $_SERVER,
 // $_FILES, $_GET, and $_POST - to enforce good encapsulation and safe variable
 // usage, the globals are protected against accidental misuse.
 		$this->protectGlobals();
 
-		$requestFactory = new RequestFactory();
-
 		/** @var ServerRequest $request */
-		$request = $requestFactory->createServerRequestFromGlobalState(
-			$this->globals["server"],
-			$this->globals["files"],
-			$this->globals["get"],
-			$this->globals["post"],
+		$request = $this->requestFactory->createServerRequestFromGlobalState(
+			$this->globals["_SERVER"] ?? [],
+			$this->globals["_FILES"] ?? [],
+			$this->globals["_GET"] ?? [],
+			$this->globals["_POST"] ?? [],
 		);
 
-		$this->dispatcher = new Dispatcher(
+		$this->dispatcher = $this->dispatcherFactory->create(
 			$this->config,
 			$request,
-			$this->globals["get"],
-			$this->globals["post"],
-			$this->globals["files"],
-			$this->globals["server"],
+			$this->globals["_GET"],
+			$this->globals["_POST"],
+			$this->globals["_FILES"],
+			$this->globals["_SERVER"],
 		);
 
 		try {

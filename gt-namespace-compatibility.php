@@ -1,3 +1,4 @@
+
 <?php
 /**
  * Namespace compatibility layer for Gt -> GT transition.
@@ -9,6 +10,12 @@
 spl_autoload_register(function(string $class):void {
 	if(str_starts_with($class, 'GT\\')) {
 		$legacyClass = 'Gt' . substr($class, 2);
-		class_alias($legacyClass, $class, true);
+		// Trigger autoloading for the legacy class
+		spl_autoload_call($legacyClass);
+		// Only create alias if it was loaded and target doesn't already exist
+		if((class_exists($legacyClass, false) || interface_exists($legacyClass, false) || trait_exists($legacyClass, false))
+			&& !class_exists($class, false) && !interface_exists($class, false) && !trait_exists($class, false)) {
+			class_alias($legacyClass, $class);
+		}
 	}
-}, true, false);
+}, true, true);

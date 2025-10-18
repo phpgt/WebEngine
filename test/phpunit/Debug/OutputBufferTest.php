@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 class OutputBufferTest extends TestCase {
 	public function testEchoIsCaptured():void {
 		$sut = new OutputBuffer();
+		$sut->start();
 		echo "Hello world";
 		$buffer = $sut->getBuffer();
 		self::assertSame("Hello world", $buffer);
@@ -14,6 +15,7 @@ class OutputBufferTest extends TestCase {
 
 	public function testVarDumpIsCaptured():void {
 		$sut = new OutputBuffer();
+		$sut->start();
 		$var = ["a" => 1, "b" => 2];
 		var_dump($var);
 		$buffer = $sut->getBuffer();

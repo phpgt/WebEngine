@@ -21,6 +21,9 @@ class OutputBuffer {
 	) {
 		$this->obStartHandler = $obStartHandler ?? fn() => ob_start();
 		$this->obGetCleanHandler = $obGetCleanHandler ?? fn() => ob_get_clean();
+	}
+
+	public function start():void {
 		($this->obStartHandler)();
 	}
 

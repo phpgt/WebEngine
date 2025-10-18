@@ -1,5 +1,5 @@
 <?php
-namespace GT\WebEngine;
+namespace GT\WebEngine\Dispatch;
 
 use Gt\Config\Config;
 use Gt\Http\Request;

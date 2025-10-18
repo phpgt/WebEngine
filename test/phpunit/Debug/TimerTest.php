@@ -15,12 +15,13 @@ class TimerTest extends TestCase {
 		};
 
 		$sut = new Timer(timeGetter: $timeGetter);
+		$sut->start();
 		$sut->stop();
 		self::assertSame(2.5, $sut->getDelta());
 	}
 
 	public function testStopMultipleTimesUsesLatestEndTime():void {
-		$times = [10.0, 15.0, 20.0];
+		$times = [10.0, 20.0, 40.0, 80.0, 160.0];
 		$index = 0;
 		$timeGetter = function() use (&$times, &$index) {
 			$value = $times[$index] ?? end($times);
@@ -29,10 +30,12 @@ class TimerTest extends TestCase {
 		};
 
 		$sut = new Timer(timeGetter: $timeGetter);
-		$sut->stop();
-		self::assertSame(5.0, $sut->getDelta());
-
+		$sut->start();
 		$sut->stop();
 		self::assertSame(10.0, $sut->getDelta());
+
+		$sut->start();
+		$sut->stop();
+		self::assertSame(40.0, $sut->getDelta());
 	}
 }

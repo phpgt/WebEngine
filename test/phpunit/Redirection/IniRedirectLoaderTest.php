@@ -1,9 +1,9 @@
 <?php
-namespace Gt\WebEngine\Test\Redirection;
+namespace GT\WebEngine\Test\Redirection;
 
-use Gt\WebEngine\Redirection\IniRedirectLoader;
-use Gt\WebEngine\Redirection\RedirectException;
-use Gt\WebEngine\Redirection\RedirectMap;
+use GT\WebEngine\Redirection\IniRedirectLoader;
+use GT\WebEngine\Redirection\RedirectException;
+use GT\WebEngine\Redirection\RedirectMap;
 use PHPUnit\Framework\TestCase;
 
 class IniRedirectLoaderTest extends TestCase {

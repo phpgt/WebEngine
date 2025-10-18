@@ -54,12 +54,12 @@
 
 	"autoload": {
 		"psr-4": {
-			"Gt\\WebEngine\\": "./src/"
+			"GT\\WebEngine\\": "./src/"
 		}
 	},
 	"autoload-dev": {
 		"psr-4": {
-			"Gt\\WebEngine\\Test\\": "./test/phpunit"
+			"GT\\WebEngine\\Test\\": "./test/phpunit"
 		}
 	},
 

@@ -1,5 +1,5 @@
 <?php
-namespace Gt\WebEngine\Redirection;
+namespace GT\WebEngine\Redirection;
 
 class RedirectUri {
 	public function __construct(

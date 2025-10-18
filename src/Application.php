@@ -1,10 +1,15 @@
 <?php
-namespace Gt\WebEngine;
+namespace GT\WebEngine;
 
-use Gt\WebEngine\Debug\OutputBuffer;
-use Gt\WebEngine\Debug\Timer;
-use Gt\WebEngine\Redirection\Redirect;
+use GT\WebEngine\Debug\OutputBuffer;
+use GT\WebEngine\Debug\Timer;
+use GT\WebEngine\Redirection\Redirect;
 
+/**
+ * The fundamental purpose of any PHP framework is to provide a mechanism for
+ * generating an HTTP response from an incoming HTTP request. This functionality
+ * is what's wrapped into the WebEngine Application class here.
+ */
 class Application {
 	private Redirect $redirect;
 	private Timer $timer;

@@ -1,5 +1,5 @@
 <?php
-namespace Gt\WebEngine\Redirection;
+namespace GT\WebEngine\Redirection;
 
 class IniRedirectLoader implements RedirectLoader {
 	public function load(string $file, RedirectMap $map):void {

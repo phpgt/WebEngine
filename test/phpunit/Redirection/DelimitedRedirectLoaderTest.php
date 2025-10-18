@@ -1,9 +1,9 @@
 <?php
-namespace Gt\WebEngine\Test\Redirection;
+namespace GT\WebEngine\Test\Redirection;
 
-use Gt\WebEngine\Redirection\DelimitedRedirectLoader;
-use Gt\WebEngine\Redirection\RedirectException;
-use Gt\WebEngine\Redirection\RedirectMap;
+use GT\WebEngine\Redirection\DelimitedRedirectLoader;
+use GT\WebEngine\Redirection\RedirectException;
+use GT\WebEngine\Redirection\RedirectMap;
 use PHPUnit\Framework\TestCase;
 
 class DelimitedRedirectLoaderTest extends TestCase {

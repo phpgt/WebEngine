@@ -1,5 +1,5 @@
 <?php
-namespace Gt\WebEngine\Redirection;
+namespace GT\WebEngine\Redirection;
 
 readonly class DelimitedRedirectLoader implements RedirectLoader {
 	public function __construct(private string $delimiter) {}
@@ -10,7 +10,7 @@ readonly class DelimitedRedirectLoader implements RedirectLoader {
 			return;
 		}
 
-		while(($row = fgetcsv($fileHandle, 0, $this->delimiter, escape: '\\')) !== false) {
+		while(($row = fgetcsv($fileHandle, 0, $this->delimiter, escape: '')) !== false) {
 			if(count($row) < 2) {
 				continue;
 			}

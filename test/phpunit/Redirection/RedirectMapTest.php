@@ -1,9 +1,9 @@
 <?php
-namespace Gt\WebEngine\Test\Redirection;
+namespace GT\WebEngine\Test\Redirection;
 
-use Gt\WebEngine\Redirection\RedirectException;
-use Gt\WebEngine\Redirection\RedirectMap;
-use Gt\WebEngine\Redirection\RedirectUri;
+use GT\WebEngine\Redirection\RedirectException;
+use GT\WebEngine\Redirection\RedirectMap;
+use GT\WebEngine\Redirection\RedirectUri;
 use PHPUnit\Framework\Attributes\IgnorePhpunitWarnings;
 use PHPUnit\Framework\Attributes\WithoutErrorHandler;
 use PHPUnit\Framework\TestCase;

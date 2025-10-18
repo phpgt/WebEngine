@@ -4,6 +4,8 @@ namespace Gt\WebEngine\Test\Redirection;
 use Gt\WebEngine\Redirection\RedirectException;
 use Gt\WebEngine\Redirection\RedirectMap;
 use Gt\WebEngine\Redirection\RedirectUri;
+use PHPUnit\Framework\Attributes\IgnorePhpunitWarnings;
+use PHPUnit\Framework\Attributes\WithoutErrorHandler;
 use PHPUnit\Framework\TestCase;
 
 class RedirectMapTest extends TestCase {
@@ -42,20 +44,13 @@ class RedirectMapTest extends TestCase {
 		$map->addRule(307, '~^/broken/([)$', '/x');
 		self::expectException(RedirectException::class);
 		self::expectExceptionMessage('Invalid regex pattern in redirect file: ^/broken/([)$');
-		$prevHandler = set_error_handler(function(int $severity, string $message) {
-			// Swallow regex compilation warnings from preg_match; exception is asserted below.
-			return ($severity === E_WARNING);
-		});
+
+		set_error_handler(static fn(int $errno) => $errno === E_WARNING);
 		try {
 			$map->match('/broken/anything');
 		}
 		finally {
-			if($prevHandler !== null) {
-				set_error_handler($prevHandler);
-			}
-			else {
-				restore_error_handler();
-			}
+			restore_error_handler();
 		}
 	}
 

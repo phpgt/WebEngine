@@ -6,6 +6,7 @@
 	cacheDirectory="test/phpunit/.phpunit.cache"
 	bootstrap="vendor/autoload.php"
 	displayDetailsOnTestsThatTriggerDeprecations="true"
+	displayDetailsOnTestsThatTriggerWarnings="true"
 >
 	<coverage />
 

@@ -59,8 +59,8 @@ class RedirectMap {
 					throw new RedirectException("Invalid regex pattern in redirect file: $pattern");
 				}
 				if($matchResult === 1) {
-					$newUri = (string)preg_replace("~$pattern~", $replacement, $oldUri, 1);
-					if($newUri !== $oldUri) {
+					$newUri = preg_replace("~$pattern~", $replacement, $oldUri, 1);
+					if(is_string($newUri) && $newUri !== $oldUri) {
 						return new RedirectUri($newUri, (int)$code);
 					}
 				}

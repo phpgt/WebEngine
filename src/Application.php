@@ -30,7 +30,7 @@ class Application {
 	private Timer $timer;
 	private OutputBuffer $outputBuffer;
 	private RequestFactory $requestFactory;
-	/** @var array<string, array<string, string>> */
+	/** @var array<string, array<string, string|array<string, string>>> */
 	private array $globals;
 	private Config $config;
 	private DispatcherFactory $dispatcherFactory;

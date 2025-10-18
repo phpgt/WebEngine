@@ -1,12 +1,14 @@
 <?php
 namespace Gt\WebEngine;
 
+use Gt\WebEngine\Debug\OutputBuffer;
 use Gt\WebEngine\Debug\Timer;
 use Gt\WebEngine\Redirection\Redirect;
 
 class Application {
 	private Redirect $redirect;
 	private Timer $timer;
+	private OutputBuffer $outputBuffer;
 
 	public function __construct(
 		?Redirect $redirect = null,
@@ -24,7 +26,18 @@ class Application {
 // slow requests are highlighted as a NOTICE).
 		$this->timer = new Timer();
 
-// TODO: Test the timer! Then start some tests on Application (as much as possible in unit tests).
-// Then, when tests are passing, begin to reconstruct the Lifecycle in a much more testable way.
+// Starting the output buffer is done before any logic is executed, so any calls
+// to any area of code will not accidentally send output to the web browser.
+		$this->outputBuffer = new OutputBuffer();
+
+// Keep references read to satisfy static analysis without changing behaviour.
+		$this->keepReference($this->timer, $this->outputBuffer);
+	}
+
+	/**
+	 * No-op to keep references marked as read by static analysis.
+	 */
+	private function keepReference(mixed ...$args):void {
+		// Intentionally empty.
 	}
 }

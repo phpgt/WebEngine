@@ -50,7 +50,7 @@
 
 	<rule ref="rulesets/naming.xml/ShortVariable">
 		<properties>
-			<property name="exceptions" value="ch,mh,sh,id,tr,td,i" />
+			<property name="exceptions" value="ch,mh,sh,id,tr,td,i,fh" />
 		</properties>
 	</rule>
 </ruleset>

@@ -7,7 +7,7 @@
  * lifecycle in the documentation:
  * https://github.com/PhpGt/WebEngine/wiki/From-request-to-response
  */
-use Gt\WebEngine\Application;
+use GT\WebEngine\Application;
 
 chdir(dirname($_SERVER["DOCUMENT_ROOT"]));
 ini_set("display_errors", "on");
@@ -31,7 +31,11 @@ if(is_file($_SERVER["DOCUMENT_ROOT"] . $uri)) {
  * files exist.
  * @link https://getcomposer.org/doc/00-intro.md
  */
-foreach([dirname($_SERVER["DOCUMENT_ROOT"]), __DIR__] as $dir) {
+$vendorDirectoryList = [
+	dirname($_SERVER["DOCUMENT_ROOT"]),
+	__DIR__,
+];
+foreach($vendorDirectoryList as $dir) {
 	$autoloadPath = "$dir/vendor/autoload.php";
 	if(file_exists($autoloadPath)) {
 		require $autoloadPath;

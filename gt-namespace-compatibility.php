@@ -9,13 +9,6 @@
 spl_autoload_register(function(string $class):void {
 	if(str_starts_with($class, 'GT\\')) {
 		$legacyClass = 'Gt' . substr($class, 2);
-
-		if(class_exists($legacyClass)
-		|| interface_exists($legacyClass)
-		|| trait_exists($legacyClass)
-		|| enum_exists($legacyClass)
-		) {
-			class_alias($legacyClass, $class);
-		}
+		class_alias($legacyClass, $class, true);
 	}
-}, true, true);
+}, true, false);

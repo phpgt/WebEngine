@@ -3,7 +3,6 @@ namespace GT\WebEngine;
 
 use GT\Config\Config;
 use GT\Config\ConfigFactory;
-use GT\Http\Request;
 use GT\Http\Response;
 use Gt\Http\ServerRequest;
 use GT\Http\Stream;
@@ -33,11 +32,19 @@ class Application {
 	private Dispatcher $dispatcher;
 	private bool $finished = false;
 
+	/**
+	 * @param null|array<string, array<string, string>> $globals
+	 * @SuppressWarnings("PHPMD.Superglobals")
+	 */
 	public function __construct(
 		?Redirect $redirect = null,
+		?Config $config = null,
+		?array $globals = null,
 	) {
-		$this->config = $this->loadConfig();
+		$this->gtCompatibility();
+		$this->config = $config ?? $this->loadConfig();
 		$this->redirect = $redirect ?? new Redirect();
+		$this->globals = $globals ?? $GLOBALS;
 		register_shutdown_function($this->handleShutdown(...));
 	}
 
@@ -61,7 +68,7 @@ class Application {
 // PHP.GT provides object-oriented interfaces to all values stored in $_SERVER,
 // $_FILES, $_GET, and $_POST - to enforce good encapsulation and safe variable
 // usage, the globals are protected against accidental misuse.
-		$this->globals = $this->protectGlobals();
+		$this->protectGlobals();
 
 		$requestFactory = new RequestFactory();
 
@@ -73,7 +80,14 @@ class Application {
 			$this->globals["post"],
 		);
 
-		$this->dispatcher = new Dispatcher($request);
+		$this->dispatcher = new Dispatcher(
+			$this->config,
+			$request,
+			$this->globals["get"],
+			$this->globals["post"],
+			$this->globals["files"],
+			$this->globals["server"],
+		);
 
 		try {
 			$response = $this->dispatcher->generateResponse();
@@ -111,22 +125,42 @@ class Application {
 	}
 
 	/**
-	 * @return array<string, array<string, mixed>>
-	 * @SuppressWarnings("PHPMD.Superglobals")
+	 * Registers a namespace compatibility autoloader to bridge the
+	 * Gt -> GT namespace transition.
+	 *
+	 * As part of the PHP.GT rebranding for WebEngine v5, all references to
+	 * "GT" are being standardised to uppercase. However, the framework
+	 * consists of 40+ repositories that cannot all be refactored
+	 * simultaneously. This compatibility layer allows new code to reference
+	 * classes using the GT\ namespace while the underlying packages still
+	 * define classes with the Gt\ namespace.
 	 */
-	private function protectGlobals():array {
-		$originalGlobals = [
-			"server" => $_SERVER,
-			"files" => $_FILES,
-			"get" => $_GET,
-			"post" => $_POST,
-			"env" => $_ENV,
-			"cookie" => $_COOKIE
-		];
+	private function gtCompatibility():void {
+		spl_autoload_register(function(string $class):void {
+			if(str_starts_with($class, 'GT\\')) {
+				$legacyClass = 'Gt' . substr($class, 2);
+				// Trigger autoloading for the legacy class
+				spl_autoload_call($legacyClass);
+				// Only create alias if it was loaded and target doesn't already exist
+				if((class_exists($legacyClass, false) || interface_exists($legacyClass, false) || trait_exists($legacyClass, false))
+					&& !class_exists($class, false) && !interface_exists($class, false) && !trait_exists($class, false)) {
+					class_alias($legacyClass, $class);
+				}
+			}
+		}, true, true);
+	}
 
+	private function protectGlobals():void {
 		$protection = new Protection();
 		$protection->overrideInternals(
-			$protection->removeGlobals($originalGlobals, [
+			$protection->removeGlobals([
+				"server" => $this->globals["_SERVER"],
+				"files" => $this->globals["_FILES"],
+				"get" => $this->globals["_GET"],
+				"post" => $this->globals["_POST"],
+				"env" => $this->globals["_ENV"],
+				"cookie" => $this->globals["_COOKIE"],
+			], [
 				"_ENV" => explode(",", $this->config->getString("app.globals_whitelist_env") ?? ""),
 				"_SERVER" => explode(",", $this->config->getString("app.globals_whitelist_server") ?? ""),
 				"_GET" => explode(",", $this->config->getString("app.globals_whitelist_get") ?? ""),
@@ -135,8 +169,6 @@ class Application {
 				"_COOKIES" => explode(",", $this->config->getString("app.globals_whitelist_cookies") ?? ""),
 			])
 		);
-
-		return $originalGlobals;
 	}
 
 	private function loadConfig():Config {
@@ -188,8 +220,15 @@ class Application {
 			$this->finish($response);
 		}
 		catch(Throwable $innerThrowable) {
-			$this->dispatcher->generateBasicErrorResponse($innerThrowable, $throwable);
+			$response = $this->dispatcher->generateBasicErrorResponse($innerThrowable, $throwable);
 		}
+		$this->outputHeaders(
+			$response->getStatusCode(),
+			$response->getHeaders(),
+		);
+		/** @var Stream $responseBody */
+		$responseBody = $response->getBody();
+		$this->outputResponseBody($responseBody);
 	}
 
 	private function logError(Throwable $throwable):void {

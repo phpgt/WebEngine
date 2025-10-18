@@ -22,8 +22,8 @@ class Timer {
 	private Closure $timeGetter;
 
 	public function __construct(
-		private float $slowDelta = 0.1,
-		private float $verySlowDelta = 0.5,
+		private readonly float $slowDelta = 0.1,
+		private readonly float $verySlowDelta = 0.5,
 		?Closure $deltaLogCallback = null,
 		?Closure $timeGetter = null,
 	) {

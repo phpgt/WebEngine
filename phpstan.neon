@@ -8,5 +8,12 @@ parameters:
         - src/View
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
-            - '#^Class Gt\\[a-zA-Z\\]+ referenced with incorrect case: GT\\[a-zA-Z\\]+\.$#'
-            - '#^Class GT\\[a-zA-Z\\]+ referenced with incorrect case: Gt\\[a-zA-Z\\]+\.$#'
+        - '#^Class Gt\\[a-zA-Z\\]+ referenced with incorrect case: GT\\[a-zA-Z\\]+\.$#'
+        - '#^Class GT\\[a-zA-Z\\]+ referenced with incorrect case: Gt\\[a-zA-Z\\]+\.$#'
+        - '#^Property .+ has unknown class GT\\.+ as its type\.$#'
+        - '#^Parameter .+ of method .+ has invalid type GT\\.+\.$#'
+        - '#^Call to method .+ on an unknown class GT\\.+\.$#'
+        - '#^Instantiated class GT\\.+ not found\.$#'
+        - '#^Parameter .+ of class .+ expects Gt\\.+, GT\\.+ given\.$#'
+        - '#^PHPDoc tag @var for variable .+ contains unknown class GT\\.+\.$#'
+        - '#^Method .+ has invalid return type GT\\.+\.$#'

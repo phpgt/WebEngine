@@ -61,7 +61,10 @@
 	"autoload-dev": {
 		"psr-4": {
 			"GT\\WebEngine\\Test\\": "./test/phpunit"
-		}
+		},
+		"files": [
+			"./gt-namespace-compatibility.php"
+		]
 	},
 
 	"keywords": [

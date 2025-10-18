@@ -44,53 +44,53 @@ class Lifecycle implements MiddlewareInterface {
 	public function start():void {
 // Before we start, we check if the current URI should be redirected. If it
 // should, we won't go any further into the lifecycle.
-		$this->handleRedirects();
+//		$this->handleRedirects();
 
 // The first thing that's done within the WebEngine lifecycle is start a timer.
 // This timer is only used again at the end of the call, when finish() is
 // called - at which point the entire duration of the request is logged out (and
 // slow requests are highlighted as a NOTICE).
-		$this->timer = new Timer();
+//		$this->timer = new Timer();
 
 // Starting the output buffer is done before any logic is executed, so any calls
 // to any area of code will not accidentally send output to the client.
-		ob_start();
+//		ob_start();
 
-		$originalGlobals = [
-			"get" => $_GET,
-			"post" => $_POST,
-			"files" => $_FILES,
-			"server" => $_SERVER,
-		];
+//		$originalGlobals = [
+//			"get" => $_GET,
+//			"post" => $_POST,
+//			"files" => $_FILES,
+//			"server" => $_SERVER,
+//		];
 // A PSR-7 HTTP Request object is created from the current global state, ready
 // for processing by the Handler.
-		$requestFactory = new RequestFactory();
-		$request = $requestFactory->createServerRequestFromGlobalState(
-			$originalGlobals["server"],
-			$originalGlobals["files"],
-			$originalGlobals["get"],
-			$originalGlobals["post"],
-		);
+//		$requestFactory = new RequestFactory();
+//		$request = $requestFactory->createServerRequestFromGlobalState(
+//			$originalGlobals["server"],
+//			$originalGlobals["files"],
+//			$originalGlobals["get"],
+//			$originalGlobals["post"],
+//		);
 
 // The handler is an individual component that processes a request and produces
 // a response, as defined by PSR-7. It's where all your application's logic is
 // executed - the brain of WebEngine. Here we pass in a reference to the finish
 // function, so the RequestHandler can complete the request early if needed.
-		$handler = new RequestHandler(
-			ConfigFactory::createForProject(
-				getcwd(),
-				"vendor/phpgt/webengine/config.default.ini"
-			),
-			$this->finish(...),
-			$originalGlobals["get"],
-			$originalGlobals["post"],
-			$originalGlobals["files"],
-			$originalGlobals["server"],
-		);
+//		$handler = new RequestHandler(
+//			ConfigFactory::createForProject(
+//				getcwd(),
+//				"vendor/phpgt/webengine/config.default.ini"
+//			),
+//			$this->finish(...),
+//			$originalGlobals["get"],
+//			$originalGlobals["post"],
+//			$originalGlobals["files"],
+//			$originalGlobals["server"],
+//		);
 
-		set_error_handler(function(int $errno, string $errstr, ?string $errFile = null, ?int $errLine = null, ?array $errContext = null):bool {
-			return true;
-		});
+//		set_error_handler(function(int $errno, string $errstr, ?string $errFile = null, ?int $errLine = null, ?array $errContext = null):bool {
+//			return true;
+//		});
 
 // The request and request handler are passed to the PSR-15 process function,
 // which will return our PSR-7 HTTP Response.

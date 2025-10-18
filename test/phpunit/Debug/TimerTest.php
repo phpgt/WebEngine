@@ -14,7 +14,7 @@ class TimerTest extends TestCase {
 			return $value;
 		};
 
-		$sut = new Timer($timeGetter);
+		$sut = new Timer(timeGetter: $timeGetter);
 		$sut->stop();
 		self::assertSame(2.5, $sut->getDelta());
 	}
@@ -28,7 +28,7 @@ class TimerTest extends TestCase {
 			return $value;
 		};
 
-		$sut = new Timer($timeGetter);
+		$sut = new Timer(timeGetter: $timeGetter);
 		$sut->stop();
 		self::assertSame(5.0, $sut->getDelta());
 

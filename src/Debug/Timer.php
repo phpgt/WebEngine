@@ -18,9 +18,19 @@ use Closure;
 class Timer {
 	private float $startTime;
 	private float $endTime;
+	private Closure $deltaLogCallback;
 	private Closure $timeGetter;
 
-	public function __construct(?Closure $timeGetter = null) {
+	public function __construct(
+		private float $slowDelta = 0.1,
+		private float $verySlowDelta = 0.5,
+		?Closure $deltaLogCallback = null,
+		?Closure $timeGetter = null,
+	) {
+		if($deltaLogCallback) {
+			$this->deltaLogCallback = $deltaLogCallback;
+		}
+
 		$this->timeGetter = $timeGetter ?? fn() => microtime(true);
 		$this->startTime = ($this->timeGetter)();
 	}
@@ -32,4 +42,24 @@ class Timer {
 	public function getDelta():float {
 		return $this->endTime - $this->startTime;
 	}
+
+	public function logDelta():void {
+		if(!isset($this->deltaLogCallback)) {
+			return;
+		}
+
+		$delta = $this->getDelta();
+		if($delta > $this->verySlowDelta) {
+			$message = "VERY SLOW";
+		}
+		elseif($delta > $this->slowDelta) {
+			$message = "SLOW";
+		}
+		else {
+			return;
+		}
+
+		$this->deltaLogCallback->call($this, "Timer ended with $message delta time: $delta seconds. https://www.php.gt/webengine/slow-delta");
+	}
+
 }

@@ -40,8 +40,6 @@
 		"phpgt/session": "^1.2",
 		"phpgt/sync": "^1.3",
 		"phpgt/ulid": "^1.0",
-
-		"psr/http-server-middleware": "^1.0",
 		"willdurand/negotiation": "^3.0"
 	},
 
@@ -55,7 +53,10 @@
 	"autoload": {
 		"psr-4": {
 			"GT\\WebEngine\\": "./src/"
-		}
+		},
+		"files": [
+			"./gt-namespace-compatibility.php"
+		]
 	},
 	"autoload-dev": {
 		"psr-4": {

@@ -6,3 +6,7 @@ parameters:
         - src/Logic
         - src/Middleware
         - src/View
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+            - '#^Class Gt\\[a-zA-Z\\]+ referenced with incorrect case: GT\\[a-zA-Z\\]+\.$#'
+            - '#^Class GT\\[a-zA-Z\\]+ referenced with incorrect case: Gt\\[a-zA-Z\\]+\.$#'

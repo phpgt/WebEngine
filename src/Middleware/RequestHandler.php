@@ -357,22 +357,22 @@ class RequestHandler implements RequestHandlerInterface {
 	}
 
 	protected function handleProtectedGlobals():void {
-		if($this instanceof ErrorRequestHandler) {
-// ErrorRequestHandler extends RequestHander, so this has already been done.
-			return;
-		}
-
-		Protection::overrideInternals(
-			Protection::removeGlobals($GLOBALS, [
-					"_ENV" => explode(",", $this->config->getString("app.globals_whitelist_env") ?? ""),
-					"_SERVER" => explode(",", $this->config->getString("app.globals_whitelist_server") ?? ""),
-					"_GET" => explode(",", $this->config->getString("app.globals_whitelist_get") ?? ""),
-					"_POST" => explode(",", $this->config->getString("app.globals_whitelist_post") ?? ""),
-					"_FILES" => explode(",", $this->config->getString("app.globals_whitelist_files") ?? ""),
-					"_COOKIES" => explode(",", $this->config->getString("app.globals_whitelist_cookies") ?? ""),
-				]
-			)
-		);
+//		if($this instanceof ErrorRequestHandler) {
+//// ErrorRequestHandler extends RequestHander, so this has already been done.
+//			return;
+//		}
+//
+//		Protection::overrideInternals(
+//			Protection::removeGlobals($GLOBALS, [
+//					"_ENV" => explode(",", $this->config->getString("app.globals_whitelist_env") ?? ""),
+//					"_SERVER" => explode(",", $this->config->getString("app.globals_whitelist_server") ?? ""),
+//					"_GET" => explode(",", $this->config->getString("app.globals_whitelist_get") ?? ""),
+//					"_POST" => explode(",", $this->config->getString("app.globals_whitelist_post") ?? ""),
+//					"_FILES" => explode(",", $this->config->getString("app.globals_whitelist_files") ?? ""),
+//					"_COOKIES" => explode(",", $this->config->getString("app.globals_whitelist_cookies") ?? ""),
+//				]
+//			)
+//		);
 	}
 
 	protected function handleLogicExecution(Assembly $logicAssembly, ?Element $component = null):void {

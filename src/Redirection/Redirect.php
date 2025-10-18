@@ -61,6 +61,7 @@ class Redirect {
 	 * @return array<int, string>
 	 */
 	private function expandBraceGlob(string $pattern): array {
+		/** @noinspection RegExpRedundantEscape */
 		if(preg_match('/\{([^}]+)\}/', $pattern, $braceMatch)) {
 			$options = array_map('trim', explode(',', $braceMatch[1]));
 			$all = [];

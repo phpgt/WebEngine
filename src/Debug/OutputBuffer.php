@@ -29,4 +29,7 @@ class OutputBuffer {
 		// ob_get_clean can return false; normalise to empty string.
 		return is_string($contents) ? $contents : "";
 	}
+
+	public function debugOutput():void {}
+
 }

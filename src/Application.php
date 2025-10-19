@@ -24,6 +24,8 @@ use GT\ProtectedGlobal\Protection;
  *
  * The heavy lifting of converting Request to Response is performed in the
  * Dispatcher's generateResponse() method.
+ *
+  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  */
 class Application {
 	private Redirect $redirect;

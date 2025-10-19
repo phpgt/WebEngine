@@ -1,27 +1,35 @@
 <?php /** @noinspection PhpUnused */
-namespace Gt\WebEngine\Middleware;
+namespace GT\WebEngine\Middleware;
 
-use Gt\Config\Config;
-use Gt\Database\Connection\DefaultSettings;
-use Gt\Database\Connection\Settings;
-use Gt\Database\Database;
-use Gt\Dom\Document;
-use Gt\DomTemplate\BindableCache;
-use Gt\DomTemplate\Binder;
-use Gt\DomTemplate\DocumentBinder;
-use Gt\DomTemplate\ElementBinder;
-use Gt\DomTemplate\HTMLAttributeBinder;
-use Gt\DomTemplate\HTMLAttributeCollection;
-use Gt\DomTemplate\ListBinder;
-use Gt\DomTemplate\ListElementCollection;
-use Gt\DomTemplate\PlaceholderBinder;
-use Gt\DomTemplate\TableBinder;
-use Gt\Http\Header\ResponseHeaders;
-use Gt\Http\Request;
-use Gt\Http\Response;
-use Gt\Http\Uri;
-use Gt\ServiceContainer\Container;
+use GT\Config\Config;
+use GT\Dom\HTMLDocument;
+use GT\DomTemplate\HTMLAttributeBinder;
+use GT\Database\Connection\DefaultSettings;
+use GT\Database\Connection\Settings;
+use GT\Database\Database;
+use GT\Dom\Document;
+use GT\DomTemplate\BindableCache;
+use GT\DomTemplate\Binder;
+use GT\DomTemplate\DocumentBinder;
+use GT\DomTemplate\ElementBinder;
+use GT\DomTemplate\HTMLAttributeCollection;
+use GT\DomTemplate\ListBinder;
+use GT\DomTemplate\ListElementCollection;
+use GT\DomTemplate\PlaceholderBinder;
+use GT\DomTemplate\TableBinder;
+use GT\Http\Header\ResponseHeaders;
+use GT\Http\Request;
+use GT\Http\Response;
+use GT\Http\Uri;
+use GT\ServiceContainer\Container;
 
+/**
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
+ * Reason: This loader is the central place that defines and provides core
+ * framework services to the container. It references many service classes by
+ * design, but each is created lazily via dedicated factory methods, keeping
+ * responsibilities focused and testable.
+ */
 class DefaultServiceLoader {
 	public function __construct(
 		protected Config $config,
@@ -83,7 +91,7 @@ class DefaultServiceLoader {
 		return new ListBinder();
 	}
 
-	public function loadBinder():Binder {
+	public function loadBinder():DocumentBinder {
 		$document = $this->container->get(Document::class);
 		return new DocumentBinder($document);
 	}

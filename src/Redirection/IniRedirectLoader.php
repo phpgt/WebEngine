@@ -1,6 +1,12 @@
 <?php
 namespace GT\WebEngine\Redirection;
 
+/**
+ * @SuppressWarnings("PHPMD.StaticAccess")
+ * Reason: StatusCodeValidator provides a stateless validation utility via static
+ * methods. Using static access here avoids unnecessary object plumbing while
+ * keeping the loader pure and easy to test.
+ */
 class IniRedirectLoader implements RedirectLoader {
 	public function load(string $file, RedirectMap $map):void {
 		$fileHandle = fopen($file, 'r');

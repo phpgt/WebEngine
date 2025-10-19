@@ -1,12 +1,12 @@
 <?php
-namespace Gt\WebEngine\Middleware;
+namespace GT\WebEngine\Middleware;
 
-use Gt\Config\Config;
-use Gt\Dom\HTMLDocument;
-use Gt\DomTemplate\DocumentBinder;
-use Gt\Http\ResponseStatusException\ResponseStatusException;
-use Gt\Http\Uri;
-use Gt\ServiceContainer\Container;
+use GT\Config\Config;
+use GT\Dom\HTMLDocument;
+use GT\DomTemplate\DocumentBinder;
+use GT\Http\ResponseStatusException\ResponseStatusException;
+use GT\Http\Uri;
+use GT\ServiceContainer\Container;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;

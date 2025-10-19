@@ -2,9 +2,6 @@
 <ruleset name="PHP.Gt Standard" namespace="Gt\CS\Standard">
 	<description>Created from PHP.GT/Styleguide</description>
 	<arg name="extensions" value="php" />
-	<exclude-pattern>/src/Logic</exclude-pattern>
-	<exclude-pattern>/src/Middleware</exclude-pattern>
-	<exclude-pattern>/src/View</exclude-pattern>
 
 	<rule ref="Generic.Classes.DuplicateClassName" />
 	<rule ref="Generic.Classes.OpeningBraceSameLine" />

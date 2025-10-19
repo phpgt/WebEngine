@@ -1,6 +1,12 @@
 <?php
 namespace GT\WebEngine\Redirection;
 
+/**
+ * @SuppressWarnings("PHPMD.StaticAccess")
+ * Reason: StatusCodeValidator exposes a simple, stateless validation API via
+ * static methods. Injecting an instance would add indirection without benefit;
+ * using static access here keeps the loader minimal and side‑effect free.
+ */
 readonly class DelimitedRedirectLoader implements RedirectLoader {
 	public function __construct(private string $delimiter) {}
 

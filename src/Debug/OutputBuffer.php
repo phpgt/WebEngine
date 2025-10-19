@@ -35,8 +35,9 @@ class OutputBuffer {
 
 	public function debugOutput():void {
 		if($buffer = $this->getBuffer()) {
-// TODO: Properly log to the console, or to the browser, depending on config.
-			var_dump($buffer);die("<<< OUTPUT BUFFER");
+			// TODO: Properly log to the console, or to the browser, depending on config.
+			var_dump($buffer);
+			echo("<<< OUTPUT BUFFER");
 		}
 	}
 }

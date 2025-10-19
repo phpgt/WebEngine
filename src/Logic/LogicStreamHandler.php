@@ -2,7 +2,7 @@
 namespace GT\WebEngine\Logic;
 
 use Closure;
-use Gt\Routing\LogicStream\LogicStreamWrapper;
+use GT\Routing\LogicStream\LogicStreamWrapper;
 
 class LogicStreamHandler {
 	private Closure $streamWrapperRegisterCallback;

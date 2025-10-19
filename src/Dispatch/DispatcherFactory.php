@@ -1,6 +1,7 @@
 <?php
 namespace GT\WebEngine\Dispatch;
 
+use Closure;
 use GT\Config\Config;
 use GT\Http\Request;
 
@@ -11,12 +12,14 @@ class DispatcherFactory {
 	public function create(
 		Config $config,
 		Request $request,
-		array $globals
+		array $globals,
+		Closure $finishCallback,
 	):Dispatcher {
 		return new Dispatcher(
 			$config,
 			$request,
-			$globals
+			$globals,
+			$finishCallback,
 		);
 	}
 }

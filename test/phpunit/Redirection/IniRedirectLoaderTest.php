@@ -11,7 +11,7 @@ class IniRedirectLoaderTest extends TestCase {
 
 	protected function setUp():void {
 		parent::setUp();
-		$this->tmpFile = sys_get_temp_dir() . "/webengine-ini-" . uniqid() . ".ini";
+		$this->tmpFile = sys_get_temp_dir() . "/phpgt-webengine-test--Redirection-IniRedirectLoader-" . uniqid() . ".ini";
 	}
 
 	protected function tearDown():void {

@@ -11,7 +11,7 @@ class DelimitedRedirectLoaderTest extends TestCase {
 
 	protected function setUp():void {
 		parent::setUp();
-		$this->tmpFile = sys_get_temp_dir() . "/webengine-delimited-" . uniqid();
+		$this->tmpFile = sys_get_temp_dir() . "/phpgt-webengine-test--Redirection-DelimitedRedirectLoader-" . uniqid();
 	}
 
 	protected function tearDown():void {

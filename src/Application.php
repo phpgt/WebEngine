@@ -84,6 +84,13 @@ class Application {
 // usage, the globals are protected against accidental misuse.
 		$this->protectGlobals();
 
+
+// The RequestFactory takes the necessary global arrays to construct a
+// ServerRequest object. The $_SERVER array contains metadata about the request,
+// such as headers and server variables. $_FILES contains any uploaded files,
+// $_GET contains query parameters from the URL, and $_POST contains form data.
+// These arrays are optional and will default to empty arrays if not provided,
+// ensuring the ServerRequest can always be constructed safely.
 		/** @var ServerRequest $request */
 		$request = $this->requestFactory->createServerRequestFromGlobalState(
 			$this->globals["_SERVER"] ?? [],
@@ -92,10 +99,14 @@ class Application {
 			$this->globals["_POST"] ?? [],
 		);
 
+// TODO: Document what the Dispatcher's purpose is, and why it's important to
+// attach to the class as a property (for error states to be able to display
+// errors using the correct instance of the request, config, etc.)
 		$this->dispatcher = $this->dispatcherFactory->create(
 			$this->config,
 			$request,
 			$this->globals,
+			$this->finish(...),
 		);
 
 		try {
@@ -246,10 +257,39 @@ class Application {
 
 	/** @param array<string, array<string>> $headers */
 	private function outputHeaders(int $statusCode, array $headers):void {
-		// TODO: implement
+		foreach($headers as $key => $value) {
+// TODO: Is this how multi-value headers should be set?
+			$valueString = implode(";", $value);
+			header("$key: $valueString", true);
+		}
+
+		http_response_code($statusCode);
+
 	}
 
+	/**
+	 * The response body is not the same as the currently-held output
+	 * buffer ($this->outputBuffer). The output buffer is used for debug
+	 * purposes, to allow developers to use var_dump, echo, etc. without
+	 * messing up their page.
+	 *
+	 * The response body is the actual response HTML, JSON, etc. that is
+	 * to be rendered directly to the web client.
+	 *
+	 * `ob_*` functions are used here to ensure that the response body is
+	 * flushed and doesn't get rendered into another open buffer.
+	 */
 	private function outputResponseBody(Stream $responseBody):void {
-		// TODO: implement
+		$length = $this->config->getInt("app.render_buffer_size");
+
+		$responseBody->rewind();
+		ob_start();
+		while(!$responseBody->eof()) {
+			echo $responseBody->read($length);
+			ob_flush();
+			flush();
+		}
+
+		ob_end_flush();
 	}
 }

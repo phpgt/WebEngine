@@ -33,6 +33,10 @@ class OutputBuffer {
 		return is_string($contents) ? $contents : "";
 	}
 
-	public function debugOutput():void {}
-
+	public function debugOutput():void {
+		if($buffer = $this->getBuffer()) {
+// TODO: Properly log to the console, or to the browser, depending on config.
+			var_dump($buffer);die("<<< OUTPUT BUFFER");
+		}
+	}
 }

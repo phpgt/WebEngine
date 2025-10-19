@@ -1,5 +1,5 @@
 <?php
-namespace Gt\WebEngine\View;
+namespace GT\WebEngine\View;
 
 class NullView extends BaseView {
 	public function createViewModel():mixed {

@@ -4,8 +4,6 @@ namespace GT\WebEngine\Test\Redirection;
 use GT\WebEngine\Redirection\RedirectException;
 use GT\WebEngine\Redirection\RedirectMap;
 use GT\WebEngine\Redirection\RedirectUri;
-use PHPUnit\Framework\Attributes\IgnorePhpunitWarnings;
-use PHPUnit\Framework\Attributes\WithoutErrorHandler;
 use PHPUnit\Framework\TestCase;
 
 class RedirectMapTest extends TestCase {

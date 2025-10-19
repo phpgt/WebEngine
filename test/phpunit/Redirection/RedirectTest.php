@@ -10,7 +10,7 @@ class RedirectTest extends TestCase {
 
 	protected function setUp():void {
 		parent::setUp();
-		$this->tmpDir = sys_get_temp_dir() . "/webengine-test-redirect-" . uniqid();
+		$this->tmpDir = sys_get_temp_dir() . "/phpgt-webengine-test--Redirection-Redirect-" . uniqid();
 		if (!is_dir($this->tmpDir)) {
 			mkdir($this->tmpDir, recursive: true);
 		}

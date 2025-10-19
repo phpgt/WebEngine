@@ -44,14 +44,24 @@ foreach($vendorDirectoryList as $dir) {
 }
 
 /**
- * Step 3 - Go!
+ * Step 3 - setup:
+ * An optional setup.php file can be included in the project root, which will
+ * simply be executed directly here. This is useful for configuring the PHP
+ * environment across the project, but shouldn't be necessary for most projects.
+ */
+if(file_exists("setup.php")) {
+	require("setup.php");
+}
+
+/**
+ * Step 4 - Go!
  * That's all we need to start the request-response lifecycle.
  * Buckle up and enjoy the ride!
  * @link https://github.com/PhpGt/WebEngine/wiki/From-request-to-response
  */
-if(file_exists("init.php")) {
-	require("init.php");
-}
-
 $app = new Application();
 $app->start();
+
+if(file_exists("teardown.php")) {
+	require("teardown.php");
+}

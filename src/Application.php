@@ -9,13 +9,13 @@ use GT\WebEngine\Debug\Timer;
 use GT\WebEngine\Redirection\Redirect;
 use GT\WebEngine\Dispatch\Dispatcher;
 use GT\WebEngine\Dispatch\DispatcherFactory;
-use Gt\Config\Config;
-use Gt\Config\ConfigFactory;
-use Gt\Http\RequestFactory;
-use Gt\Http\Response;
-use Gt\Http\ServerRequest;
-use Gt\Http\Stream;
-use Gt\ProtectedGlobal\Protection;
+use GT\Config\Config;
+use GT\Config\ConfigFactory;
+use GT\Http\RequestFactory;
+use GT\Http\Response;
+use GT\Http\ServerRequest;
+use GT\Http\Stream;
+use GT\ProtectedGlobal\Protection;
 
 /**
  * The fundamental purpose of any PHP framework is to provide a mechanism for
@@ -95,10 +95,7 @@ class Application {
 		$this->dispatcher = $this->dispatcherFactory->create(
 			$this->config,
 			$request,
-			$this->globals["_GET"],
-			$this->globals["_POST"],
-			$this->globals["_FILES"],
-			$this->globals["_SERVER"],
+			$this->globals,
 		);
 
 		try {

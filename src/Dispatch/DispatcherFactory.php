@@ -1,31 +1,22 @@
 <?php
 namespace GT\WebEngine\Dispatch;
 
-use Gt\Config\Config;
-use Gt\Http\Request;
+use GT\Config\Config;
+use GT\Http\Request;
 
 class DispatcherFactory {
 	/**
-	 * @param array<string, mixed> $globalGet
-	 * @param array<string, mixed> $globalPost
-	 * @param array<string, mixed> $globalFiles
-	 * @param array<string, mixed> $globalServer
+	 * @param array<string, array<string, string|array<string, string>>> $globals
 	 */
 	public function create(
 		Config $config,
 		Request $request,
-		array $globalGet,
-		array $globalPost,
-		array $globalFiles,
-		array $globalServer,
+		array $globals
 	):Dispatcher {
 		return new Dispatcher(
 			$config,
 			$request,
-			$globalGet,
-			$globalPost,
-			$globalFiles,
-			$globalServer,
+			$globals
 		);
 	}
 }

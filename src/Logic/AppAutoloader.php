@@ -1,5 +1,5 @@
 <?php
-namespace GT\WebEngine\Logic;
+namespace Gt\WebEngine\Logic;
 
 /**
  * This autoloader is only necessary if Composer's PSR-4 autoloader isn't set up

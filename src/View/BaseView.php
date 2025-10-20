@@ -1,5 +1,5 @@
 <?php
-namespace GT\WebEngine\View;
+namespace Gt\WebEngine\View;
 
 use Psr\Http\Message\StreamInterface;
 

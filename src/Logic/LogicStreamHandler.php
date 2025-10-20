@@ -1,8 +1,8 @@
 <?php
-namespace GT\WebEngine\Logic;
+namespace Gt\WebEngine\Logic;
 
 use Closure;
-use GT\Routing\LogicStream\LogicStreamWrapper;
+use Gt\Routing\LogicStream\LogicStreamWrapper;
 
 class LogicStreamHandler {
 	private Closure $streamWrapperRegisterCallback;

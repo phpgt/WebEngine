@@ -1,9 +1,9 @@
 <?php
-namespace GT\WebEngine\Service;
+namespace Gt\WebEngine\Service;
 
-use GT\Config\Config;
-use GT\ServiceContainer\Container;
-use GT\WebEngine\Middleware\DefaultServiceLoader;
+use Gt\Config\Config;
+use Gt\ServiceContainer\Container;
+use Gt\WebEngine\Middleware\DefaultServiceLoader;
 
 class ContainerFactory {
 	public static function create(Config $config):Container {

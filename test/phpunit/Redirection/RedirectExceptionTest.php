@@ -1,8 +1,8 @@
 <?php
-namespace GT\WebEngine\Test\Redirection;
+namespace Gt\WebEngine\Test\Redirection;
 
-use GT\WebEngine\Redirection\RedirectException;
-use GT\WebEngine\WebEngineException;
+use Gt\WebEngine\Redirection\RedirectException;
+use Gt\WebEngine\WebEngineException;
 use PHPUnit\Framework\TestCase;
 
 class RedirectExceptionTest extends TestCase {

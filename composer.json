@@ -52,19 +52,13 @@
 
 	"autoload": {
 		"psr-4": {
-			"GT\\WebEngine\\": "./src/"
-		},
-		"files": [
-			"./gt-namespace-compatibility.php"
-		]
+			"Gt\\WebEngine\\": "./src/"
+		}
 	},
 	"autoload-dev": {
 		"psr-4": {
-			"GT\\WebEngine\\Test\\": "./test/phpunit"
-		},
-		"files": [
-			"./gt-namespace-compatibility.php"
-		]
+			"Gt\\WebEngine\\Test\\": "./test/phpunit"
+		}
 	},
 
 	"keywords": [

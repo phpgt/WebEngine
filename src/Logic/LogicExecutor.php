@@ -1,11 +1,11 @@
 <?php
-namespace GT\WebEngine\Logic;
+namespace Gt\WebEngine\Logic;
 
 use Generator;
-use GT\Routing\Assembly;
-use GT\Routing\LogicStream\LogicStreamNamespace;
-use GT\Routing\LogicStream\LogicStreamWrapper;
-use GT\ServiceContainer\Injector;
+use Gt\Routing\Assembly;
+use Gt\Routing\LogicStream\LogicStreamNamespace;
+use Gt\Routing\LogicStream\LogicStreamWrapper;
+use Gt\ServiceContainer\Injector;
 use ReflectionFunction;
 
 class LogicExecutor {

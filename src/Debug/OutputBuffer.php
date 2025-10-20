@@ -1,5 +1,5 @@
 <?php
-namespace GT\WebEngine\Debug;
+namespace Gt\WebEngine\Debug;
 
 use Closure;
 

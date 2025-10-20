@@ -1,5 +1,5 @@
 <?php
-namespace GT\WebEngine\Redirection;
+namespace Gt\WebEngine\Redirection;
 
 class RedirectMap {
 	/** @var array<int, array<string, string>> */

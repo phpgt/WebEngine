@@ -1,10 +1,10 @@
 <?php
-namespace GT\WebEngine\Dispatch;
+namespace Gt\WebEngine\Dispatch;
 
-use GT\Http\Header\ResponseHeaders;
-use GT\Http\Response;
-use GT\ServiceContainer\Container;
-use GT\ServiceContainer\ServiceNotFoundException;
+use Gt\Http\Header\ResponseHeaders;
+use Gt\Http\Response;
+use Gt\ServiceContainer\Container;
+use Gt\ServiceContainer\ServiceNotFoundException;
 
 class HeaderApplier {
 	public function apply(Container $container, Response $response): Response {

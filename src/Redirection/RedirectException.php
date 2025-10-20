@@ -1,6 +1,6 @@
 <?php
-namespace GT\WebEngine\Redirection;
+namespace Gt\WebEngine\Redirection;
 
-use GT\WebEngine\WebEngineException;
+use Gt\WebEngine\WebEngineException;
 
 class RedirectException extends WebEngineException {}

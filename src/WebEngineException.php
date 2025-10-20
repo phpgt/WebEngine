@@ -1,4 +1,4 @@
 <?php
-namespace GT\WebEngine;
+namespace Gt\WebEngine;
 
 class WebEngineException extends \Exception {}

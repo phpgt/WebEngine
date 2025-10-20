@@ -1,37 +1,37 @@
 <?php
-namespace GT\WebEngine\Dispatch;
+namespace Gt\WebEngine\Dispatch;
 
 use Closure;
-use GT\Config\Config;
-use GT\Dom\Element;
-use GT\Dom\HTMLDocument;
-use GT\DomTemplate\BindableCache;
-use GT\DomTemplate\Binder;
-use GT\DomTemplate\ComponentBinder;
-use GT\DomTemplate\DocumentBinder;
-use GT\DomTemplate\ElementBinder;
-use GT\DomTemplate\ListBinder;
-use GT\DomTemplate\ListElementCollection;
-use GT\DomTemplate\PlaceholderBinder;
-use GT\DomTemplate\TableBinder;
-use GT\Http\Request;
-use GT\Http\Response;
-use GT\Http\ServerInfo;
-use GT\Http\StatusCode;
-use GT\Input\Input;
-use GT\Input\InputData\InputData;
-use GT\Routing\Assembly;
-use GT\Routing\Path\DynamicPath;
-use GT\ServiceContainer\Container;
-use GT\ServiceContainer\Injector;
-use GT\Session\Session;
-use GT\Session\SessionSetup;
-use GT\WebEngine\Logic\AppAutoloader;
-use GT\WebEngine\Logic\LogicExecutor;
-use GT\WebEngine\Logic\LogicStreamHandler;
-use GT\WebEngine\Service\ContainerFactory;
-use GT\WebEngine\View\BaseView;
-use GT\WebEngine\View\NullView;
+use Gt\Config\Config;
+use Gt\Dom\Element;
+use Gt\Dom\HTMLDocument;
+use Gt\DomTemplate\BindableCache;
+use Gt\DomTemplate\Binder;
+use Gt\DomTemplate\ComponentBinder;
+use Gt\DomTemplate\DocumentBinder;
+use Gt\DomTemplate\ElementBinder;
+use Gt\DomTemplate\ListBinder;
+use Gt\DomTemplate\ListElementCollection;
+use Gt\DomTemplate\PlaceholderBinder;
+use Gt\DomTemplate\TableBinder;
+use Gt\Http\Request;
+use Gt\Http\Response;
+use Gt\Http\ServerInfo;
+use Gt\Http\StatusCode;
+use Gt\Input\Input;
+use Gt\Input\InputData\InputData;
+use Gt\Routing\Assembly;
+use Gt\Routing\Path\DynamicPath;
+use Gt\ServiceContainer\Container;
+use Gt\ServiceContainer\Injector;
+use Gt\Session\Session;
+use Gt\Session\SessionSetup;
+use Gt\WebEngine\Logic\AppAutoloader;
+use Gt\WebEngine\Logic\LogicExecutor;
+use Gt\WebEngine\Logic\LogicStreamHandler;
+use Gt\WebEngine\Service\ContainerFactory;
+use Gt\WebEngine\View\BaseView;
+use Gt\WebEngine\View\NullView;
 use Throwable;
 
 /**
@@ -159,17 +159,18 @@ class Dispatcher {
 		}
 
 		$sessionConfig = $this->config->getSection("session");
-		$sessionId = $this->globals["_COOKIE"][$sessionConfig["name"]] ?? null;
 		$sessionSetup = new SessionSetup();
 		$sessionHandler = $sessionSetup->attachHandler(
 			$sessionConfig->getString("handler")
 		);
 
+		$sessionId = session_id();
 		$session = new Session(
 			$sessionHandler,
 			$sessionConfig,
 			$sessionId,
 		);
+		session_start();
 		$this->serviceContainer->set($session);
 	}
 

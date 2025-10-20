@@ -1,5 +1,5 @@
 <?php
-namespace GT\WebEngine\Redirection;
+namespace Gt\WebEngine\Redirection;
 
 class StatusCodeValidator {
 	public const int DEFAULT_CODE = 307;

@@ -1,5 +1,5 @@
 <?php
-namespace GT\WebEngine\Test\Redirection;
+namespace Gt\WebEngine\Test\Redirection;
 
 use Gt\WebEngine\Redirection\RedirectUri;
 use PHPUnit\Framework\TestCase;

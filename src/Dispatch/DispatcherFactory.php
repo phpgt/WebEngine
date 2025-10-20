@@ -1,9 +1,9 @@
 <?php
-namespace GT\WebEngine\Dispatch;
+namespace Gt\WebEngine\Dispatch;
 
 use Closure;
-use GT\Config\Config;
-use GT\Http\Request;
+use Gt\Config\Config;
+use Gt\Http\Request;
 
 class DispatcherFactory {
 	/**

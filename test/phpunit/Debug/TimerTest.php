@@ -1,7 +1,7 @@
 <?php
-namespace GT\WebEngine\Test\Debug;
+namespace Gt\WebEngine\Test\Debug;
 
-use GT\WebEngine\Debug\Timer;
+use Gt\WebEngine\Debug\Timer;
 use PHPUnit\Framework\TestCase;
 
 class TimerTest extends TestCase {

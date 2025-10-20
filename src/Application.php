@@ -1,21 +1,21 @@
 <?php
-namespace GT\WebEngine;
+namespace Gt\WebEngine;
 
 use Closure;
 use Throwable;
 use ErrorException;
-use GT\WebEngine\Debug\OutputBuffer;
-use GT\WebEngine\Debug\Timer;
-use GT\WebEngine\Redirection\Redirect;
-use GT\WebEngine\Dispatch\Dispatcher;
-use GT\WebEngine\Dispatch\DispatcherFactory;
-use GT\Config\Config;
-use GT\Config\ConfigFactory;
-use GT\Http\RequestFactory;
-use GT\Http\Response;
-use GT\Http\ServerRequest;
-use GT\Http\Stream;
-use GT\ProtectedGlobal\Protection;
+use Gt\WebEngine\Debug\OutputBuffer;
+use Gt\WebEngine\Debug\Timer;
+use Gt\WebEngine\Redirection\Redirect;
+use Gt\WebEngine\Dispatch\Dispatcher;
+use Gt\WebEngine\Dispatch\DispatcherFactory;
+use Gt\Config\Config;
+use Gt\Config\ConfigFactory;
+use Gt\Http\RequestFactory;
+use Gt\Http\Response;
+use Gt\Http\ServerRequest;
+use Gt\Http\Stream;
+use Gt\ProtectedGlobal\Protection;
 
 /**
  * The fundamental purpose of any PHP framework is to provide a mechanism for
@@ -63,7 +63,14 @@ class Application {
 		$this->outputBuffer = $outputBuffer ?? new OutputBuffer();
 		$this->requestFactory = $requestFactory ?? new RequestFactory();
 		$this->dispatcherFactory = $dispatcherFactory ?? new DispatcherFactory();
-		$this->globals = $globals ?? $GLOBALS;
+		$this->globals = array_merge([
+			"_SERVER" => [],
+			"_FILES" => [],
+			"_GET" => [],
+			"_POST" => [],
+			"_ENV" => [],
+			"_COOKIE" => [],
+		], $globals ?? $GLOBALS);
 		register_shutdown_function($handleShutdown ?? $this->handleShutdown(...));
 	}
 
@@ -115,6 +122,8 @@ class Application {
 			$response = $this->dispatcher->generateResponse();
 		}
 		catch(Throwable $throwable) {
+			var_dump($throwable);
+			die("ERRRRRRRRRRRRRRRRRRR");
 			$this->logError($throwable);
 			$response = $this->dispatcher->generateErrorResponse($throwable);
 		}
@@ -188,7 +197,7 @@ class Application {
 				"_GET" => explode(",", $this->config->getString("app.globals_whitelist_get") ?? ""),
 				"_POST" => explode(",", $this->config->getString("app.globals_whitelist_post") ?? ""),
 				"_FILES" => explode(",", $this->config->getString("app.globals_whitelist_files") ?? ""),
-				"_COOKIES" => explode(",", $this->config->getString("app.globals_whitelist_cookies") ?? ""),
+				"_COOKIE" => explode(",", $this->config->getString("app.globals_whitelist_cookies") ?? ""),
 			])
 		);
 	}

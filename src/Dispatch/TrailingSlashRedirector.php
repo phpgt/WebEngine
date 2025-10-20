@@ -1,9 +1,9 @@
 <?php
-namespace GT\WebEngine\Dispatch;
+namespace Gt\WebEngine\Dispatch;
 
-use GT\Config\Config;
-use GT\Http\Request;
-use GT\Http\Response;
+use Gt\Config\Config;
+use Gt\Http\Request;
+use Gt\Http\Response;
 
 class TrailingSlashRedirector {
 	public function apply(Request $request, Config $config, Response $response):void {

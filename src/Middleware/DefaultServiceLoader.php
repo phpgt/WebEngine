@@ -1,27 +1,27 @@
 <?php /** @noinspection PhpUnused */
-namespace GT\WebEngine\Middleware;
+namespace Gt\WebEngine\Middleware;
 
-use GT\Config\Config;
-use GT\Dom\HTMLDocument;
-use GT\DomTemplate\HTMLAttributeBinder;
-use GT\Database\Connection\DefaultSettings;
-use GT\Database\Connection\Settings;
-use GT\Database\Database;
-use GT\Dom\Document;
-use GT\DomTemplate\BindableCache;
-use GT\DomTemplate\Binder;
-use GT\DomTemplate\DocumentBinder;
-use GT\DomTemplate\ElementBinder;
-use GT\DomTemplate\HTMLAttributeCollection;
-use GT\DomTemplate\ListBinder;
-use GT\DomTemplate\ListElementCollection;
-use GT\DomTemplate\PlaceholderBinder;
-use GT\DomTemplate\TableBinder;
-use GT\Http\Header\ResponseHeaders;
-use GT\Http\Request;
-use GT\Http\Response;
-use GT\Http\Uri;
-use GT\ServiceContainer\Container;
+use Gt\Config\Config;
+use Gt\DomTemplate\HTMLAttributeBinder;
+use Gt\Database\Connection\DefaultSettings;
+use Gt\Database\Connection\Settings;
+use Gt\Database\Database;
+use Gt\Dom\Document;
+use Gt\Dom\HTMLDocument;
+use Gt\DomTemplate\BindableCache;
+use Gt\DomTemplate\Binder;
+use Gt\DomTemplate\DocumentBinder;
+use Gt\DomTemplate\ElementBinder;
+use Gt\DomTemplate\HTMLAttributeCollection;
+use Gt\DomTemplate\ListBinder;
+use Gt\DomTemplate\ListElementCollection;
+use Gt\DomTemplate\PlaceholderBinder;
+use Gt\DomTemplate\TableBinder;
+use Gt\Http\Header\ResponseHeaders;
+use Gt\Http\Request;
+use Gt\Http\Response;
+use Gt\Http\Uri;
+use Gt\ServiceContainer\Container;
 
 /**
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")

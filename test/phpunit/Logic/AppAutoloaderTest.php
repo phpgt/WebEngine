@@ -1,7 +1,7 @@
 <?php
-namespace GT\WebEngine\Test\Logic;
+namespace Gt\WebEngine\Test\Logic;
 
-use GT\WebEngine\Logic\AppAutoloader;
+use Gt\WebEngine\Logic\AppAutoloader;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 

@@ -1,7 +1,7 @@
 <?php
-namespace GT\WebEngine\Test\Debug;
+namespace Gt\WebEngine\Test\Debug;
 
-use GT\WebEngine\Debug\OutputBuffer;
+use Gt\WebEngine\Debug\OutputBuffer;
 use PHPUnit\Framework\TestCase;
 
 class OutputBufferTest extends TestCase {

@@ -7,7 +7,7 @@
  * lifecycle in the documentation:
  * https://github.com/PhpGt/WebEngine/wiki/From-request-to-response
  */
-use GT\WebEngine\Application;
+use Gt\WebEngine\Application;
 
 chdir(dirname($_SERVER["DOCUMENT_ROOT"]));
 ini_set("display_errors", "on");

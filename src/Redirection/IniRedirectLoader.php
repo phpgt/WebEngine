@@ -1,5 +1,5 @@
 <?php
-namespace GT\WebEngine\Redirection;
+namespace Gt\WebEngine\Redirection;
 
 /**
  * @SuppressWarnings("PHPMD.StaticAccess")

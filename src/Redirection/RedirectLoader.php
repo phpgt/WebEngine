@@ -1,5 +1,5 @@
 <?php
-namespace GT\WebEngine\Redirection;
+namespace Gt\WebEngine\Redirection;
 
 interface RedirectLoader {
 	public function load(string $file, RedirectMap $map):void;

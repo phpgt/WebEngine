@@ -1,14 +1,14 @@
 <?php
-namespace GT\WebEngine\Test;
+namespace Gt\WebEngine\Test;
 
-use GT\Http\RequestFactory;
-use GT\Http\Response;
-use GT\WebEngine\Application;
-use GT\WebEngine\Debug\OutputBuffer;
-use GT\WebEngine\Debug\Timer;
-use GT\WebEngine\Dispatch\Dispatcher;
-use GT\WebEngine\Dispatch\DispatcherFactory;
-use GT\WebEngine\Redirection\Redirect;
+use Gt\Http\RequestFactory;
+use Gt\Http\Response;
+use Gt\WebEngine\Application;
+use Gt\WebEngine\Debug\OutputBuffer;
+use Gt\WebEngine\Debug\Timer;
+use Gt\WebEngine\Dispatch\Dispatcher;
+use Gt\WebEngine\Dispatch\DispatcherFactory;
+use Gt\WebEngine\Redirection\Redirect;
 use PHPUnit\Framework\TestCase;
 
 class ApplicationTest extends TestCase {

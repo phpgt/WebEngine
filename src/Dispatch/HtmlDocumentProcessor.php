@@ -1,25 +1,25 @@
 <?php
-namespace GT\WebEngine\Dispatch;
+namespace Gt\WebEngine\Dispatch;
 
-use GT\Config\Config;
-use GT\Dom\HTMLDocument;
-use GT\DomTemplate\BindableCache;
-use GT\DomTemplate\Binder;
-use GT\DomTemplate\DocumentBinder;
-use GT\DomTemplate\ComponentExpander;
-use GT\DomTemplate\ElementBinder;
-use GT\DomTemplate\HTMLAttributeBinder;
-use GT\DomTemplate\HTMLAttributeCollection;
-use GT\DomTemplate\ListBinder;
-use GT\DomTemplate\ListElementCollection;
-use GT\DomTemplate\PartialContent;
-use GT\DomTemplate\PartialContentDirectoryNotFoundException;
-use GT\DomTemplate\PartialExpander;
-use GT\DomTemplate\PlaceholderBinder;
-use GT\DomTemplate\TableBinder;
-use GT\Routing\Assembly;
-use GT\Routing\Path\DynamicPath;
-use GT\ServiceContainer\Container;
+use Gt\Config\Config;
+use Gt\Dom\HTMLDocument;
+use Gt\DomTemplate\BindableCache;
+use Gt\DomTemplate\Binder;
+use Gt\DomTemplate\DocumentBinder;
+use Gt\DomTemplate\ComponentExpander;
+use Gt\DomTemplate\ElementBinder;
+use Gt\DomTemplate\HTMLAttributeBinder;
+use Gt\DomTemplate\HTMLAttributeCollection;
+use Gt\DomTemplate\ListBinder;
+use Gt\DomTemplate\ListElementCollection;
+use Gt\DomTemplate\PartialContent;
+use Gt\DomTemplate\PartialContentDirectoryNotFoundException;
+use Gt\DomTemplate\PartialExpander;
+use Gt\DomTemplate\PlaceholderBinder;
+use Gt\DomTemplate\TableBinder;
+use Gt\Routing\Assembly;
+use Gt\Routing\Path\DynamicPath;
+use Gt\ServiceContainer\Container;
 
 /**
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")

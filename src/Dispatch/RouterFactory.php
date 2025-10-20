@@ -1,9 +1,9 @@
 <?php
-namespace GT\WebEngine\Dispatch;
+namespace Gt\WebEngine\Dispatch;
 
-use GT\Routing\BaseRouter;
-use GT\Routing\RouterConfig;
-use GT\ServiceContainer\Container;
+use Gt\Routing\BaseRouter;
+use Gt\Routing\RouterConfig;
+use Gt\ServiceContainer\Container;
 
 class RouterFactory {
 	public function create(

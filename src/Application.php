@@ -71,6 +71,7 @@ class Application {
 // Before we start, we check if the current URI should be redirected. If it
 // should, we won't go any further into the lifecycle.
 		$this->redirect->execute();
+		
 // The first thing done within the WebEngine lifecycle is start a timer.
 // This timer is only used again at the end of the call, when finish() is
 // called - at which point the entire duration of the request is logged out (and
@@ -86,7 +87,6 @@ class Application {
 // usage, the globals are protected against accidental misuse.
 		$this->protectGlobals();
 
-
 // The RequestFactory takes the necessary global arrays to construct a
 // ServerRequest object. The $_SERVER array contains metadata about the request,
 // such as headers and server variables. $_FILES contains any uploaded files,
@@ -101,9 +101,18 @@ class Application {
 			$this->globals["_POST"] ?? [],
 		);
 
-// TODO: Document what the Dispatcher's purpose is, and why it's important to
-// attach to the class as a property (for error states to be able to display
-// errors using the correct instance of the request, config, etc.)
+// The Dispatcher is a core component responsible for:
+// 1. Executing the application's routing logic to match the incoming request
+// 2. Running any middleware defined for the matched route
+// 3. Executing the appropriate page logic functions
+// 4. Generating and returning the HTTP response
+//
+// It's critical to store the Dispatcher as a class property because if an error
+// occurs during request processing, the error handling system needs access to
+// the same Dispatcher instance that has the original request context,
+// configuration, and other dependencies required to properly generate and
+// display error pages. This ensures errors can be handled consistently using
+// the application's error templates and logging mechanisms.
 		$this->dispatcher = $this->dispatcherFactory->create(
 			$this->config,
 			$request,

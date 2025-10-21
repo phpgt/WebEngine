@@ -10,18 +10,19 @@ use ReflectionFunction;
 
 class LogicExecutor {
 	public function __construct(
-		private Assembly $assembly,
+		private string $appNamespace,
 		private Injector $injector,
-		private string $appNamespace
 	) {
-		foreach($assembly as $file) {
-			$this->loadLogicFile($file);
-		}
 	}
 
 	/** @return Generator<string> filename::function() */
-	public function invoke(string $name, array $extraArgs = []):Generator {
-		foreach(iterator_to_array($this->assembly) as $file) {
+	public function invoke(Assembly $logicAssembly, string $name, array $extraArgs = []):Generator {
+		foreach($logicAssembly as $file) {
+			$this->loadLogicFile($file);
+		}
+
+// TODO: Why convert to array?
+		foreach(iterator_to_array($logicAssembly) as $file) {
 			$nsProject = (string)(new LogicProjectNamespace(
 				$file,
 				$this->appNamespace

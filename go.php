@@ -49,6 +49,8 @@ foreach($vendorDirectoryList as $dir) {
  * simply be executed directly here. This is useful for configuring the PHP
  * environment across the project, but shouldn't be necessary for most projects.
  */
+// TODO: Investigate why requiring the composer autoloader emits a newline character, so we don't have to clear the output buffer in the go script.
+ob_clean();
 if(file_exists("setup.php")) {
 	require("setup.php");
 }
@@ -65,3 +67,5 @@ $app->start();
 if(file_exists("teardown.php")) {
 	require("teardown.php");
 }
+
+die("go complete!");

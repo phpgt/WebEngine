@@ -12,6 +12,7 @@ class RouterFactory {
 		string $configAppRouterFile,
 		string $configAppRouterClass,
 		string $configDefaultRouterFile,
+		string $configDefaultRouterClass,
 		int $configRedirectResponseCode,
 		string $configDefaultContentType,
 	):BaseRouter {
@@ -21,7 +22,7 @@ class RouterFactory {
 		}
 		else {
 			require_once($configDefaultRouterFile);
-			$class = "\\GT\\WebEngine\\DefaultRouter";
+			$class = $configDefaultRouterClass;
 		}
 
 		$routerConfig = new RouterConfig(

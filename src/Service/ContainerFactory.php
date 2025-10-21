@@ -6,7 +6,7 @@ use GT\ServiceContainer\Container;
 use GT\WebEngine\Middleware\DefaultServiceLoader;
 
 class ContainerFactory {
-	public static function create(Config $config):Container {
+	public function create(Config $config):Container {
 		$container = new Container();
 
 		// Always register the DefaultServiceLoader for core WebEngine services.

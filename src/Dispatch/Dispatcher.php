@@ -159,7 +159,12 @@ class Dispatcher {
 		}
 
 		$sessionConfig = $this->config->getSection("session");
-		$sessionId = $this->globals["_COOKIE"][$sessionConfig["name"]] ?? null;
+
+		// Temporarily allow superglobal access to _COOKIE.
+		$originalCookie = $_COOKIE;
+		$_COOKIE = $this->globals["_COOKIE"];
+
+		$sessionId = $_COOKIE[$sessionConfig["name"]] ?? null;
 		$sessionSetup = new SessionSetup();
 		$sessionHandler = $sessionSetup->attachHandler(
 			$sessionConfig->getString("handler")
@@ -171,6 +176,8 @@ class Dispatcher {
 			$sessionId,
 		);
 		$this->serviceContainer->set($session);
+
+		$_COOKIE = $originalCookie;
 	}
 
 

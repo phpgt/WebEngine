@@ -3,7 +3,6 @@ namespace GT\WebEngine\Service;
 
 use Gt\Config\Config;
 use Gt\ServiceContainer\Container;
-use Gt\WebEngine\Middleware\DefaultServiceLoader;
 
 class ContainerFactory {
 	public function create(Config $config):Container {

@@ -1,5 +1,5 @@
-<?php /** @noinspection PhpUnused */
-namespace Gt\WebEngine\Middleware;
+<?php
+namespace GT\WebEngine\Service;
 
 use Gt\Config\Config;
 use Gt\DomTemplate\HTMLAttributeBinder;
@@ -7,7 +7,6 @@ use Gt\Database\Connection\DefaultSettings;
 use Gt\Database\Connection\Settings;
 use Gt\Database\Database;
 use Gt\Dom\Document;
-use Gt\Dom\HTMLDocument;
 use Gt\DomTemplate\BindableCache;
 use Gt\DomTemplate\Binder;
 use Gt\DomTemplate\DocumentBinder;
@@ -23,13 +22,6 @@ use Gt\Http\Response;
 use Gt\Http\Uri;
 use Gt\ServiceContainer\Container;
 
-/**
- * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
- * Reason: This loader is the central place that defines and provides core
- * framework services to the container. It references many service classes by
- * design, but each is created lazily via dedicated factory methods, keeping
- * responsibilities focused and testable.
- */
 class DefaultServiceLoader {
 	protected string $uniqid;
 

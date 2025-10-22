@@ -9,9 +9,6 @@ class ContainerFactory {
 	public function create(Config $config):Container {
 		$container = new Container();
 
-		// Always register the DefaultServiceLoader for core WebEngine services.
-		$container->addLoaderClass(new DefaultServiceLoader($config, $container));
-
 		// Optionally, register an application-provided service loader.
 		$customServiceContainerClassName = implode("\\", [
 			$config->get("app.namespace"),
@@ -19,15 +16,11 @@ class ContainerFactory {
 		]);
 
 		if(class_exists($customServiceContainerClassName)) {
-			$constructorArgs = [];
-			if(is_a($customServiceContainerClassName, DefaultServiceLoader::class, true)) {
-				$constructorArgs = [
-					$config,
-					$container,
-				];
-			}
-
-			$container->addLoaderClass(new $customServiceContainerClassName(...$constructorArgs));
+			$container->addLoaderClass(new $customServiceContainerClassName($config, $container));
+		}
+		else {
+			// Always register the DefaultServiceLoader for core WebEngine services.
+			$container->addLoaderClass(new DefaultServiceLoader($config, $container));
 		}
 
 		return $container;

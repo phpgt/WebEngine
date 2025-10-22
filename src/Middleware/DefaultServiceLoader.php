@@ -31,10 +31,14 @@ use Gt\ServiceContainer\Container;
  * responsibilities focused and testable.
  */
 class DefaultServiceLoader {
+	protected string $uniqid;
+
 	public function __construct(
 		protected Config $config,
 		protected Container $container
-	) {}
+	) {
+		$this->uniqid = uniqid(more_entropy: true);
+	}
 
 	public function loadResponseHeaders():ResponseHeaders {
 		$response = $this->container->get(Response::class);
@@ -91,7 +95,7 @@ class DefaultServiceLoader {
 		return new ListBinder();
 	}
 
-	public function loadBinder():DocumentBinder {
+	public function loadBinder():Binder {
 		$document = $this->container->get(Document::class);
 		return new DocumentBinder($document);
 	}

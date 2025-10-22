@@ -174,7 +174,7 @@ class Dispatcher {
 		);
 		$this->viewModelProcessor = $viewModelInit->getViewModelProcessor();
 		$this->viewREADYTHING = fn() => $viewModelInit->initHTMLDocument(
-			$this->serviceContainer->get(DocumentBinder::class),
+			$this->serviceContainer->get(Binder::class),
 			$this->serviceContainer->get(HTMLAttributeBinder::class),
 			$this->serviceContainer->get(ListBinder::class),
 			$this->serviceContainer->get(TableBinder::class),
@@ -237,7 +237,7 @@ class Dispatcher {
 		}
 
 // TODO: Why is this here in the dispatcher? Move it to the ViewModel::cleanup() or similar
-		$documentBinder = $this->serviceContainer->get(DocumentBinder::class);
+		$documentBinder = $this->serviceContainer->get(Binder::class);
 		$documentBinder->cleanupDocument();
 
 		$this->viewStreamer->stream($this->view, $this->viewModel);

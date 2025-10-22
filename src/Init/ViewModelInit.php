@@ -37,7 +37,7 @@ class ViewModelInit {
 	}
 
 	public function initHTMLDocument(
-		DocumentBinder $binder,
+		DocumentBinder $documentBinder,
 		HTMLAttributeBinder $htmlAttributeBinder,
 		ListBinder $listBinder,
 		TableBinder $tableBinder,
@@ -70,7 +70,7 @@ class ViewModelInit {
 			$bindableCache,
 			$tableBinder,
 		);
-		$binder->setDependencies(
+		$documentBinder->setDependencies(
 			$elementBinder,
 			$placeholderBinder,
 			$tableBinder,

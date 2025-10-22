@@ -19,38 +19,16 @@ use GT\WebEngine\Logic\ViewModelProcessor;
 
 class ViewModelInit {
 	private ViewModelProcessor $viewModelProcessor;
-	private Closure $initFunction;
 
 	public function __construct(
 		HTMLDocument $model,
 		string $componentDirectory,
 		string $partialDirectory,
-		DocumentBinder $binder,
-		HTMLAttributeBinder $htmlAttributeBinder,
-		ListBinder $listBinder,
-		TableBinder $tableBinder,
-		ElementBinder $elementBinder,
-		PlaceholderBinder $placeholderBinder,
-		HTMLAttributeCollection $htmlAttributeCollection,
-		ListElementCollection $listElementCollection,
-		BindableCache $bindableCache,
 	) {
 		if($model instanceof HTMLDocument) {
 			$this->viewModelProcessor = new HTMLDocumentProcessor(
 				$componentDirectory,
 				$partialDirectory,
-			);
-
-			$this->initFunction = fn() => $this->initHTMLDocument(
-				$binder,
-				$htmlAttributeBinder,
-				$listBinder,
-				$tableBinder,
-				$elementBinder,
-				$placeholderBinder,
-				$htmlAttributeCollection,
-				$listElementCollection,
-				$bindableCache,
 			);
 		}
 		else {
@@ -58,11 +36,7 @@ class ViewModelInit {
 		}
 	}
 
-	public function init():void {
-		$this->initFunction->call($this);
-	}
-
-	private function initHTMLDocument(
+	public function initHTMLDocument(
 		DocumentBinder $binder,
 		HTMLAttributeBinder $htmlAttributeBinder,
 		ListBinder $listBinder,

@@ -171,6 +171,9 @@ class Dispatcher {
 			$this->viewModel,
 			$this->config->getString("view.component_directory"),
 			$this->config->getString("view.partial_directory"),
+		);
+		$this->viewModelProcessor = $viewModelInit->getViewModelProcessor();
+		$this->viewREADYTHING = fn() => $viewModelInit->initHTMLDocument(
 			$this->serviceContainer->get(DocumentBinder::class),
 			$this->serviceContainer->get(HTMLAttributeBinder::class),
 			$this->serviceContainer->get(ListBinder::class),
@@ -181,8 +184,6 @@ class Dispatcher {
 			$this->serviceContainer->get(ListElementCollection::class),
 			$this->serviceContainer->get(BindableCache::class),
 		);
-		$this->viewModelProcessor = $viewModelInit->getViewModelProcessor();
-		$this->viewREADYTHING = $viewModelInit->init(...);
 
 		$this->logicExecutor = $logicExecutor ?? new LogicExecutor(
 			$appNamespace,
@@ -197,7 +198,6 @@ class Dispatcher {
 // function's responsibility is to execute the logic that builds the response.
 // Since this involves running user code that may throw errors, we execute each
 // step individually to ensure proper error handling throughout the process.
-		$appNamespace = $this->config->getString("app.namespace");
 		$dynamicPath = $this->serviceContainer->get(DynamicPath::class);
 
 		$this->viewModelProcessor->processDynamicPath(
@@ -208,6 +208,7 @@ class Dispatcher {
 		$logicAssemblyComponentList = $this->viewModelProcessor->processPartialContent(
 			$this->viewModel,
 		);
+
 
 // TODO: CSRF handling - needs to be done on any POST request.
 		($this->viewREADYTHING)();

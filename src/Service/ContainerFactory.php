@@ -1,5 +1,5 @@
 <?php
-namespace Gt\WebEngine\Service;
+namespace GT\WebEngine\Service;
 
 use Gt\Config\Config;
 use Gt\ServiceContainer\Container;

@@ -4,6 +4,11 @@ namespace Gt\WebEngine\Logic;
 use Closure;
 use Gt\Routing\LogicStream\LogicStreamWrapper;
 
+/**
+ * Handles the registration of a custom stream wrapper, as defined by the
+ * GT\Routing\LogicStreamWrapper. This functionality allows you to create
+ * a classless PHP script with a single go() function.
+ */
 class LogicStreamHandler {
 	private Closure $streamWrapperRegisterCallback;
 

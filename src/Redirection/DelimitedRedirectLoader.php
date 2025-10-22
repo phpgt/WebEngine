@@ -1,5 +1,5 @@
 <?php
-namespace Gt\WebEngine\Redirection;
+namespace GT\WebEngine\Redirection;
 
 /**
  * @SuppressWarnings("PHPMD.StaticAccess")
@@ -20,9 +20,11 @@ readonly class DelimitedRedirectLoader implements RedirectLoader {
 			if(count($row) < 2) {
 				continue;
 			}
+
+			$statusCodeValidator = new StatusCodeValidator();
 			$old = trim((string)$row[0]);
 			$new = trim((string)$row[1]);
-			$code = isset($row[2]) ? StatusCodeValidator::validate($row[2]) : StatusCodeValidator::DEFAULT_CODE;
+			$code = isset($row[2]) ? $statusCodeValidator->validate($row[2]) : StatusCodeValidator::DEFAULT_CODE;
 			$map->addRule($code, $old, $new);
 		}
 		fclose($fileHandle);

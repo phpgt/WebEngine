@@ -1,5 +1,5 @@
 <?php
-namespace Gt\WebEngine\Redirection;
+namespace GT\WebEngine\Redirection;
 
 use Closure;
 
@@ -36,7 +36,7 @@ class Redirect {
 			fn(string $uri, int $code)
 			=> header("Location: $uri", true, $code);
 
-		$this->map = new RedirectMap();
+		$this->map = new \GT\WebEngine\Redirection\RedirectMap();
 		if($this->redirectFile) {
 			$extension = strtolower(pathinfo($this->redirectFile, PATHINFO_EXTENSION));
 			$loader = $this->createLoader($extension);

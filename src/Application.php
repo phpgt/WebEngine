@@ -1,14 +1,14 @@
 <?php
-namespace Gt\WebEngine;
+namespace GT\WebEngine;
 
 use Closure;
 use Throwable;
 use ErrorException;
-use Gt\WebEngine\Debug\OutputBuffer;
-use Gt\WebEngine\Debug\Timer;
-use Gt\WebEngine\Redirection\Redirect;
-use Gt\WebEngine\Dispatch\Dispatcher;
-use Gt\WebEngine\Dispatch\DispatcherFactory;
+use GT\WebEngine\Debug\OutputBuffer;
+use GT\WebEngine\Debug\Timer;
+use GT\WebEngine\Redirection\Redirect;
+use GT\WebEngine\Dispatch\Dispatcher;
+use GT\WebEngine\Dispatch\DispatcherFactory;
 use Gt\Config\Config;
 use Gt\Config\ConfigFactory;
 use Gt\Http\RequestFactory;

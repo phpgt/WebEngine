@@ -35,7 +35,6 @@ use GT\WebEngine\Logic\LogicExecutor;
 use GT\WebEngine\Logic\LogicStreamHandler;
 use GT\WebEngine\Logic\ViewModelProcessor;
 use GT\WebEngine\Service\ContainerFactory;
-use GT\WebEngine\View\BaseView;
 use GT\WebEngine\View\HTMLView;
 use GT\WebEngine\View\JSONView;
 use GT\WebEngine\View\NullView;

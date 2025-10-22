@@ -1,8 +1,8 @@
 <?php
-namespace Gt\WebEngine\Test\Redirection;
+namespace GT\WebEngine\Test\Redirection;
 
-use Gt\WebEngine\Redirection\Redirect;
-use Gt\WebEngine\Redirection\RedirectException;
+use GT\WebEngine\Redirection\Redirect;
+use GT\WebEngine\Redirection\RedirectException;
 use PHPUnit\Framework\TestCase;
 
 class RedirectTest extends TestCase {
@@ -11,7 +11,7 @@ class RedirectTest extends TestCase {
 	protected function setUp():void {
 		parent::setUp();
 		$this->tmpDir = sys_get_temp_dir() . "/phpgt-webengine-test--Redirection-Redirect-" . uniqid();
-		if (!is_dir($this->tmpDir)) {
+		if(!is_dir($this->tmpDir)) {
 			mkdir($this->tmpDir, recursive: true);
 		}
 		chdir($this->tmpDir);
@@ -252,5 +252,21 @@ class RedirectTest extends TestCase {
 		file_put_contents("$this->tmpDir/redirect.ini", $ini);
 		$sut = new Redirect();
 		self::assertNull($sut->getRedirectUri("/blog/post/123"));
+	}
+
+	public function testConstruct_noBracePatternLoadsSingleFile():void {
+		file_put_contents($this->tmpDir . '/redirect.csv', "/only,/single\n");
+		$sut = new Redirect($this->tmpDir . '/redirect.csv');
+		self::assertSame('/single', $sut->getRedirectUri('/only')->uri);
+	}
+
+	public function testExecute_sameUri_doesNotCallHandler():void {
+		file_put_contents($this->tmpDir . '/redirect.ini', "/same=/same\n");
+		$called = false;
+		$sut = new Redirect(redirectHandler: function() use (&$called) {
+			$called = true;
+		});
+		$sut->execute('/same');
+		self::assertFalse($called, 'Handler should not be called when redirect URI equals input URI');
 	}
 }

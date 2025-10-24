@@ -1,5 +1,5 @@
 <?php
-namespace Gt\WebEngine\Dispatch;
+namespace GT\WebEngine\Dispatch;
 
 use Gt\Routing\BaseRouter;
 use Gt\Routing\RouterConfig;

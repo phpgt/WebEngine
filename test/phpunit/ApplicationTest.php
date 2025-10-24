@@ -26,7 +26,10 @@ class ApplicationTest extends TestCase {
 		$serverRequest->method("getUri")
 			->willReturn(self::createMock(Uri::class));
 		$serverRequest->method("getHeaderLine")
-			->willReturn("Accept: text/test");
+			->with("accept")
+			->willReturn("*/*");
+		$serverRequest->method("getMethod")
+			->willReturn("GET");
 		$requestFactory = self::createMock(RequestFactory::class);
 		$requestFactory->method("createServerRequestFromGlobalState")
 			->willReturn($serverRequest);

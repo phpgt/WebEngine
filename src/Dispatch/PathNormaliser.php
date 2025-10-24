@@ -18,7 +18,7 @@ class PathNormaliser {
 			}
 		}
 		else {
-			if(str_ends_with($path, "/" && $path !== "/")) {
+			if(str_ends_with($path, "/") && $path !== "/") {
 				$redirect($uri->withPath(rtrim($path, "/")));
 			}
 		}

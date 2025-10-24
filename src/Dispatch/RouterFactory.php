@@ -15,6 +15,7 @@ class RouterFactory {
 		string $configDefaultRouterClass,
 		int $configRedirectResponseCode,
 		string $configDefaultContentType,
+		?int $errorStatus = null,
 	):BaseRouter {
 		if(file_exists($configAppRouterFile)) {
 			require_once($configAppRouterFile);
@@ -31,7 +32,7 @@ class RouterFactory {
 		);
 
 		/** @var BaseRouter $router */
-		$router = new $class($routerConfig);
+		$router = new $class($routerConfig, errorStatus: $errorStatus);
 		$router->setContainer($container);
 		return $router;
 	}

@@ -14,8 +14,10 @@ use Closure;
 class OutputBuffer {
 	private Closure $obStartHandler;
 	private Closure $obGetCleanHandler;
+	private string $buffer = "";
 
 	public function __construct(
+		private bool $debugToJavaScript,
 		?Closure $obStartHandler = null,
 		?Closure $obGetCleanHandler = null,
 	) {
@@ -23,21 +25,38 @@ class OutputBuffer {
 		$this->obGetCleanHandler = $obGetCleanHandler ?? fn() => ob_get_clean();
 	}
 
+	private function fillBuffer(string $buffer):string {
+		$this->buffer .= $buffer;
+		return $buffer;
+	}
+
 	public function start():void {
 		($this->obStartHandler)();
 	}
 
-	public function getBuffer():string {
-		$contents = ($this->obGetCleanHandler)();
+	public function cleanBuffer():void {
 		// ob_get_clean can return false; normalise to empty string.
-		return is_string($contents) ? $contents : "";
+		$this->buffer .= ($this->obGetCleanHandler)() ?? "";
 	}
 
-	public function debugOutput():void {
-		if($buffer = $this->getBuffer()) {
-			// TODO: Properly log to the console, or to the browser, depending on config.
-			var_dump($buffer);
-			echo("<<< OUTPUT BUFFER");
+	public function debugOutput():?string {
+		$this->cleanBuffer();
+		if($this->buffer) {
+			if($this->debugToJavaScript) {
+				$html = <<<HTML
+				<script>
+				console.group("PHP.GT/WebEngine");
+				console.log(`%buffer%`);
+				console.groupEnd();
+				</script>
+
+				HTML;
+				$buffer = trim($this->buffer);
+				$buffer = str_replace("`", "\\`", $buffer);
+				return str_replace("%buffer%", $buffer, $html);
+			}
 		}
+
+		return null;
 	}
 }

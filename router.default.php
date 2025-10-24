@@ -1,5 +1,5 @@
 <?php
-namespace Gt\WebEngine;
+namespace GT\WebEngine;
 
 use Gt\Http\Request;
 use Gt\Routing\BaseRouter;
@@ -84,8 +84,15 @@ class DefaultRouter extends BaseRouter {
 			? -1
 			: 0);
 
+		if($this->errorStatus) {
+			$uriPath = "_error/$this->errorStatus";
+		}
+		else {
+			$uriPath = $request->getUri()->getPath();
+		}
+
 		$matchingLogics = $pathMatcher->findForUriPath(
-			$request->getUri()->getPath(),
+			$uriPath,
 			"page",
 			"php"
 		);
@@ -95,7 +102,7 @@ class DefaultRouter extends BaseRouter {
 		}
 
 		$matchingViews = $pathMatcher->findForUriPath(
-			$request->getUri()->getPath(),
+			$uriPath,
 			"page",
 			"html"
 		);

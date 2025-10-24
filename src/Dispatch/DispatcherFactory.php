@@ -14,12 +14,14 @@ class DispatcherFactory {
 		Request $request,
 		array $globals,
 		Closure $finishCallback,
+		?int $errorStatus = null,
 	):Dispatcher {
 		return new Dispatcher(
 			$config,
 			$request,
 			$globals,
 			$finishCallback,
+			$errorStatus,
 		);
 	}
 }

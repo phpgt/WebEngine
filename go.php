@@ -7,7 +7,7 @@
  * lifecycle in the documentation:
  * https://github.com/PhpGt/WebEngine/wiki/From-request-to-response
  */
-use Gt\WebEngine\Application;
+use GT\WebEngine\Application;
 
 chdir(dirname($_SERVER["DOCUMENT_ROOT"]));
 ini_set("display_errors", "on");
@@ -67,5 +67,3 @@ $app->start();
 if(file_exists("teardown.php")) {
 	require("teardown.php");
 }
-
-die("go complete!");

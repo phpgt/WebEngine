@@ -9,7 +9,7 @@ class OutputBufferTest extends TestCase {
 		$sut = new OutputBuffer();
 		$sut->start();
 		echo "Hello world";
-		$buffer = $sut->getBuffer();
+		$buffer = $sut->cleanBuffer();
 		self::assertSame("Hello world", $buffer);
 	}
 
@@ -18,7 +18,7 @@ class OutputBufferTest extends TestCase {
 		$sut->start();
 		$var = ["a" => 1, "b" => 2];
 		var_dump($var);
-		$buffer = $sut->getBuffer();
+		$buffer = $sut->cleanBuffer();
 // var_dump format can vary; assert key parts present rather than exact formatting
 		self::assertNotSame("", $buffer);
 		self::assertStringContainsString("array", $buffer);

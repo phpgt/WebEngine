@@ -6,9 +6,9 @@ use GT\Config\Config;
 use GT\Dom\Element;
 use GT\Dom\HTMLDocument;
 use GT\DomTemplate\BindableCache;
-use GT\DomTemplate\Binder;
+use Gt\DomTemplate\Binder;
 use GT\DomTemplate\ComponentBinder;
-use GT\DomTemplate\DocumentBinder;
+use Gt\DomTemplate\DocumentBinder;
 use GT\DomTemplate\ElementBinder;
 use GT\DomTemplate\HTMLAttributeBinder;
 use GT\DomTemplate\HTMLAttributeCollection;
@@ -19,9 +19,14 @@ use GT\DomTemplate\TableBinder;
 use GT\Http\Header\ResponseHeaders;
 use GT\Http\Request;
 use GT\Http\Response;
+use Gt\Http\ResponseStatusException\ClientError\HttpNotFound;
+use Gt\Http\ResponseStatusException\ResponseStatusException;
+use Gt\Http\StatusCode;
+use Gt\Http\Stream;
 use GT\Input\Input;
 use GT\Input\InputData\InputData;
 use GT\Routing\Assembly;
+use Gt\Routing\BaseRouter;
 use GT\Routing\Path\DynamicPath;
 use GT\ServiceContainer\Container;
 use GT\ServiceContainer\Injector;
@@ -57,13 +62,14 @@ class Dispatcher {
 	private NullView|JSONView|HTMLView $view;
 	private HTMLDocument/*|NullViewModel*/ $viewModel;
 	private ViewModelProcessor $viewModelProcessor;
+	private BaseRouter $router;
 	private Assembly $logicAssembly;
 	private Assembly $viewAssembly;
 	private LogicExecutor $logicExecutor;
 	private ViewStreamer $viewStreamer;
-	private HeaderManager $headerManager;
 
-	private Closure $viewREADYTHING;
+	private HeaderManager $headerManager;
+	private Closure $viewModelInitCallback;
 
 	/**
 	 * @param array<string, array<string, string|array<string, string>>> $globals
@@ -73,6 +79,7 @@ class Dispatcher {
 		Request $request,
 		array $globals,
 		Closure $finishCallback,
+		?int $errorStatus = null,
 
 		?AppAutoloader $appAutoloader = null,
 		?LogicStreamHandler $logicStreamHandler = null,
@@ -144,13 +151,15 @@ class Dispatcher {
 			DefaultRouter::class,
 			$this->config->getInt("router.redirect_response_code"),
 			$this->config->getString("router.default_content_type"),
+			$errorStatus,
 		);
 		$view = $routerInit->getView();
 		$this->serviceContainer->set($view);
 		$this->view = $view;
 		$this->viewModel = $routerInit->getViewModel();
 		$this->serviceContainer->set($this->viewModel);
-		$this->serviceContainer->set($routerInit->getBaseRouter());
+		$this->router = $routerInit->getBaseRouter();
+		$this->serviceContainer->set($this->router);
 		$dynamicPath = $routerInit->getDynamicPath();
 		$this->serviceContainer->set($dynamicPath);
 		$this->viewAssembly = $routerInit->getViewAssembly();
@@ -172,7 +181,7 @@ class Dispatcher {
 			$this->config->getString("view.partial_directory"),
 		);
 		$this->viewModelProcessor = $viewModelInit->getViewModelProcessor();
-		$this->viewREADYTHING = fn() => $viewModelInit->initHTMLDocument(
+		$this->viewModelInitCallback = fn() => $viewModelInit->initHTMLDocument(
 			$this->serviceContainer->get(Binder::class),
 			$this->serviceContainer->get(HTMLAttributeBinder::class),
 			$this->serviceContainer->get(ListBinder::class),
@@ -197,66 +206,95 @@ class Dispatcher {
 // function's responsibility is to execute the logic that builds the response.
 // Since this involves running user code that may throw errors, we execute each
 // step individually to ensure proper error handling throughout the process.
-		$dynamicPath = $this->serviceContainer->get(DynamicPath::class);
-
-		$this->viewModelProcessor->processDynamicPath(
-			$this->viewModel,
-			$dynamicPath,
-		);
-
-		$logicAssemblyComponentList = $this->viewModelProcessor->processPartialContent(
-			$this->viewModel,
-		);
-
-
-// TODO: CSRF handling - needs to be done on any POST request.
-		($this->viewREADYTHING)();
-		foreach($logicAssemblyComponentList as $logicAssemblyComponent) {
-			$assembly = $logicAssemblyComponent->assembly;
-			$componentElement = $logicAssemblyComponent->component;
-			$this->serviceContainer->set($componentElement);
-
-			$this->handleLogicExecution(
-				$assembly,
-				$this->input,
-				$componentElement,
-			);
+		if(!$this->viewAssembly->containsDistinctFile()) {
+			$this->response = $this->response->withStatus(StatusCode::NOT_FOUND);
+			throw new HttpNotFound();
 		}
 
-		$this->handleLogicExecution(
-			$this->logicAssembly,
-			$this->input,
-		);
+		$this->processResponse();
 
-		if($responseWithHeader = $this->headerManager->apply(
-			$this->response->getResponseHeaders(),
-			$this->response->withHeader(...)
-		)) {
-			$this->response = $responseWithHeader;
+		if(!$this->response->getStatusCode()) {
+			$this->response = $this->response->withStatus(StatusCode::OK);
 		}
-
-// TODO: Why is this here in the dispatcher? Move it to the ViewModel::cleanup() or similar
-		$documentBinder = $this->serviceContainer->get(Binder::class);
-		$documentBinder->cleanupDocument();
-
-		$this->viewStreamer->stream($this->view, $this->viewModel);
 
 		return $this->response;
 	}
 
 	public function generateErrorResponse(Throwable $throwable):Response {
-		var_dump($throwable);
-		die("ERRRRRRRRRRRRRRRRRRRRRRRORororororororororo");
-// TODO: Override the request's path to load the appropriate error page, and inject the throwable into the service container.
+		$this->serviceContainer->set($throwable);
+
+		$errorStatusCode = StatusCode::INTERNAL_SERVER_ERROR;
+		if($throwable instanceof ResponseStatusException) {
+			$errorStatusCode = $throwable->getHttpCode();
+		}
+
+// TODO: Why can't I load the Binder here?
+//		if($this->viewModel instanceof HTMLDocument) {
+//			$binder = $this->serviceContainer->get(DocumentBinder::class);
+//			$binder->bindValue($throwable->getMessage());
+//		}
+
+		$this->response = $this->response->withStatus($errorStatusCode);
+
+		if(!$this->viewAssembly->containsDistinctFile()) {
+			throw new ErrorPageNotFoundException($errorStatusCode);
+		}
+
+		$this->processResponse(true);
 		return $this->response;
 	}
 
 	public function generateBasicErrorResponse(
-		Throwable $throwable,
-		Throwable $previousThrowable,
+		Throwable $actualThrowable,
+		Throwable $innerThrowable,
 	):Response {
-		die("NONONO");
-		return new Response(request: $this->request);
+// TODO: Handle innerThrowable for if there's an error thrown in WebEngine itself.
+		$errorStatusCode = $this->response->getStatusCode();
+		$errorType = get_class($actualThrowable);
+		$errorMessage = $actualThrowable->getMessage();
+		$detail = "";
+
+		$errorPageDir = $this->config->getString("app.error_page_dir");
+
+		if(!$errorMessage) {
+			if($actualThrowable instanceof HttpNotFound) {
+				$errorMessage = "The server could not find the requested resource.";
+
+				if(!$this->config->getBool("app.production")) {
+					$detail .= " Additionally, there was no error page found in your application at $errorPageDir/$errorStatusCode.html";
+				}
+			}
+		}
+
+		if(!$this->config->getBool("app.production")) {
+			$detail .= implode(":", [
+				$actualThrowable->getFile(),
+				$actualThrowable->getLine(),
+			]) . "\n\n";
+			foreach($actualThrowable->getTrace() as $i => $t) {
+				if(isset($t["file"]) && str_ends_with($t["file"], "/vendor/phpgt/servicecontainer/src/Injector.php")) {
+					break;
+				}
+				$detail .= "#$i\n";
+
+				foreach($t as $key => $value) {
+					$detail .= "$key:\t$value\n";
+				}
+			}
+		}
+
+		// TODO: Load this HTML from a file in the root of WebEngine!
+		$html = <<<HTML
+		<!doctype html>
+		<h1>Error $errorStatusCode</h1>
+		<h2>$errorType</h2>
+		<p>$errorMessage</p>
+		<p style="white-space: pre">$detail</p>
+		HTML;
+
+		$body = new Stream();
+		$body->write($html);
+		return new Response(request: $this->request)->withBody($body)->withStatus($errorStatusCode);
 	}
 
 	private function setupResponse():Response {
@@ -318,5 +356,67 @@ class Dispatcher {
 		foreach($this->logicExecutor->invoke($logicAssembly, "go_after", $extraArgs) as $file) {
 			// TODO: Hook up to debug output
 		}
+	}
+
+	/**
+	 * @return void
+	 */
+	public function processResponse(bool $processingError = false):void {
+		$dynamicPath = $this->serviceContainer->get(DynamicPath::class);
+
+		$this->viewModelProcessor->processDynamicPath(
+			$this->viewModel,
+			$dynamicPath,
+		);
+
+		$logicAssemblyComponentList = $this->viewModelProcessor->processPartialContent(
+			$this->viewModel,
+		);
+
+// TODO: CSRF handling - needs to be done on any POST request.
+		($this->viewModelInitCallback)();
+
+		foreach($logicAssemblyComponentList as $logicAssemblyComponent) {
+			$assembly = $logicAssemblyComponent->assembly;
+			$componentElement = $logicAssemblyComponent->component;
+			$this->serviceContainer->set($componentElement);
+
+			try {
+				$this->handleLogicExecution(
+					$assembly,
+					$this->input,
+					$componentElement,
+				);
+			}
+			catch(Throwable $throwable) {
+				if(!$processingError) {
+					throw $throwable;
+				}
+			}
+		}
+
+		try {
+			$this->handleLogicExecution(
+				$this->logicAssembly,
+				$this->input,
+			);
+		}
+		catch(Throwable $throwable) {
+			if(!$processingError) {
+				throw $throwable;
+			}
+		}
+
+		if($responseWithHeader = $this->headerManager->apply(
+			$this->response->getResponseHeaders(),
+			$this->response->withHeader(...)
+		)) {
+			$this->response = $responseWithHeader;
+		}
+
+		$documentBinder = $this->serviceContainer->get(Binder::class);
+		$documentBinder->cleanupDocument();
+
+		$this->viewStreamer->stream($this->view, $this->viewModel);
 	}
 }

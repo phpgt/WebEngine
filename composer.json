@@ -29,7 +29,7 @@
 		"phpgt/domvalidation": "^1.0",
 		"phpgt/fetch": "^1.2",
 		"phpgt/filecache": "^1.2",
-		"phpgt/http": "^1.2",
+		"phpgt/http": "^1.3.5",
 		"phpgt/input": "^1.3",
 		"phpgt/logger": "^1.0",
 		"phpgt/promise": "^2.4",

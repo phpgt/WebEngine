@@ -19,6 +19,7 @@ use GT\WebEngine\Logic\ViewModelProcessor;
 
 class ViewModelInit {
 	private ViewModelProcessor $viewModelProcessor;
+	private bool $initialised = false;
 
 	public function __construct(
 		HTMLDocument $model,
@@ -47,6 +48,12 @@ class ViewModelInit {
 		ListElementCollection $listElementCollection,
 		BindableCache $bindableCache,
 	):void {
+		if($this->initialised) {
+			return;
+		}
+
+		$this->initialised = true;
+
 		$htmlAttributeBinder->setDependencies(
 			$listBinder,
 			$tableBinder,

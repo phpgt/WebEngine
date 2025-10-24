@@ -2,6 +2,9 @@
 namespace GT\WebEngine;
 
 use Closure;
+use Gt\Http\ResponseStatusException\ClientError\ClientErrorException;
+use Gt\Http\ResponseStatusException\ResponseStatusException;
+use Gt\Logger\Log;
 use Throwable;
 use ErrorException;
 use GT\WebEngine\Debug\OutputBuffer;
@@ -32,6 +35,7 @@ class Application {
 	private Timer $timer;
 	private OutputBuffer $outputBuffer;
 	private RequestFactory $requestFactory;
+	private ServerRequest $request;
 	/** @var array<string, array<string, string|array<string, string>>> */
 	private array $globals;
 	private Protection $globalProtection;
@@ -62,7 +66,9 @@ class Application {
 			$this->config->getFloat("app.slow_delta"),
 			$this->config->getFloat("app.very_slow_delta"),
 		);
-		$this->outputBuffer = $outputBuffer ?? new OutputBuffer();
+		$this->outputBuffer = $outputBuffer ?? new OutputBuffer(
+			$this->config->getBool("logger.debug_to_javascript")
+		);
 		$this->requestFactory = $requestFactory ?? new RequestFactory();
 		$this->dispatcherFactory = $dispatcherFactory ?? new DispatcherFactory();
 		$this->globals = array_merge([
@@ -103,8 +109,7 @@ class Application {
 // $_GET contains query parameters from the URL, and $_POST contains form data.
 // These arrays are optional and will default to empty arrays if not provided,
 // ensuring the ServerRequest can always be constructed safely.
-		/** @var ServerRequest $request */
-		$request = $this->requestFactory->createServerRequestFromGlobalState(
+		$this->request = $this->requestFactory->createServerRequestFromGlobalState(
 			$this->globals["_SERVER"] ?? [],
 			$this->globals["_FILES"] ?? [],
 			$this->globals["_GET"] ?? [],
@@ -125,7 +130,7 @@ class Application {
 // the application's error templates and logging mechanisms.
 		$this->dispatcher = $this->dispatcherFactory->create(
 			$this->config,
-			$request,
+			$this->request,
 			$this->globals,
 			$this->finish(...),
 		);
@@ -134,10 +139,27 @@ class Application {
 			$response = $this->dispatcher->generateResponse();
 		}
 		catch(Throwable $throwable) {
-			var_dump($throwable);
-			die("ERRRRRRRRRRRRRRRRRRR");
 			$this->logError($throwable);
-			$response = $this->dispatcher->generateErrorResponse($throwable);
+			$errorStatus = 500;
+
+			if($throwable instanceof ResponseStatusException) {
+				$errorStatus = $throwable->getHttpCode();
+			}
+
+			$this->dispatcher = $this->dispatcherFactory->create(
+				$this->config,
+				$this->request,
+				$this->globals,
+				$this->finish(...),
+				$errorStatus,
+			);
+
+			try {
+				$response = $this->dispatcher->generateErrorResponse($throwable);
+			}
+			catch(Throwable $innerThrowable) {
+				$response = $this->dispatcher->generateBasicErrorResponse($throwable, $innerThrowable);
+			}
 		}
 
 		$this->finish($response);
@@ -156,12 +178,19 @@ class Application {
 			$response->getHeaders(),
 		);
 
-// If there's any content in the output buffer, render it to the developer console/log instead of the page.
-		$this->outputBuffer->debugOutput();
+		if($this->config->getBool("logger.log_all_requests")) {
+			Log::info(
+				"HTTP " . $response->getStatusCode(),
+				$this->getLogContext(),
+			);
+		}
 
 		/** @var Stream $responseBody */
 		$responseBody = $response->getBody();
-		$this->outputResponseBody($responseBody);
+		$this->outputResponseBody(
+			$responseBody,
+			$this->outputBuffer->debugOutput(),
+		);
 
 		$this->timer->stop();
 		$this->timer->logDelta();
@@ -274,7 +303,32 @@ class Application {
 	}
 
 	private function logError(Throwable $throwable):void {
-		// TODO: implement
+		if($throwable instanceof ClientErrorException) {
+			return;
+		}
+
+		Log::error($throwable);
+	}
+
+	/** @return array<string, string> */
+	private function getLogContext():array {
+		$uri = $this->request->getUri();
+		$uriPath = $uri->getPath();
+		$uriQuery = $this->request->getQueryParams();
+		$postBody = $this->request->getParsedBody();
+
+		$context = [
+			"id" => $this->request->getServerParams()["REMOTE_ADDR"] . ":" . substr(session_id(), 0, 4),
+			"uri" => $uriPath,
+		];
+		if($uriQuery) {
+			$context["query"] = $uriQuery;
+		}
+		if($postBody) {
+			$context["post"] = $postBody;
+		}
+
+		return $context;
 	}
 
 	/** @param array<string, array<string>> $headers */
@@ -301,13 +355,21 @@ class Application {
 	 * `ob_*` functions are used here to ensure that the response body is
 	 * flushed and doesn't get rendered into another open buffer.
 	 */
-	private function outputResponseBody(Stream $responseBody):void {
+	private function outputResponseBody(Stream $responseBody, ?string $debugScript = null):void {
 		$length = $this->config->getInt("app.render_buffer_size");
 
 		$responseBody->rewind();
 		ob_start();
 		while(!$responseBody->eof()) {
-			echo $responseBody->read($length);
+			$content = $responseBody->read($length);
+			if($debugScript) {
+				$closingBody = strpos($content, "</body>");
+				if(false !== $closingBody) {
+					$content = substr_replace($content, $debugScript, $closingBody, 0);
+				}
+			}
+			echo $content;
+
 			ob_flush();
 			flush();
 		}

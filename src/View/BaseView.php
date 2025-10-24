@@ -1,6 +1,7 @@
 <?php
 namespace GT\WebEngine\View;
 
+use Gt\Dom\HTMLDocument;
 use Psr\Http\Message\StreamInterface;
 
 abstract class BaseView {
@@ -19,7 +20,7 @@ abstract class BaseView {
 		array_push($this->viewFileArray, $fileName);
 	}
 
-	public function stream(mixed $viewModel):void {
+	public function stream(HTMLDocument $viewModel):void {
 		$this->outputStream->write((string)$viewModel);
 	}
 }

@@ -1,5 +1,5 @@
 <?php
-namespace Gt\WebEngine\Logic;
+namespace GT\WebEngine\Logic;
 
 use Closure;
 use Gt\Routing\LogicStream\LogicStreamWrapper;
@@ -21,7 +21,15 @@ class LogicStreamHandler {
 			fn() => stream_wrapper_register($this->streamName, $this->logicStreamClassName);
 	}
 
+	private function isProtocolDefined(string $protocol):bool {
+		return in_array($protocol, stream_get_wrappers(), true);
+	}
+
 	public function setup():void {
+		if($this->isProtocolDefined($this->streamName)) {
+			return;
+		}
+
 		($this->streamWrapperRegisterCallback)(
 			$this->streamName,
 			$this->logicStreamClassName,

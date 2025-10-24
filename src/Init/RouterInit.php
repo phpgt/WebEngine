@@ -33,6 +33,7 @@ class RouterInit {
 		string $defaultRouterClass,
 		int $redirectResponseCode,
 		string $defaultContentType,
+		?int $errorStatus = null,
 		?RouterFactory $routerFactory = null,
 	) {
 		$routerFactory = $routerFactory ?? new RouterFactory();
@@ -46,6 +47,7 @@ class RouterInit {
 			$defaultRouterClass,
 			$redirectResponseCode,
 			$defaultContentType,
+			$errorStatus,
 		);
 		$this->baseRouter->route($request);
 		$viewClass = $this->baseRouter->getViewClass() ?? NullView::class;
@@ -56,10 +58,6 @@ class RouterInit {
 
 		$this->viewAssembly = $this->baseRouter->getViewAssembly();
 		$this->logicAssembly = $this->baseRouter->getLogicAssembly();
-
-		if(!$this->viewAssembly->containsDistinctFile()) {
-// TODO: How do we set 404 on the Response from here?
-		}
 
 		foreach($this->viewAssembly as $viewFile) {
 			$this->view->addViewFile($viewFile);

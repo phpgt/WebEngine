@@ -34,6 +34,7 @@ class Application {
 	private RequestFactory $requestFactory;
 	/** @var array<string, array<string, string|array<string, string>>> */
 	private array $globals;
+	private Protection $globalProtection;
 	private Config $config;
 	private DispatcherFactory $dispatcherFactory;
 	private Dispatcher $dispatcher;
@@ -52,6 +53,7 @@ class Application {
 		?DispatcherFactory $dispatcherFactory = null,
 		?array $globals = null,
 		?Closure $handleShutdown = null,
+		?Protection $globalProtection = null,
 	) {
 		$this->gtCompatibility();
 		$this->redirect = $redirect ?? new Redirect();
@@ -71,6 +73,7 @@ class Application {
 			"_ENV" => [],
 			"_COOKIE" => [],
 		], $globals ?? $GLOBALS);
+		$this->globalProtection = $globalProtection ?? new Protection();
 		register_shutdown_function($handleShutdown ?? $this->handleShutdown(...));
 	}
 
@@ -191,9 +194,8 @@ class Application {
 	}
 
 	private function protectGlobals():void {
-		$protection = new Protection();
-		$protection->overrideInternals(
-			$protection->removeGlobals([
+		$this->globalProtection->overrideInternals(
+			$this->globalProtection->removeGlobals([
 				"server" => $this->globals["_SERVER"],
 				"files" => $this->globals["_FILES"],
 				"get" => $this->globals["_GET"],

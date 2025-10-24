@@ -1,5 +1,5 @@
 <?php
-namespace Gt\WebEngine\Dispatch;
+namespace GT\WebEngine\Dispatch;
 
 use Closure;
 use Gt\Config\Config;

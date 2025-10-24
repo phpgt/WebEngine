@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3cf8faacbe1719f3e4b8567cfeaa28ed",
+    "content-hash": "3d2a63fb71db812217aeece7d653f157",
     "packages": [
         {
             "name": "composer/semver",
@@ -1558,24 +1558,24 @@
         },
         {
             "name": "phpgt/protectedglobal",
-            "version": "v1.1.2",
+            "version": "v2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/ProtectedGlobal.git",
-                "reference": "b8ac7187e1e3047877a68b21416fa545812ed96a"
+                "reference": "28c9ae979549759828fe0b732907a99d8b9c7e44"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/ProtectedGlobal/zipball/b8ac7187e1e3047877a68b21416fa545812ed96a",
-                "reference": "b8ac7187e1e3047877a68b21416fa545812ed96a",
+                "url": "https://api.github.com/repos/phpgt/ProtectedGlobal/zipball/28c9ae979549759828fe0b732907a99d8b9c7e44",
+                "reference": "28c9ae979549759828fe0b732907a99d8b9c7e44",
                 "shasum": ""
             },
             "require": {
-                "php": ">7.4"
+                "php": ">=8.2"
             },
             "require-dev": {
-                "phpstan/phpstan": "^1.10",
-                "phpunit/phpunit": "^10.1"
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^10.5"
             },
             "type": "library",
             "autoload": {
@@ -1590,9 +1590,9 @@
             "description": "Protect against accidental use of superglobals.",
             "support": {
                 "issues": "https://github.com/phpgt/ProtectedGlobal/issues",
-                "source": "https://github.com/phpgt/ProtectedGlobal/tree/v1.1.2"
+                "source": "https://github.com/phpgt/ProtectedGlobal/tree/v2.0.0"
             },
-            "time": "2025-03-09T13:53:23+00:00"
+            "time": "2025-10-23T15:24:26+00:00"
         },
         {
             "name": "phpgt/routing",

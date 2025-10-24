@@ -1,8 +1,12 @@
 <?php
 namespace GT\WebEngine\Test;
 
+use Gt\Http\Request;
 use Gt\Http\RequestFactory;
 use Gt\Http\Response;
+use Gt\Http\ServerRequest;
+use Gt\Http\Uri;
+use Gt\ProtectedGlobal\Protection;
 use GT\WebEngine\Application;
 use GT\WebEngine\Debug\OutputBuffer;
 use GT\WebEngine\Debug\Timer;
@@ -17,8 +21,19 @@ class ApplicationTest extends TestCase {
 		$redirect->expects(self::once())
 			->method("execute");
 
+		$globalProtection = self::createMock(Protection::class);
+		$serverRequest = self::createMock(ServerRequest::class);
+		$serverRequest->method("getUri")
+			->willReturn(self::createMock(Uri::class));
+		$serverRequest->method("getHeaderLine")
+			->willReturn("Accept: text/test");
+		$requestFactory = self::createMock(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($serverRequest);
 		$sut = new Application(
 			redirect: $redirect,
+			requestFactory: $requestFactory,
+			globalProtection: $globalProtection,
 		);
 		$sut->start();
 	}
@@ -45,8 +60,11 @@ class ApplicationTest extends TestCase {
 		$outputBuffer->expects(self::once())
 			->method("debugOutput");
 
+		$globalProtection = self::createMock(Protection::class);
+
 		$sut = new Application(
 			outputBuffer: $outputBuffer,
+			globalProtection: $globalProtection,
 		);
 		$sut->start();
 	}
@@ -87,8 +105,11 @@ class ApplicationTest extends TestCase {
 		$response->expects(self::once())
 			->method("getBody");
 
+		$globalProtection = self::createMock(Protection::class);
+
 		$sut = new Application(
 			dispatcherFactory: $dispatcherFactory,
+			globalProtection: $globalProtection,
 		);
 		$sut->start();
 	}

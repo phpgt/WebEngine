@@ -29,7 +29,7 @@ class BaseViewTest extends TestCase {
 
 	private function newTestableView(StreamInterface $stream): BaseView {
 		return new class($stream) extends BaseView {
-			public function createViewModel():mixed { return ""; }
+			public function createViewModel():mixed { return new \Gt\Dom\HTMLDocument(""); }
 			public function getViewFiles(): array { return $this->viewFileArray; }
 		};
 	}
@@ -37,16 +37,17 @@ class BaseViewTest extends TestCase {
 	public function testStream_writesStringToOutput():void {
 		$stream = $this->newRecordingStream();
 		$sut = $this->newTestableView($stream);
-		$sut->stream("hello world");
-		self::assertSame("hello world", (string)$stream);
+		$doc = new \Gt\Dom\HTMLDocument("hello world");
+		$sut->stream($doc);
+		self::assertSame((string)$doc, (string)$stream);
 	}
 
 	public function testStream_castsNonStringToString():void {
 		$stream = $this->newRecordingStream();
 		$sut = $this->newTestableView($stream);
-		$object = new class(){ public function __toString():string { return "obj-str"; } };
-		$sut->stream($object);
-		self::assertSame("obj-str", (string)$stream);
+		$doc = new \Gt\Dom\HTMLDocument("<p>obj-str</p>");
+		$sut->stream($doc);
+		self::assertSame((string)$doc, (string)$stream);
 	}
 
 	public function testAddViewFile_appendsInOrder():void {

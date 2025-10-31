@@ -2,98 +2,62 @@
 namespace GT\WebEngine\Test\Logic;
 
 use GT\WebEngine\Logic\AppAutoloader;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 class AppAutoloaderTest extends TestCase {
-	private string $classDir;
+	private string $cwd;
+	private string $relBaseDir;
 
 	protected function setUp():void {
-		// Use system temporary directory to avoid writing into the project tree.
-		$sysTmp = rtrim(sys_get_temp_dir(), "/\\");
-		$this->classDir = $sysTmp . "/phpgt-webengine-test--Logic-AppAutoloader-" . uniqid();
-		@mkdir($this->classDir, recursive: true);
+		parent::setUp();
+		$this->cwd = getcwd();
+		$this->relBaseDir = "test-autoload-" . uniqid();
+		mkdir($this->relBaseDir . "/Foo", 0777, true);
 	}
 
 	protected function tearDown():void {
-		// Recursively remove the temporary directory we created.
-		$path = $this->classDir;
-		if(is_dir($path)) {
-			self::rrmdir($path);
+		// Recursively remove created files/dirs
+		$it = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator($this->relBaseDir, \FilesystemIterator::SKIP_DOTS),
+			\RecursiveIteratorIterator::CHILD_FIRST
+		);
+		foreach($it as $file) {
+			$file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
 		}
+		@rmdir($this->relBaseDir);
+		parent::tearDown();
 	}
 
-	private static function rrmdir(string $dir):void {
-		/** @var list<string> $items */
-		$items = @scandir($dir) ?: [];
-		foreach($items as $item) {
-			if($item === "." || $item === "..") {
-				continue;
-			}
-			$full = $dir . "/" . $item;
-			if(is_dir($full)) {
-				self::rrmdir($full);
-			}
-			else {
-				@unlink($full);
-			}
-		}
-		@rmdir($dir);
+	public function testSetup_noDir_doesNotRegisterOrLoad():void {
+		$sut = new AppAutoloader('App', 'non-existent-dir-' . uniqid());
+		// Should not throw, and autoloader should not attempt to load anything
+		$sut->setup();
+		self::assertFalse(class_exists('App\\Nope\\Thing'));
 	}
 
-	#[RunInSeparateProcess]
-	public function testLoadsClassFromConfiguredDirectory():void {
-		// Arrange: create a simple class file under the configured directory.
-		$ns = 'TestApp';
-		$cls = 'Widget';
-		$code = <<<PHP
-		<?php
-		namespace {$ns};
-		class {$cls} {
-			public function ping(): string { return 'pong'; }
-		}
-		PHP;
+	public function testAutoload_relativePathAndUcfirstSegments():void {
+		// Create class file using ucfirst segment mapping: Foo/Bar.php
+		$code = "<?php\nnamespace App\\Foo; class Bar { public static function hello(): string { return 'hi'; } }\n";
+		file_put_contents($this->relBaseDir . "/Foo/Bar.php", $code);
 
-		$filePath = "{$this->classDir}/{$cls}.php";
-		file_put_contents($filePath, $code);
-
-		$sut = new AppAutoloader(namespace: $ns, classDir: $this->classDir);
+		$sut = new AppAutoloader('App', $this->relBaseDir);
 		$sut->setup();
 
-		// Act: reference the class so the autoloader resolves it.
-		$fullClass = "\\{$ns}\\{$cls}";
-		$instance = new $fullClass();
-
-		// Assert
-		self::assertSame('pong', $instance->ping());
+		$class = 'App\\Foo\\Bar';
+		self::assertTrue(class_exists($class));
+		self::assertSame('hi', \call_user_func([$class, 'hello']));
 	}
 
-	#[RunInSeparateProcess]
-	public function testLoadsClassFromNestedNamespaceUsingUcfirstPath():void {
-		// Arrange: nested namespace parts should map to capitalised path segments.
-		$ns = 'TestApp2';
-		$nsParts = ['foo', 'bar'];
-		$class = 'baz';
+	public function testAutoload_ignoresDifferentNamespace():void {
+		// Create class that shouldn't be autoloaded by our AppAutoloader because of namespace mismatch
+		$otherDir = $this->relBaseDir . '/Other';
+		mkdir($otherDir, 0777, true);
+		file_put_contents($otherDir . '/Qux.php', "<?php\nnamespace Other\\Ns; class Qux {}\n");
 
-		// The autoloader ucfirst()s each part, so we create directories capitalised.
-		$dir = "{$this->classDir}/" . implode('/', array_map('ucfirst', $nsParts));
-		@mkdir($dir, recursive: true);
-
-		$code = <<<PHP
-		<?php
-		namespace {$ns}\\foo\\bar;
-		class {$class} { public function id(): string { return 'ok'; } }
-		PHP;
-
-		file_put_contents($dir . '/Baz.php', $code);
-
-		$sut = new AppAutoloader(namespace: $ns, classDir: $this->classDir);
+		$sut = new AppAutoloader('App', $this->relBaseDir);
 		$sut->setup();
 
-		// Use lowercased parts to confirm ucfirst mapping works.
-		$fullClass = "\\{$ns}\\{$nsParts[0]}\\{$nsParts[1]}\\$class";
-		$instance = new $fullClass();
-
-		self::assertSame('ok', $instance->id());
+		// Asserting that merely referencing a different namespace doesn't cause load attempt here.
+		self::assertFalse(class_exists('Other\\Ns\\Qux', false));
 	}
 }

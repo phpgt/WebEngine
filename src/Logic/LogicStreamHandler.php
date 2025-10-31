@@ -2,7 +2,6 @@
 namespace GT\WebEngine\Logic;
 
 use Closure;
-use Gt\Routing\LogicStream\LogicStreamWrapper;
 
 /**
  * Handles the registration of a custom stream wrapper, as defined by the
@@ -13,8 +12,8 @@ class LogicStreamHandler {
 	private Closure $streamWrapperRegisterCallback;
 
 	public function __construct(
-		private readonly string $streamName = LogicStreamWrapper::STREAM_NAME,
-		private readonly string $logicStreamClassName = LogicStreamWrapper::class,
+		private readonly string $streamName = WebEngineLogicStreamWrapper::STREAM_NAME,
+		private readonly string $logicStreamClassName = WebEngineLogicStreamWrapper::class,
 		?Closure $streamWrapperRegisterCallback = null,
 	) {
 		$this->streamWrapperRegisterCallback = $streamWrapperRegisterCallback ??

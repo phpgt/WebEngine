@@ -35,11 +35,13 @@ class ApplicationTest extends TestCase {
 		$requestFactory->method("createServerRequestFromGlobalState")
 			->willReturn($serverRequest);
 		$dispatcher = self::createMock(Dispatcher::class);
+
 		$response = self::createMock(Response::class);
 		$response->method('getStatusCode')->willReturn(200);
 		$response->method('getHeaders')->willReturn(['Content-Type' => ['text/html']]);
 		$response->method('getBody')->willReturn(new \Gt\Http\Stream());
 		$dispatcher->method('generateResponse')->willReturn($response);
+
 		$dispatcherFactory = self::createMock(DispatcherFactory::class);
 		$dispatcherFactory->method('create')->willReturn($dispatcher);
 

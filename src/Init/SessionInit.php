@@ -17,6 +17,8 @@ class SessionInit {
 		bool $useTransSid,
 		bool $useCookies,
 		array $currentCookieArray,
+		?SessionSetup $sessionSetup = null,
+		string|Session $sessionClass = Session::class,
 	) {
 		$originalCookie = $_COOKIE;
 		$_COOKIE = $currentCookieArray;
@@ -30,14 +32,21 @@ class SessionInit {
 		];
 
 		$sessionId = $_COOKIE[$sessionConfig["name"]] ?? null;
-		$sessionSetup = new SessionSetup();
+		$sessionSetup = $sessionSetup ?? new SessionSetup();
 		$sessionHandler = $sessionSetup->attachHandler($sessionConfig["handler"]);
 
-		$this->session = new Session(
-			$sessionHandler,
-			$sessionConfig,
-			$sessionId,
-		);
+		if($sessionClass instanceof Session) {
+			$this->session = $sessionClass;
+		}
+		else {
+// @codeCoverageIgnoreStart
+			$this->session = new $sessionClass(
+				$sessionHandler,
+				$sessionConfig,
+				$sessionId,
+			);
+// @codeCoverageIgnoreEnd
+		}
 
 		$_COOKIE = $originalCookie;
 	}

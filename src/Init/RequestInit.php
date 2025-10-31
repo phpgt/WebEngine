@@ -2,9 +2,9 @@
 namespace GT\WebEngine\Init;
 
 use Closure;
-use GT\Input\Input;
-use GT\Http\Uri;
-use GT\Http\ServerInfo;
+use Gt\Input\Input;
+use Gt\Http\Uri;
+use Gt\Http\ServerInfo;
 use GT\WebEngine\Dispatch\PathNormaliser;
 
 class RequestInit {

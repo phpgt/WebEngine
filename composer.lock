@@ -1399,24 +1399,24 @@
         },
         {
             "name": "phpgt/logger",
-            "version": "v1.0.0",
+            "version": "v1.0.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/PhpGt/Logger.git",
-                "reference": "9cbb7c986941bff513aedf80dfa256497aff8dd2"
+                "url": "https://github.com/phpgt/Logger.git",
+                "reference": "efa981ac32190ea5e432d7674afd0895e06d45e9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PhpGt/Logger/zipball/9cbb7c986941bff513aedf80dfa256497aff8dd2",
-                "reference": "9cbb7c986941bff513aedf80dfa256497aff8dd2",
+                "url": "https://api.github.com/repos/phpgt/Logger/zipball/efa981ac32190ea5e432d7674afd0895e06d45e9",
+                "reference": "efa981ac32190ea5e432d7674afd0895e06d45e9",
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.4"
+                "php": ">=8.1"
             },
             "require-dev": {
-                "phpstan/phpstan": ">=0.12.64",
-                "phpunit/phpunit": "9.*"
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^10.5"
             },
             "type": "library",
             "autoload": {
@@ -1436,8 +1436,8 @@
             ],
             "description": "PSR-3 logger and implementation.",
             "support": {
-                "issues": "https://github.com/PhpGt/Logger/issues",
-                "source": "https://github.com/PhpGt/Logger/tree/v1.0.0"
+                "issues": "https://github.com/phpgt/Logger/issues",
+                "source": "https://github.com/phpgt/Logger/tree/v1.0.1"
             },
             "funding": [
                 {
@@ -1445,7 +1445,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2021-09-21T14:18:11+00:00"
+            "time": "2025-10-30T11:45:41+00:00"
         },
         {
             "name": "phpgt/promise",
@@ -1713,30 +1713,30 @@
         },
         {
             "name": "phpgt/servicecontainer",
-            "version": "v1.3.3",
+            "version": "v1.3.4",
             "source": {
                 "type": "git",
-                "url": "https://github.com/PhpGt/ServiceContainer.git",
-                "reference": "733778c499d0b3eb5f2c311fc64c109694dd8d22"
+                "url": "https://github.com/phpgt/ServiceContainer.git",
+                "reference": "60e01f6279e2fcc792e905b70d1b33d01a4632b2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PhpGt/ServiceContainer/zipball/733778c499d0b3eb5f2c311fc64c109694dd8d22",
-                "reference": "733778c499d0b3eb5f2c311fc64c109694dd8d22",
+                "url": "https://api.github.com/repos/phpgt/ServiceContainer/zipball/60e01f6279e2fcc792e905b70d1b33d01a4632b2",
+                "reference": "60e01f6279e2fcc792e905b70d1b33d01a4632b2",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.0",
+                "php": ">=8.3",
                 "psr/container": "^2.0.1"
             },
             "provide": {
                 "psr/container-implementation": "1.0"
             },
             "require-dev": {
-                "phpmd/phpmd": "^2.13",
-                "phpstan/phpstan": "^1.10",
-                "phpunit/phpunit": "^10.1",
-                "squizlabs/php_codesniffer": "^3.7"
+                "phpmd/phpmd": "^2.15",
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^12.4",
+                "squizlabs/php_codesniffer": "^4.0"
             },
             "type": "library",
             "autoload": {
@@ -1750,8 +1750,8 @@
             ],
             "description": "Centralised container of a project's core objects.",
             "support": {
-                "issues": "https://github.com/PhpGt/ServiceContainer/issues",
-                "source": "https://github.com/PhpGt/ServiceContainer/tree/v1.3.3"
+                "issues": "https://github.com/phpgt/ServiceContainer/issues",
+                "source": "https://github.com/phpgt/ServiceContainer/tree/v1.3.4"
             },
             "funding": [
                 {
@@ -1759,20 +1759,20 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-11-10T11:20:19+00:00"
+            "time": "2025-10-28T10:34:11+00:00"
         },
         {
             "name": "phpgt/session",
-            "version": "v1.2.4",
+            "version": "v1.2.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Session.git",
-                "reference": "acdf1f7e6bb7aafab7daf155fc3e8d55788b9e81"
+                "reference": "c9a50b491c53737dea9503ea297832138b89bfd5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Session/zipball/acdf1f7e6bb7aafab7daf155fc3e8d55788b9e81",
-                "reference": "acdf1f7e6bb7aafab7daf155fc3e8d55788b9e81",
+                "url": "https://api.github.com/repos/phpgt/Session/zipball/c9a50b491c53737dea9503ea297832138b89bfd5",
+                "reference": "c9a50b491c53737dea9503ea297832138b89bfd5",
                 "shasum": ""
             },
             "require": {
@@ -1798,7 +1798,7 @@
             "description": "Encapsulated user sessions.",
             "support": {
                 "issues": "https://github.com/phpgt/Session/issues",
-                "source": "https://github.com/phpgt/Session/tree/v1.2.4"
+                "source": "https://github.com/phpgt/Session/tree/v1.2.5"
             },
             "funding": [
                 {
@@ -1806,7 +1806,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-07-31T11:48:09+00:00"
+            "time": "2025-10-31T16:04:32+00:00"
         },
         {
             "name": "phpgt/sync",
@@ -2080,16 +2080,16 @@
         },
         {
             "name": "webmozart/assert",
-            "version": "1.12.0",
+            "version": "1.12.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/webmozarts/assert.git",
-                "reference": "541057574806f942c94662b817a50f63f7345360"
+                "reference": "9be6926d8b485f55b9229203f962b51ed377ba68"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/webmozarts/assert/zipball/541057574806f942c94662b817a50f63f7345360",
-                "reference": "541057574806f942c94662b817a50f63f7345360",
+                "url": "https://api.github.com/repos/webmozarts/assert/zipball/9be6926d8b485f55b9229203f962b51ed377ba68",
+                "reference": "9be6926d8b485f55b9229203f962b51ed377ba68",
                 "shasum": ""
             },
             "require": {
@@ -2132,9 +2132,9 @@
             ],
             "support": {
                 "issues": "https://github.com/webmozarts/assert/issues",
-                "source": "https://github.com/webmozarts/assert/tree/1.12.0"
+                "source": "https://github.com/webmozarts/assert/tree/1.12.1"
             },
-            "time": "2025-10-20T12:43:39+00:00"
+            "time": "2025-10-29T15:56:20+00:00"
         },
         {
             "name": "webmozart/glob",
@@ -3211,16 +3211,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "12.4.1",
+            "version": "12.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "fc5413a2e6d240d2f6d9317bdf7f0a24e73de194"
+                "reference": "a94ea4d26d865875803b23aaf78c3c2c670ea2ea"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/fc5413a2e6d240d2f6d9317bdf7f0a24e73de194",
-                "reference": "fc5413a2e6d240d2f6d9317bdf7f0a24e73de194",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/a94ea4d26d865875803b23aaf78c3c2c670ea2ea",
+                "reference": "a94ea4d26d865875803b23aaf78c3c2c670ea2ea",
                 "shasum": ""
             },
             "require": {
@@ -3288,7 +3288,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.4.1"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.4.2"
             },
             "funding": [
                 {
@@ -3312,7 +3312,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-10-09T14:08:29+00:00"
+            "time": "2025-10-30T08:41:39+00:00"
         },
         {
             "name": "psr/log",

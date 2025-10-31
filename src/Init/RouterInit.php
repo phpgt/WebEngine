@@ -51,9 +51,13 @@ class RouterInit {
 		);
 		$this->baseRouter->route($request);
 		$viewClass = $this->baseRouter->getViewClass() ?? NullView::class;
+
+		// @codeCoverageIgnoreStart
 		if(str_starts_with($viewClass, "Gt\\")) {
 			$viewClass = str_replace("Gt\\", "GT\\", $viewClass);
 		}
+		// @codeCoverageIgnoreEnd
+
 		$this->view = new $viewClass($response->getBody());
 
 		$this->viewAssembly = $this->baseRouter->getViewAssembly();

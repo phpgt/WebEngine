@@ -23,7 +23,8 @@ class IniRedirectLoader implements RedirectLoader {
 			// Section header?
 			if($line !== '' && $line[0] === '[' && substr($line, -1) === ']') {
 				$section = trim($line, '[] ');
-				$currentCode = StatusCodeValidator::validate($section);
+				$statusCodeValidator = new StatusCodeValidator();
+				$currentCode = $statusCodeValidator->validate($section);
 				continue;
 			}
 

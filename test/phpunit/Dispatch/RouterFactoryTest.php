@@ -37,8 +37,8 @@ class RouterFactoryTest extends TestCase {
 		class %CLASS% extends BaseRouter {
 			public ?RouterConfig $receivedConfig = null;
 			public ?Container $receivedContainer = null;
-			public function __construct(RouterConfig $config) {
-				parent::__construct($config);
+			public function __construct(RouterConfig $config, ?int $errorStatus) {
+				parent::__construct($config, errorStatus: $errorStatus);
 				$this->receivedConfig = $config;
 			}
 			public function setContainer(Container $container):void {

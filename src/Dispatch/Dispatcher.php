@@ -17,8 +17,8 @@ use GT\DomTemplate\ListElementCollection;
 use GT\DomTemplate\PlaceholderBinder;
 use GT\DomTemplate\TableBinder;
 use GT\Http\Header\ResponseHeaders;
-use GT\Http\Request;
-use GT\Http\Response;
+use Gt\Http\Request;
+use Gt\Http\Response;
 use Gt\Http\ResponseStatusException\ClientError\HttpNotFound;
 use Gt\Http\ResponseStatusException\ResponseStatusException;
 use Gt\Http\StatusCode;
@@ -129,7 +129,7 @@ class Dispatcher {
 		$requestInit = $requestInit ?? new RequestInit(
 			$pathNormaliser,
 			$request->getUri(),
-			$config->getBool("app.force_trailing_slash"),
+			$config->getBool("app.force_trailing_slash") ?? true,
 			$this->response->redirect(...),
 			$this->globals["_GET"],
 			$this->globals["_POST"],
@@ -407,7 +407,7 @@ class Dispatcher {
 			}
 		}
 
-		if($responseWithHeader = $this->headerManager->apply(
+		if($responseWithHeader = $this->headerManager->applyWithHeader(
 			$this->response->getResponseHeaders(),
 			$this->response->withHeader(...)
 		)) {

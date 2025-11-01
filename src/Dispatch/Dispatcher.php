@@ -261,12 +261,12 @@ class Dispatcher {
 				$errorMessage = "The server could not find the requested resource.";
 
 				if(!$this->config->getBool("app.production")) {
-					$detail .= " Additionally, there was no error page found in your application at $errorPageDir/$errorStatusCode.html";
+					$detail .= " Additionally, there was no error page found in your application at <strong>$errorPageDir/$errorStatusCode.html</strong>";
 				}
 			}
 		}
 
-		if(!$this->config->getBool("app.production")) {
+		if($errorStatusCode >= 500 && !$this->config->getBool("app.production")) {
 			$detail .= implode(":", [
 				$actualThrowable->getFile(),
 				$actualThrowable->getLine(),

@@ -33,7 +33,7 @@
 		"phpgt/logger": "^1.0",
 		"phpgt/promise": "^2.4",
 		"phpgt/protectedglobal": "^1.1",
-		"phpgt/routing": "^1.1",
+		"phpgt/routing": "1.1.4",
 		"phpgt/server": "^1.1",
 		"phpgt/servicecontainer": "^1.3",
 		"phpgt/session": "1.2.4",

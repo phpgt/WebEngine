@@ -8,7 +8,6 @@ use GT\Dom\HTMLDocument;
 use GT\DomTemplate\BindableCache;
 use Gt\DomTemplate\Binder;
 use GT\DomTemplate\ComponentBinder;
-use Gt\DomTemplate\DocumentBinder;
 use GT\DomTemplate\ElementBinder;
 use GT\DomTemplate\HTMLAttributeBinder;
 use GT\DomTemplate\HTMLAttributeCollection;
@@ -16,7 +15,6 @@ use GT\DomTemplate\ListBinder;
 use GT\DomTemplate\ListElementCollection;
 use GT\DomTemplate\PlaceholderBinder;
 use GT\DomTemplate\TableBinder;
-use GT\Http\Header\ResponseHeaders;
 use Gt\Http\Request;
 use Gt\Http\Response;
 use Gt\Http\ResponseStatusException\ClientError\HttpNotFound;
@@ -228,11 +226,61 @@ class Dispatcher {
 			$errorStatusCode = $throwable->getHttpCode();
 		}
 
+		$this->processResponse(true);
+
 // TODO: Why can't I load the Binder here?
-//		if($this->viewModel instanceof HTMLDocument) {
-//			$binder = $this->serviceContainer->get(DocumentBinder::class);
-//			$binder->bindValue($throwable->getMessage());
-//		}
+		if($this->viewModel instanceof HTMLDocument) {
+			$trace = $throwable->getTrace();
+			array_unshift($trace, [
+				"file" => $throwable->getFile(),
+				"line" => $throwable->getLine(),
+				"class" => get_class($throwable) . "(\"" . $throwable->getMessage() . "\")",
+			]);
+			foreach($trace as $i => $traceItem) {
+				if(isset($traceItem["file"])) {
+					$cwd = getcwd() . DIRECTORY_SEPARATOR;
+					if(str_starts_with($traceItem["file"], $cwd)) {
+						$trace[$i]["file"] = substr($traceItem["file"], strlen($cwd));
+					}
+				}
+
+				if(isset($traceItem["file"]) && str_starts_with($traceItem["file"], "gt-logic-stream://")) {
+					$trace = array_slice($trace, 0, $i + 1);
+					break;
+				}
+			}
+
+			$binder = $this->serviceContainer->get(Binder::class);
+
+//			($this->viewModelInitCallback)();
+			$binder->bindValue($throwable->getMessage());
+
+			if(!$this->config->getBool("app.production")) {
+				$traceString = "";
+				foreach($trace as $i => $traceItem) {
+					$traceString .= "#$i ";
+					if(isset($traceItem["class"])) {
+						$traceString .= $traceItem["class"];
+						if(isset($traceItem["function"])) {
+							$traceString .= "::";
+							$traceString .= $traceItem["function"];
+						}
+
+						$traceString .= " -> ";
+					}
+
+					if(isset($traceItem["file"])) {
+						$traceString .= $traceItem["file"];
+					}
+					if(isset($traceItem["line"])) {
+						$traceString .= "(" . $traceItem["line"] . ")";
+					}
+					$traceString .= "\n";
+				}
+				$binder->bindKeyValue("trace", $traceString);
+			}
+
+		}
 
 		$this->response = $this->response->withStatus($errorStatusCode);
 

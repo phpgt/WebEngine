@@ -204,7 +204,7 @@ class Dispatcher {
 // function's responsibility is to execute the logic that builds the response.
 // Since this involves running user code that may throw errors, we execute each
 // step individually to ensure proper error handling throughout the process.
-		if(!$this->viewAssembly->containsDistinctFile()) {
+		if(!$this->viewAssembly->containsDistinctFile() && !$this->logicAssembly->containsDistinctFile()) {
 			$this->response = $this->response->withStatus(StatusCode::NOT_FOUND);
 			throw new HttpNotFound();
 		}

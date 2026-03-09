@@ -1868,16 +1868,16 @@
         },
         {
             "name": "phpgt/servicecontainer",
-            "version": "v1.3.4",
+            "version": "v1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/ServiceContainer.git",
-                "reference": "60e01f6279e2fcc792e905b70d1b33d01a4632b2"
+                "reference": "9f85224075716808f75a7d2da867fddefe9b4020"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/ServiceContainer/zipball/60e01f6279e2fcc792e905b70d1b33d01a4632b2",
-                "reference": "60e01f6279e2fcc792e905b70d1b33d01a4632b2",
+                "url": "https://api.github.com/repos/phpgt/ServiceContainer/zipball/9f85224075716808f75a7d2da867fddefe9b4020",
+                "reference": "9f85224075716808f75a7d2da867fddefe9b4020",
                 "shasum": ""
             },
             "require": {
@@ -1906,7 +1906,7 @@
             "description": "Centralised container of a project's core objects.",
             "support": {
                 "issues": "https://github.com/phpgt/ServiceContainer/issues",
-                "source": "https://github.com/phpgt/ServiceContainer/tree/v1.3.4"
+                "source": "https://github.com/phpgt/ServiceContainer/tree/v1.4.0"
             },
             "funding": [
                 {
@@ -1914,7 +1914,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-10-28T10:34:11+00:00"
+            "time": "2026-03-09T16:32:02+00:00"
         },
         {
             "name": "phpgt/session",

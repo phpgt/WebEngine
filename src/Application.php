@@ -5,8 +5,13 @@ use Closure;
 use Gt\Http\ResponseStatusException\ClientError\ClientErrorException;
 use Gt\Http\ResponseStatusException\ResponseStatusException;
 use Gt\Logger\Log;
+use Gt\Logger\LogConfig;
+use Gt\Logger\LogHandler\StdErrHandler;
+use Gt\Logger\LogLevel;
 use Throwable;
 use ErrorException;
+use ReflectionException;
+use ReflectionMethod;
 use GT\WebEngine\Debug\OutputBuffer;
 use GT\WebEngine\Debug\Timer;
 use GT\WebEngine\Redirection\Redirect;
@@ -42,6 +47,7 @@ class Application {
 	private Config $config;
 	private DispatcherFactory $dispatcherFactory;
 	private Dispatcher $dispatcher;
+	private static bool $loggerStreamsConfigured = false;
 	private bool $finished = false;
 
 	/**
@@ -62,6 +68,7 @@ class Application {
 		$this->gtCompatibility();
 		$this->redirect = $redirect ?? new Redirect();
 		$this->config = $config ?? $this->loadConfig();
+		$this->configureLoggerStreams();
 		$this->timer = $timer ?? new Timer(
 			$this->config->getFloat("app.slow_delta"),
 			$this->config->getFloat("app.very_slow_delta"),
@@ -152,6 +159,7 @@ class Application {
 				$this->globals,
 				$this->finish(...),
 				$errorStatus,
+				$this->dispatcher->getSessionInit(),
 			);
 
 			try {
@@ -250,6 +258,48 @@ class Application {
 		);
 	}
 
+	private function configureLoggerStreams():void {
+		if(self::$loggerStreamsConfigured) {
+			return;
+		}
+
+		$stderrMinLevel = $this->getStderrMinimumLogLevel();
+		$stderrMinLevelIndex = array_search($stderrMinLevel, LogLevel::ALL_LEVELS, true);
+		if($stderrMinLevelIndex === false) {
+			return;
+		}
+
+		if(!class_exists(StdErrHandler::class)) {
+			return;
+		}
+
+		try {
+			$addHandlerMethod = new ReflectionMethod(LogConfig::class, "addHandler");
+		}
+		catch(ReflectionException) {
+			return;
+		}
+
+		if($addHandlerMethod->getNumberOfParameters() < 3) {
+			return;
+		}
+
+		if($stderrMinLevelIndex > 0) {
+			$stdoutMaxLevel = LogLevel::ALL_LEVELS[$stderrMinLevelIndex - 1];
+			LogConfig::addHandler(
+				LogConfig::getDefaultHandler(),
+				LogLevel::DEBUG,
+				$stdoutMaxLevel,
+			);
+		}
+		LogConfig::addHandler(
+			new StdErrHandler(),
+			$stderrMinLevel,
+			LogLevel::EMERGENCY,
+		);
+		self::$loggerStreamsConfigured = true;
+	}
+
 	private function handleShutdown():void {
 		$error = error_get_last();
 		if(!$error) {
@@ -307,7 +357,35 @@ class Application {
 			return;
 		}
 
-		Log::error($throwable);
+		if(self::$loggerStreamsConfigured) {
+			Log::error((string)$throwable);
+			return;
+		}
+
+		$stderrMinLevel = $this->getStderrMinimumLogLevel();
+		$stderrMinLevelIndex = array_search($stderrMinLevel, LogLevel::ALL_LEVELS, true);
+		$errorLevelIndex = array_search(LogLevel::ERROR, LogLevel::ALL_LEVELS, true);
+		if($stderrMinLevelIndex === false || $errorLevelIndex === false || $stderrMinLevelIndex > $errorLevelIndex) {
+			Log::error((string)$throwable);
+			return;
+		}
+
+		$errorLine = (string)$throwable;
+		if(!str_ends_with($errorLine, PHP_EOL)) {
+			$errorLine .= PHP_EOL;
+		}
+		file_put_contents("php://stderr", $errorLine, FILE_APPEND);
+	}
+
+	private function getStderrMinimumLogLevel():string {
+		$configuredLevel = strtoupper(
+			$this->config->getString("logger.stderr_min_level") ?: LogLevel::ERROR
+		);
+		if(in_array($configuredLevel, LogLevel::ALL_LEVELS, true)) {
+			return $configuredLevel;
+		}
+
+		return LogLevel::ERROR;
 	}
 
 	/** @return array<string, string> */

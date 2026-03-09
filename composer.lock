@@ -1553,16 +1553,16 @@
         },
         {
             "name": "phpgt/logger",
-            "version": "v1.0.1",
+            "version": "v1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Logger.git",
-                "reference": "efa981ac32190ea5e432d7674afd0895e06d45e9"
+                "reference": "64676afa8c2f8ae27a81ba36a2cfc96795230d81"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Logger/zipball/efa981ac32190ea5e432d7674afd0895e06d45e9",
-                "reference": "efa981ac32190ea5e432d7674afd0895e06d45e9",
+                "url": "https://api.github.com/repos/phpgt/Logger/zipball/64676afa8c2f8ae27a81ba36a2cfc96795230d81",
+                "reference": "64676afa8c2f8ae27a81ba36a2cfc96795230d81",
                 "shasum": ""
             },
             "require": {
@@ -1591,7 +1591,7 @@
             "description": "PSR-3 logger and implementation.",
             "support": {
                 "issues": "https://github.com/phpgt/Logger/issues",
-                "source": "https://github.com/phpgt/Logger/tree/v1.0.1"
+                "source": "https://github.com/phpgt/Logger/tree/v1.1.0"
             },
             "funding": [
                 {
@@ -1599,7 +1599,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-10-30T11:45:41+00:00"
+            "time": "2026-03-09T17:36:44+00:00"
         },
         {
             "name": "phpgt/promise",
@@ -1822,16 +1822,16 @@
         },
         {
             "name": "phpgt/server",
-            "version": "v1.1.5",
+            "version": "v1.1.6",
             "source": {
                 "type": "git",
-                "url": "https://github.com/PhpGt/Server.git",
-                "reference": "6e959fcf874d3363ddbe708f25f907b42dcb17bc"
+                "url": "https://github.com/phpgt/Server.git",
+                "reference": "a9369ed4e6fac0ff2d51400d3217f199a08a9b6f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PhpGt/Server/zipball/6e959fcf874d3363ddbe708f25f907b42dcb17bc",
-                "reference": "6e959fcf874d3363ddbe708f25f907b42dcb17bc",
+                "url": "https://api.github.com/repos/phpgt/Server/zipball/a9369ed4e6fac0ff2d51400d3217f199a08a9b6f",
+                "reference": "a9369ed4e6fac0ff2d51400d3217f199a08a9b6f",
                 "shasum": ""
             },
             "require": {
@@ -1840,7 +1840,7 @@
             },
             "require-dev": {
                 "phpmd/phpmd": "^2.13",
-                "phpstan/phpstan": "v1.10",
+                "phpstan/phpstan": "^2.1",
                 "squizlabs/php_codesniffer": "^3.7"
             },
             "bin": [
@@ -1855,8 +1855,8 @@
             "notification-url": "https://packagist.org/downloads/",
             "description": "Development HTTP server.",
             "support": {
-                "issues": "https://github.com/PhpGt/Server/issues",
-                "source": "https://github.com/PhpGt/Server/tree/v1.1.5"
+                "issues": "https://github.com/phpgt/Server/issues",
+                "source": "https://github.com/phpgt/Server/tree/v1.1.6"
             },
             "funding": [
                 {
@@ -1864,7 +1864,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-05-09T15:21:06+00:00"
+            "time": "2026-03-09T18:18:44+00:00"
         },
         {
             "name": "phpgt/servicecontainer",

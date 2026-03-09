@@ -7,6 +7,9 @@
 	bootstrap="vendor/autoload.php"
 	displayDetailsOnTestsThatTriggerDeprecations="true"
 	displayDetailsOnTestsThatTriggerWarnings="true"
+	displayDetailsOnTestsThatTriggerNotices="true"
+	displayDetailsOnPhpunitNotices="true"
+	displayDetailsOnPhpunitDeprecations="true"
 >
 	<coverage />
 

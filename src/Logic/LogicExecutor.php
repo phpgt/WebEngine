@@ -105,11 +105,23 @@ class LogicExecutor {
 	}
 
 	private function fileHasNamespace(string $file):bool {
+		if(!is_file($file)) {
+			return false;
+		}
+
 		$fh = fopen($file, "r");
+		if($fh === false) {
+			return false;
+		}
+
 		$maxLines = 50;
 		$read = "";
 		for($i = 0; $i < $maxLines && !feof($fh); $i++) {
-			$read .= fgets($fh);
+			$line = fgets($fh);
+			if($line === false) {
+				break;
+			}
+			$read .= $line;
 		}
 		fclose($fh);
 		return (bool)preg_match('/^\s*namespace\s+[^;]+;/m', $read);

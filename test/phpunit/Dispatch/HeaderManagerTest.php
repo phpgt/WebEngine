@@ -2,7 +2,7 @@
 namespace GT\WebEngine\Test\Dispatch;
 
 use Gt\Http\Header\ResponseHeaders;
-use GT\WebEngine\Dispatch\HeaderManager;
+use Gt\WebEngine\Dispatch\HeaderManager;
 use PHPUnit\Framework\TestCase;
 
 class HeaderManagerTest extends TestCase {

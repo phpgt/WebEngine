@@ -61,7 +61,7 @@ class Dispatcher {
 	private HTMLDocument/*|NullViewModel*/ $viewModel;
 	private ViewModelProcessor $viewModelProcessor;
 	private BaseRouter $router;
-	private SessionInit $sessionInit;
+	private ?SessionInit $sessionInit = null;
 	private Assembly $logicAssembly;
 	private Assembly $viewAssembly;
 	private LogicExecutor $logicExecutor;
@@ -69,6 +69,7 @@ class Dispatcher {
 
 	private HeaderManager $headerManager;
 	private Closure $viewModelInitCallback;
+	private bool $redirectPrepared = false;
 
 	/**
 	 * @param array<string, array<string, string|array<string, string>>> $globals
@@ -138,6 +139,10 @@ class Dispatcher {
 		$this->input = $requestInit->getInput();
 		$this->serviceContainer->set($this->input);
 		$this->serviceContainer->set($requestInit->getServerInfo());
+		if($this->isRedirectPrepared()) {
+			$this->redirectPrepared = true;
+			return;
+		}
 
 		$routerInit = $routerInit ?? new RouterInit(
 			$this->request,
@@ -202,6 +207,10 @@ class Dispatcher {
 	}
 
 	public function generateResponse():Response {
+		if($this->redirectPrepared) {
+			return $this->response;
+		}
+
 // The routing is now complete and all services are properly configured. This
 // function's responsibility is to execute the logic that builds the response.
 // Since this involves running user code that may throw errors, we execute each
@@ -419,8 +428,17 @@ class Dispatcher {
 		$this->viewStreamer->stream($this->view, $this->viewModel);
 	}
 
-	public function getSessionInit():SessionInit {
+	public function getSessionInit():?SessionInit {
 		return $this->sessionInit;
+	}
+
+	private function isRedirectPrepared():bool {
+		$status = $this->response->getStatusCode();
+		if($status < 300 || $status >= 400) {
+			return false;
+		}
+
+		return $this->response->hasHeader("Location");
 	}
 
 	private function bindErrorDetails(Throwable $throwable):void {

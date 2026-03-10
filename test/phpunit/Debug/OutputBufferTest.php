@@ -64,7 +64,7 @@ class OutputBufferTest extends TestCase {
 		$sut = new OutputBuffer(true, function(){}, function(){ return ''; });
 		$ref = new \ReflectionClass($sut);
 		$m = $ref->getMethod('fillBuffer');
-		$m->setAccessible(true);
+//		$m->setAccessible(true);
 		$ret1 = $m->invoke($sut, 'A');
 		$ret2 = $m->invoke($sut, 'B');
 		self::assertSame('A', $ret1);

@@ -10,27 +10,27 @@ use Gt\Routing\Assembly;
 use Gt\Routing\BaseRouter;
 use Gt\ServiceContainer\Container;
 use GT\WebEngine\Init\RouterInit;
-use GT\WebEngine\Dispatch\RouterFactory;
+use Gt\WebEngine\Dispatch\RouterFactory;
 use GT\WebEngine\View\HTMLView;
 use GT\WebEngine\View\NullView;
 use PHPUnit\Framework\TestCase;
 
 class RouterInitTest extends TestCase {
 	public function testConstruct_usesRouterFactoryAndBuildsViewAndAssemblies():void {
-		$request = self::createMock(Request::class);
-		$request->method('getUri')->willReturn(new Uri('https://example.test/one'));
-		$response = self::createMock(Response::class);
+			$request = self::createStub(Request::class);
+			$request->method('getUri')->willReturn(new Uri('https://example.test/one'));
+			$response = self::createStub(Response::class);
 		$stream = new Stream();
 		$response->method('getBody')->willReturn($stream);
 		$container = new Container();
 
 		$viewFile = "/tmp/phpgt-webengine-test--view-file-" . uniqid();
 		touch($viewFile);
-		$viewAssembly = self::createMock(Assembly::class);
+			$viewAssembly = self::createStub(Assembly::class);
 		$viewAssembly->method("valid")
 			->willReturnOnConsecutiveCalls(true, false);
 		$viewAssembly->method("current")->willReturn($viewFile);
-		$logicAssembly = self::createMock(Assembly::class);
+			$logicAssembly = self::createStub(Assembly::class);
 
 		$baseRouter = self::createMock(BaseRouter::class);
 		$baseRouter->expects(self::once())->method('route')->with($request);
@@ -78,21 +78,21 @@ class RouterInitTest extends TestCase {
 	}
 
 	public function testConstruct_legacyGtViewClassIsUsedDirectly():void {
-		$request = self::createMock(Request::class);
-		$request->method('getUri')->willReturn(new Uri('https://example.test/'));
-		$response = self::createMock(Response::class);
+			$request = self::createStub(Request::class);
+			$request->method('getUri')->willReturn(new Uri('https://example.test/'));
+			$response = self::createStub(Response::class);
 		$response->method('getBody')->willReturn(new Stream());
 		$container = new Container();
 
-		$viewAssembly = self::createMock(Assembly::class);
-		$logicAssembly = self::createMock(Assembly::class);
+			$viewAssembly = self::createStub(Assembly::class);
+			$logicAssembly = self::createStub(Assembly::class);
 
-		$baseRouter = self::createMock(BaseRouter::class);
+			$baseRouter = self::createStub(BaseRouter::class);
 		$baseRouter->method("getViewClass")->willReturn(HTMLView::class);
 		$baseRouter->method("getViewAssembly")->willReturn($viewAssembly);
 		$baseRouter->method("getLogicAssembly")->willReturn($logicAssembly);
 
-		$routerFactory = self::createMock(RouterFactory::class);
+			$routerFactory = self::createStub(RouterFactory::class);
 		$routerFactory->method('create')->willReturn($baseRouter);
 
 		$sut = new RouterInit(

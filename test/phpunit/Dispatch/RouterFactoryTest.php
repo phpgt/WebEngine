@@ -1,7 +1,7 @@
 <?php
 namespace GT\WebEngine\Test\Dispatch;
 
-use GT\WebEngine\Dispatch\RouterFactory;
+use Gt\WebEngine\Dispatch\RouterFactory;
 use Gt\Routing\BaseRouter;
 use Gt\Routing\RouterConfig;
 use Gt\ServiceContainer\Container;

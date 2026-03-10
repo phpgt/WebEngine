@@ -14,10 +14,10 @@ class ViewModelInitTest extends TestCase {
 		$listBinder = self::createMock(\Gt\DomTemplate\ListBinder::class);
 		$tableBinder = self::createMock(\Gt\DomTemplate\TableBinder::class);
 		$elementBinder = self::createMock(\Gt\DomTemplate\ElementBinder::class);
-		$placeholderBinder = self::createMock(\Gt\DomTemplate\PlaceholderBinder::class);
-		$htmlAttributeCollection = self::createMock(\Gt\DomTemplate\HTMLAttributeCollection::class);
-		$listElementCollection = self::createMock(\Gt\DomTemplate\ListElementCollection::class);
-		$bindableCache = self::createMock(\Gt\DomTemplate\BindableCache::class);
+			$placeholderBinder = self::createStub(\Gt\DomTemplate\PlaceholderBinder::class);
+			$htmlAttributeCollection = self::createStub(\Gt\DomTemplate\HTMLAttributeCollection::class);
+			$listElementCollection = self::createStub(\Gt\DomTemplate\ListElementCollection::class);
+			$bindableCache = self::createStub(\Gt\DomTemplate\BindableCache::class);
 
 		$htmlAttributeBinder->expects(self::once())
 			->method('setDependencies')

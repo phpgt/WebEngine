@@ -4,6 +4,7 @@ namespace GT\WebEngine\Dispatch;
 use Closure;
 use Gt\Config\Config;
 use Gt\Http\Request;
+use GT\WebEngine\Init\SessionInit;
 
 class DispatcherFactory {
 	/**
@@ -15,6 +16,7 @@ class DispatcherFactory {
 		array $globals,
 		Closure $finishCallback,
 		?int $errorStatus = null,
+		?SessionInit $sessionInit = null,
 	):Dispatcher {
 		return new Dispatcher(
 			$config,
@@ -22,6 +24,7 @@ class DispatcherFactory {
 			$globals,
 			$finishCallback,
 			$errorStatus,
+			sessionInit: $sessionInit,
 		);
 	}
 }

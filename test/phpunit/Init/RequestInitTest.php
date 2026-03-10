@@ -6,14 +6,14 @@ use Gt\Http\ServerInfo;
 use Gt\Http\Uri;
 use Gt\Input\Input;
 use GT\WebEngine\Init\RequestInit;
-use GT\WebEngine\Dispatch\PathNormaliser;
+use Gt\WebEngine\Dispatch\PathNormaliser;
 use PHPUnit\Framework\TestCase;
 
 class RequestInitTest extends TestCase {
 	public function testConstructor_normalisesPath_andBuildsInputAndServerInfo():void {
 		$pathNormaliser = self::createMock(PathNormaliser::class);
 
-		$uri = self::createMock(Uri::class);
+			$uri = self::createStub(Uri::class);
 		$uri->method("getPath")
 			->willReturn("https://example.test/section");
 

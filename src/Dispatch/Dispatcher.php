@@ -8,7 +8,6 @@ use GT\Dom\HTMLDocument;
 use GT\DomTemplate\BindableCache;
 use Gt\DomTemplate\Binder;
 use GT\DomTemplate\ComponentBinder;
-use Gt\DomTemplate\DocumentBinder;
 use GT\DomTemplate\ElementBinder;
 use GT\DomTemplate\HTMLAttributeBinder;
 use GT\DomTemplate\HTMLAttributeCollection;
@@ -16,7 +15,6 @@ use GT\DomTemplate\ListBinder;
 use GT\DomTemplate\ListElementCollection;
 use GT\DomTemplate\PlaceholderBinder;
 use GT\DomTemplate\TableBinder;
-use GT\Http\Header\ResponseHeaders;
 use Gt\Http\Request;
 use Gt\Http\Response;
 use Gt\Http\ResponseStatusException\ClientError\HttpNotFound;
@@ -63,6 +61,7 @@ class Dispatcher {
 	private HTMLDocument/*|NullViewModel*/ $viewModel;
 	private ViewModelProcessor $viewModelProcessor;
 	private BaseRouter $router;
+	private ?SessionInit $sessionInit = null;
 	private Assembly $logicAssembly;
 	private Assembly $viewAssembly;
 	private LogicExecutor $logicExecutor;
@@ -70,6 +69,7 @@ class Dispatcher {
 
 	private HeaderManager $headerManager;
 	private Closure $viewModelInitCallback;
+	private bool $redirectPrepared = false;
 
 	/**
 	 * @param array<string, array<string, string|array<string, string>>> $globals
@@ -139,6 +139,10 @@ class Dispatcher {
 		$this->input = $requestInit->getInput();
 		$this->serviceContainer->set($this->input);
 		$this->serviceContainer->set($requestInit->getServerInfo());
+		if($this->isRedirectPrepared()) {
+			$this->redirectPrepared = true;
+			return;
+		}
 
 		$routerInit = $routerInit ?? new RouterInit(
 			$this->request,
@@ -173,6 +177,7 @@ class Dispatcher {
 			$this->config->getBool("session.use_cookies") ?? false,
 			$this->globals["_COOKIE"],
 		);
+		$this->sessionInit = $sessionInit;
 		$this->serviceContainer->set($sessionInit->getSession());
 
 		$viewModelInit = $viewModelInit ?? new ViewModelInit(
@@ -202,6 +207,10 @@ class Dispatcher {
 	}
 
 	public function generateResponse():Response {
+		if($this->redirectPrepared) {
+			return $this->response;
+		}
+
 // The routing is now complete and all services are properly configured. This
 // function's responsibility is to execute the logic that builds the response.
 // Since this involves running user code that may throw errors, we execute each
@@ -228,19 +237,12 @@ class Dispatcher {
 			$errorStatusCode = $throwable->getHttpCode();
 		}
 
-// TODO: Why can't I load the Binder here?
-//		if($this->viewModel instanceof HTMLDocument) {
-//			$binder = $this->serviceContainer->get(DocumentBinder::class);
-//			$binder->bindValue($throwable->getMessage());
-//		}
-
-		$this->response = $this->response->withStatus($errorStatusCode);
-
 		if(!$this->viewAssembly->containsDistinctFile()) {
 			throw new ErrorPageNotFoundException($errorStatusCode);
 		}
 
-		$this->processResponse(true);
+		$this->processResponse(true, $throwable);
+		$this->response = $this->response->withStatus($errorStatusCode);
 		return $this->response;
 	}
 
@@ -361,7 +363,10 @@ class Dispatcher {
 	/**
 	 * @return void
 	 */
-	public function processResponse(bool $processingError = false):void {
+	public function processResponse(
+		bool $processingError = false,
+		?Throwable $errorThrowable = null,
+	):void {
 		$dynamicPath = $this->serviceContainer->get(DynamicPath::class);
 
 		$this->viewModelProcessor->processDynamicPath(
@@ -375,6 +380,9 @@ class Dispatcher {
 
 // TODO: CSRF handling - needs to be done on any POST request.
 		($this->viewModelInitCallback)();
+		if($processingError && $errorThrowable) {
+			$this->bindErrorDetails($errorThrowable);
+		}
 
 		foreach($logicAssemblyComponentList as $logicAssemblyComponent) {
 			$assembly = $logicAssemblyComponent->assembly;
@@ -418,5 +426,65 @@ class Dispatcher {
 		$documentBinder->cleanupDocument();
 
 		$this->viewStreamer->stream($this->view, $this->viewModel);
+	}
+
+	public function getSessionInit():?SessionInit {
+		return $this->sessionInit;
+	}
+
+	private function isRedirectPrepared():bool {
+		$status = $this->response->getStatusCode();
+		if($status < 300 || $status >= 400) {
+			return false;
+		}
+
+		return $this->response->hasHeader("Location");
+	}
+
+	private function bindErrorDetails(Throwable $throwable):void {
+		$trace = $throwable->getTrace();
+		array_unshift($trace, [
+			"file" => $throwable->getFile(),
+			"line" => $throwable->getLine(),
+			"class" => get_class($throwable) . "(\"" . $throwable->getMessage() . "\")",
+		]);
+		foreach($trace as $i => $traceItem) {
+			if(isset($traceItem["file"])) {
+				$cwd = getcwd() . DIRECTORY_SEPARATOR;
+				if(str_starts_with($traceItem["file"], $cwd)) {
+					$trace[$i]["file"] = substr($traceItem["file"], strlen($cwd));
+				}
+			}
+
+			if(isset($traceItem["file"]) && str_starts_with($traceItem["file"], "gt-logic-stream://")) {
+				$trace = array_slice($trace, 0, $i + 1);
+				break;
+			}
+		}
+
+		$binder = $this->serviceContainer->get(Binder::class);
+		$binder->bindValue($throwable->getMessage());
+		if(!$this->config->getBool("app.production")) {
+			$traceString = "";
+			foreach($trace as $i => $traceItem) {
+				$traceString .= "#$i ";
+				if(isset($traceItem["class"])) {
+					$traceString .= $traceItem["class"];
+					if(isset($traceItem["function"])) {
+						$traceString .= "::";
+						$traceString .= $traceItem["function"];
+					}
+					$traceString .= " -> ";
+				}
+				if(isset($traceItem["file"])) {
+					$traceString .= $traceItem["file"];
+				}
+				if(isset($traceItem["line"])) {
+					$traceString .= "(" . $traceItem["line"] . ")";
+				}
+				$traceString .= "\n";
+			}
+			$binder->bindKeyValue("trace", $traceString);
+		}
 	}
 }

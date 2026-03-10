@@ -1,12 +1,10 @@
 <?php
 namespace GT\WebEngine\Test;
 
-use Gt\Http\Request;
 use Gt\Http\RequestFactory;
 use Gt\Http\Response;
 use Gt\Http\ServerRequest;
 use Gt\Http\Uri;
-use Gt\Logger\Log;
 use Gt\ProtectedGlobal\Protection;
 use GT\WebEngine\Application;
 use GT\WebEngine\Debug\OutputBuffer;
@@ -22,28 +20,29 @@ class ApplicationTest extends TestCase {
 		$redirect->expects(self::once())
 			->method("execute");
 
-		$globalProtection = self::createMock(Protection::class);
-		$serverRequest = self::createMock(ServerRequest::class);
-		$serverRequest->method("getUri")
-			->willReturn(self::createMock(Uri::class));
-		$serverRequest->method("getHeaderLine")
-			->with("accept")
-			->willReturn("*/*");
+			$globalProtection = self::createStub(Protection::class);
+			$serverRequest = self::createStub(ServerRequest::class);
+			$serverRequest->method("getUri")
+				->willReturn(self::createStub(Uri::class));
+			$serverRequest->method("getHeaderLine")
+				->willReturnCallback(
+					fn(string $name):string => strtolower($name) === "accept" ? "*/*" : ""
+				);
 		$serverRequest->method("getMethod")
 			->willReturn("GET");
-		$requestFactory = self::createMock(RequestFactory::class);
-		$requestFactory->method("createServerRequestFromGlobalState")
-			->willReturn($serverRequest);
-		$dispatcher = self::createMock(Dispatcher::class);
+			$requestFactory = self::createStub(RequestFactory::class);
+			$requestFactory->method("createServerRequestFromGlobalState")
+				->willReturn($serverRequest);
+			$dispatcher = self::createStub(Dispatcher::class);
 
-		$response = self::createMock(Response::class);
+			$response = self::createStub(Response::class);
 		$response->method('getStatusCode')->willReturn(200);
 		$response->method('getHeaders')->willReturn(['Content-Type' => ['text/html']]);
 		$response->method('getBody')->willReturn(new \Gt\Http\Stream());
 		$dispatcher->method('generateResponse')->willReturn($response);
 
-		$dispatcherFactory = self::createMock(DispatcherFactory::class);
-		$dispatcherFactory->method('create')->willReturn($dispatcher);
+			$dispatcherFactory = self::createStub(DispatcherFactory::class);
+			$dispatcherFactory->method('create')->willReturn($dispatcher);
 
 		// Avoid warnings by ensuring server params contain REMOTE_ADDR
 		$serverRequest->method('getServerParams')->willReturn(['REMOTE_ADDR' => '127.0.0.1']);
@@ -66,20 +65,23 @@ class ApplicationTest extends TestCase {
 		$timer->expects(self::once())
 			->method("logDelta");
 
-		$dispatcher = self::createMock(Dispatcher::class);
-		$response = self::createMock(Response::class);
+			$dispatcher = self::createStub(Dispatcher::class);
+			$response = self::createStub(Response::class);
 		$response->method('getStatusCode')->willReturn(200);
 		$response->method('getHeaders')->willReturn(['Content-Type' => ['text/html']]);
 		$response->method('getBody')->willReturn(new \Gt\Http\Stream());
 		$dispatcher->method('generateResponse')->willReturn($response);
-		$dispatcherFactory = self::createMock(DispatcherFactory::class);
-		$dispatcherFactory->method('create')->willReturn($dispatcher);
+			$dispatcherFactory = self::createStub(DispatcherFactory::class);
+			$dispatcherFactory->method('create')->willReturn($dispatcher);
 
-		$requestFactory = self::createMock(RequestFactory::class);
-		$serverRequest = self::createMock(ServerRequest::class);
-		$serverRequest->method('getServerParams')->willReturn(['REMOTE_ADDR' => '127.0.0.1']);
-		$serverRequest->method('getUri')->willReturn(self::createMock(Uri::class));
-		$serverRequest->method('getHeaderLine')->with('accept')->willReturn('*/*');
+			$requestFactory = self::createStub(RequestFactory::class);
+			$serverRequest = self::createStub(ServerRequest::class);
+			$serverRequest->method('getServerParams')->willReturn(['REMOTE_ADDR' => '127.0.0.1']);
+				$serverRequest->method('getUri')->willReturn(self::createStub(Uri::class));
+			$serverRequest->method('getHeaderLine')
+				->willReturnCallback(
+					fn(string $name):string => strtolower($name) === "accept" ? "*/*" : ""
+				);
 		$serverRequest->method('getMethod')->willReturn('GET');
 		$requestFactory->method('createServerRequestFromGlobalState')->willReturn($serverRequest);
 

@@ -2,17 +2,17 @@
 namespace GT\WebEngine;
 
 use Gt\Http\Request;
-use Gt\Routing\BaseRouter;
-use Gt\Routing\Method\Any;
-use Gt\Routing\Method\Get;
-use Gt\Routing\Method\Post;
-use Gt\Routing\Path\FileMatch\BasicFileMatch;
-use Gt\Routing\Path\FileMatch\MagicFileMatch;
-use Gt\Routing\Path\PathMatcher;
-use Gt\Routing\Path\DynamicPath;
-use Gt\WebEngine\View\BaseView;
-use Gt\WebEngine\View\HTMLView;
-use Gt\WebEngine\View\NullView;
+use GT\Routing\BaseRouter;
+use GT\Routing\Method\Any;
+use GT\Routing\Method\Get;
+use GT\Routing\Method\Post;
+use GT\Routing\Path\FileMatch\BasicFileMatch;
+use GT\Routing\Path\FileMatch\MagicFileMatch;
+use GT\Routing\Path\PathMatcher;
+use GT\Routing\Path\DynamicPath;
+use GT\WebEngine\View\BaseView;
+use GT\WebEngine\View\HTMLView;
+use GT\WebEngine\View\NullView;
 
 class DefaultRouter extends BaseRouter {
 	#[Any(name: "page-route", accept: "text/html,application/xhtml+xml")]

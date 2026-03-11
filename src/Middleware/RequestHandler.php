@@ -293,7 +293,8 @@ class RequestHandler implements RequestHandlerInterface {
 	protected function handleSession():void {
 		$sessionConfig = $this->config->getSection("session");
 		$sessionId = $_COOKIE[$sessionConfig["name"]] ?? null;
-		$sessionHandler = SessionSetup::attachHandler(
+		$sessionSetup = new SessionSetup();
+		$sessionHandler = $sessionSetup->attachHandler(
 			$sessionConfig->getString("handler")
 		);
 

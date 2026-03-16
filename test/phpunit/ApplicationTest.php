@@ -14,6 +14,8 @@ use GT\WebEngine\Debug\Timer;
 use GT\WebEngine\Dispatch\Dispatcher;
 use GT\WebEngine\Dispatch\DispatcherFactory;
 use GT\WebEngine\Redirection\Redirect;
+use PHPUnit\Framework\MockObject\Invocation;
+use PHPUnit\Framework\MockObject\InvocationHandler;
 use PHPUnit\Framework\TestCase;
 
 class ApplicationTest extends TestCase {
@@ -246,7 +248,18 @@ class ApplicationTest extends TestCase {
 		$map = array_merge($map, $mockedValues);
 
 		$config->method(self::anything())->willReturnCallback(function ($key) use ($map) {
-			return $map[$key];
+			$type = null;
+			$bt = debug_backtrace();
+			if(isset($bt[1]) && ($bt[1]["args"][0] ?? null) instanceof Invocation) {
+				$type = strtolower(substr($bt[1]["args"][0]->methodName(), 3));
+			}
+
+			return match($type) {
+				"bool" => (bool)$map[$key],
+				"int" => (int)$map[$key],
+				"float" => (float)$map[$key],
+				default => $map[$key],
+			};
 		});
 
 		return $config;

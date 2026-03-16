@@ -1,6 +1,7 @@
 <?php
 namespace GT\WebEngine\Test;
 
+use Exception;
 use Gt\Config\Config;
 use Gt\Config\ConfigFactory;
 use Gt\Http\RequestFactory;
@@ -214,9 +215,12 @@ class ApplicationTest extends TestCase {
 
 
 		$php = <<<PHP
-			echo "exception message is " . $throwable->getMessage();
+			echo "exception message is " . \$throwable->getMessage();
 			PHP;
 
+		$stream = fopen('php://memory', 'r+');
+		fwrite($stream, $php);
+		rewind($stream);
 
 		$sut = new Application(
 			config: $config,
@@ -225,11 +229,14 @@ class ApplicationTest extends TestCase {
 
 		$dispatcher->expects(self::once())
 			->method("generateResponse")
-			->willThrowException(new \Exception("testing"));
+			->willThrowException(new Exception("testing"));
 
-
-
+		ob_start();
 		$sut->start();
+		self::assertTrue(false);
+		$output = ob_get_clean();
+
+		self::assertStringContainsString('exception message is testing', $output);
 	}
 
 	private function createTestConfig(array $mockedValues):Config {

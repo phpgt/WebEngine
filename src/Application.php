@@ -94,7 +94,7 @@ class Application {
 // Before we start, we check if the current URI should be redirected. If it
 // should, we won't go any further into the lifecycle.
 		$this->redirect->execute();
-		
+
 // The first thing done within the WebEngine lifecycle is start a timer.
 // This timer is only used again at the end of the call, when finish() is
 // called - at which point the entire duration of the request is logged out (and
@@ -149,7 +149,7 @@ class Application {
 			if ($errorScript = $this->config->getString('app.error_script')) {
 				$this->restoreGlobals();
 				require($errorScript);
-				exit;
+				return;
 			}
 
 			$this->logError($throwable);

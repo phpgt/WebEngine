@@ -1,6 +1,8 @@
 <?php
 namespace GT\WebEngine\Test;
 
+use Gt\Config\Config;
+use Gt\Config\ConfigFactory;
 use Gt\Http\RequestFactory;
 use Gt\Http\Response;
 use Gt\Http\ServerRequest;
@@ -194,5 +196,59 @@ class ApplicationTest extends TestCase {
 		);
 		$sut->start();
 		self::addToAssertionCount(1);
+	}
+
+	public function testStart_callErrorScriptOnThrowable():void {
+		$config = $this->createTestConfig([
+			"app.error_script" => "php://memory"
+		]);
+
+		$dispatcher = self::createMock(Dispatcher::class);
+
+		$dispatcherFactory = self::createMock(DispatcherFactory::class);
+		$dispatcherFactory->expects(self::once())
+			->method("create")
+			->willReturn($dispatcher);
+
+
+		$php = <<<PHP
+			echo "exception message is " . $throwable->getMessage();
+			PHP;
+
+
+		$sut = new Application(
+			config: $config,
+			dispatcherFactory: $dispatcherFactory,
+		);
+
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willThrowException(new \Exception("testing"));
+
+
+
+		$sut->start();
+	}
+
+	private function createTestConfig(array $mockedValues):Config {
+		$config = self::createMock(Config::class);
+
+		$configFile = "config.default.ini";
+		$configContents = parse_ini_file($configFile, true);
+
+		$map = [];
+		foreach ($configContents as $section => $kvp) {
+			foreach ($kvp as $key => $value) {
+				$map["$section.$key"] = $value;
+			}
+		}
+
+		$map = array_merge($map, $mockedValues);
+
+		$config->method(self::anything())->willReturnCallback(function ($key) use ($map) {
+			return $map[$key];
+		});
+
+		return $config;
 	}
 }

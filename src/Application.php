@@ -146,6 +146,12 @@ class Application {
 			$response = $this->dispatcher->generateResponse();
 		}
 		catch(Throwable $throwable) {
+			if ($errorScript = $this->config->getString('app.error_script')) {
+				$this->restoreGlobals();
+				require($errorScript);
+				exit;
+			}
+
 			$this->logError($throwable);
 			$errorStatus = 500;
 
@@ -248,6 +254,23 @@ class Application {
 				"_COOKIE" => explode(",", $this->config->getString("app.globals_whitelist_cookies") ?? ""),
 			])
 		);
+	}
+
+	public function restoreGlobals(): void {
+		foreach ($this->globals as $key => $value) {
+			$GLOBALS[$key] = $value;
+
+			if (in_array($key, [
+				"_GET",
+				"_POST",
+				"_SERVER",
+				"_COOKIE",
+				"_FILES",
+				"_ENV"
+			])) {
+				$GLOBALS[substr($key, 1)] = $value;
+			}
+		}
 	}
 
 	private function loadConfig():Config {

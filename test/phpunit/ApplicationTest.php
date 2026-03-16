@@ -202,8 +202,16 @@ class ApplicationTest extends TestCase {
 	}
 
 	public function testStart_callErrorScriptOnThrowable():void {
+		$php = <<<PHP
+		<?php
+		echo "exception message is " . \$throwable->getMessage();
+		PHP;
+
+		$tmpFile = tempnam(sys_get_temp_dir(), "webengine-test-");
+		file_put_contents($tmpFile, $php);
+
 		$config = $this->createTestConfig([
-			"app.error_script" => "php://memory"
+			"app.error_script" => $tmpFile,
 		]);
 
 		$dispatcher = self::createMock(Dispatcher::class);
@@ -212,15 +220,6 @@ class ApplicationTest extends TestCase {
 		$dispatcherFactory->expects(self::once())
 			->method("create")
 			->willReturn($dispatcher);
-
-
-		$php = <<<PHP
-			echo "exception message is " . \$throwable->getMessage();
-			PHP;
-
-		$stream = fopen('php://memory', 'r+');
-		fwrite($stream, $php);
-		rewind($stream);
 
 		$sut = new Application(
 			config: $config,
@@ -233,10 +232,10 @@ class ApplicationTest extends TestCase {
 
 		ob_start();
 		$sut->start();
-		self::assertTrue(false);
 		$output = ob_get_clean();
+		ob_end_clean();
 
-		self::assertStringContainsString('exception message is testing', $output);
+		self::assertStringContainsString("exception message is testing", $output);
 	}
 
 	private function createTestConfig(array $mockedValues):Config {

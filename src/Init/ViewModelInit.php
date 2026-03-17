@@ -14,6 +14,7 @@ use Gt\DomTemplate\ListBinder;
 use Gt\DomTemplate\ListElementCollection;
 use Gt\DomTemplate\PlaceholderBinder;
 use Gt\DomTemplate\TableBinder;
+use Gt\Json\Schema\JsonDocument;
 use GT\WebEngine\Logic\HTMLDocumentProcessor;
 use GT\WebEngine\Logic\ViewModelProcessor;
 
@@ -22,7 +23,7 @@ class ViewModelInit {
 	private bool $initialised = false;
 
 	public function __construct(
-		HTMLDocument $model,
+		HTMLDocument|JsonDocument $model,
 		string $componentDirectory,
 		string $partialDirectory,
 	) {
@@ -32,9 +33,7 @@ class ViewModelInit {
 				$partialDirectory,
 			);
 		}
-		else {
 // TODO: Handle other view model types.
-		}
 	}
 
 	public function initHTMLDocument(
@@ -44,8 +43,8 @@ class ViewModelInit {
 		TableBinder $tableBinder,
 		ElementBinder $elementBinder,
 		PlaceholderBinder $placeholderBinder,
-		HTMLAttributeCollection $htmlAttributeCollection,
-		ListElementCollection $listElementCollection,
+		HTMLAttributeCollection $attrCollection,
+		ListElementCollection $elementCollection,
 		BindableCache $bindableCache,
 	):void {
 		if($this->initialised) {
@@ -60,20 +59,20 @@ class ViewModelInit {
 		);
 		$elementBinder->setDependencies(
 			$htmlAttributeBinder,
-			$htmlAttributeCollection,
+			$attrCollection,
 			$placeholderBinder,
 		);
 		$tableBinder->setDependencies(
 			$listBinder,
-			$listElementCollection,
+			$elementCollection,
 			$elementBinder,
 			$htmlAttributeBinder,
-			$htmlAttributeCollection,
+			$attrCollection,
 			$placeholderBinder,
 		);
 		$listBinder->setDependencies(
 			$elementBinder,
-			$listElementCollection,
+			$elementCollection,
 			$bindableCache,
 			$tableBinder,
 		);
@@ -82,12 +81,12 @@ class ViewModelInit {
 			$placeholderBinder,
 			$tableBinder,
 			$listBinder,
-			$listElementCollection,
+			$elementCollection,
 			$bindableCache,
 		);
 	}
 
-	public function getViewModelProcessor():ViewModelProcessor {
-		return $this->viewModelProcessor;
+	public function getViewModelProcessor():?ViewModelProcessor {
+		return $this->viewModelProcessor ?? null;
 	}
 }

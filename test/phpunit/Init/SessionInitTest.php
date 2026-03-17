@@ -8,7 +8,6 @@ use GT\WebEngine\Init\SessionInit;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\TestCase;
 
-#[RunTestsInSeparateProcesses]
 class SessionInitTest extends TestCase {
 	private string $tmpDir;
 	private array $originalCookie;

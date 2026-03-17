@@ -2,6 +2,7 @@
 namespace GT\WebEngine\Redirection;
 
 use Closure;
+use GT\WebEngine\Redirection\RedirectMap;
 
 /**
  * Redirection: file-driven HTTP redirects for WebEngine
@@ -36,7 +37,7 @@ class Redirect {
 			fn(string $uri, int $code)
 			=> header("Location: $uri", true, $code);
 
-		$this->map = new \GT\WebEngine\Redirection\RedirectMap();
+		$this->map = new RedirectMap();
 		if($this->redirectFile) {
 			$extension = strtolower(pathinfo($this->redirectFile, PATHINFO_EXTENSION));
 			$loader = $this->createLoader($extension);

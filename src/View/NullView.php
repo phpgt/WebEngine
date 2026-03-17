@@ -6,8 +6,8 @@ namespace GT\WebEngine\View;
  * for it until the structured object document feature is planned out properly.
  */
 class NullView extends BaseView {
-	public function createViewModel():mixed {
+	public function createViewModel():null {
 		// TODO: Implement createViewModel() method.
-		return "";
+		return null;
 	}
 }

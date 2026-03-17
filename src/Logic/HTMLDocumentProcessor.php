@@ -31,7 +31,7 @@ class HTMLDocumentProcessor extends ViewModelProcessor {
 	function processPartialContent(
 		HTMLDocument $model,
 	):LogicAssemblyComponentList {
-		$logicAssemblyComponentList = new LogicAssemblyComponentList();
+		$componentList = new LogicAssemblyComponentList();
 
 		try {
 // TODO: Handle other model types in sub-functions.
@@ -57,7 +57,7 @@ class HTMLDocumentProcessor extends ViewModelProcessor {
 
 				$componentAssembly = new Assembly();
 				$componentAssembly->add($filePath);
-				$logicAssemblyComponentList->addAssemblyComponent(
+				$componentList->addAssemblyComponent(
 					$componentAssembly,
 					$componentElement,
 				);
@@ -79,6 +79,6 @@ class HTMLDocumentProcessor extends ViewModelProcessor {
 		}
 		catch(PartialContentDirectoryNotFoundException) {}
 
-		return $logicAssemblyComponentList;
+		return $componentList;
 	}
 }

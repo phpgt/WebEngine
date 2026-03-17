@@ -15,7 +15,12 @@ class LogicExecutor {
 	) {
 	}
 
-	/** @return Generator<string> filename::function() */
+	/**
+	 * @param array<string, mixed> $extraArgs
+	 * @return Generator<string> filename::function()
+	 */
+	// phpcs:disable Generic.Metrics.CyclomaticComplexity.TooHigh
+	// phpcs:disable Generic.Metrics.NestingLevel.TooHigh
 	public function invoke(Assembly $logicAssembly, string $name, array $extraArgs = []):Generator {
 		foreach($logicAssembly as $file) {
 			$this->loadLogicFile($file);
@@ -88,6 +93,8 @@ class LogicExecutor {
 			}
 		}
 	}
+	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
+	// phpcs:enable Generic.Metrics.NestingLevel.TooHigh
 
 	private function loadLogicFile(string $file):void {
 		// If the target file already declares a namespace, load it directly.
@@ -109,21 +116,25 @@ class LogicExecutor {
 			return false;
 		}
 
-		$fh = fopen($file, "r");
-		if($fh === false) {
+		$fileHandle = fopen($file, "r");
+		if($fileHandle === false) {
 			return false;
 		}
 
 		$maxLines = 50;
 		$read = "";
-		for($i = 0; $i < $maxLines && !feof($fh); $i++) {
-			$line = fgets($fh);
+		for($i = 0; $i < $maxLines; $i++) {
+			if(feof($fileHandle)) {
+				break;
+			}
+
+			$line = fgets($fileHandle);
 			if($line === false) {
 				break;
 			}
 			$read .= $line;
 		}
-		fclose($fh);
+		fclose($fileHandle);
 		return (bool)preg_match('/^\s*namespace\s+[^;]+;/m', $read);
 	}
 

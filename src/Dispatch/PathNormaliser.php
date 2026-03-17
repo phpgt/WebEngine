@@ -2,11 +2,11 @@
 namespace GT\WebEngine\Dispatch;
 
 use Closure;
-use Gt\Http\Uri;
+use Psr\Http\Message\UriInterface;
 
 class PathNormaliser {
 	public function normaliseTrailingSlash(
-		Uri $uri,
+		UriInterface $uri,
 		bool $forceTrailingSlash,
 		Closure $redirect,
 	):void {

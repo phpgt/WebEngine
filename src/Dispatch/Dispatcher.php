@@ -2,33 +2,34 @@
 namespace GT\WebEngine\Dispatch;
 
 use Closure;
-use GT\Config\Config;
+use Gt\Config\Config;
 use GT\Dom\Element;
 use GT\Dom\HTMLDocument;
-use GT\DomTemplate\BindableCache;
+use Gt\DomTemplate\BindableCache;
 use Gt\DomTemplate\Binder;
-use GT\DomTemplate\ComponentBinder;
-use GT\DomTemplate\ElementBinder;
-use GT\DomTemplate\HTMLAttributeBinder;
-use GT\DomTemplate\HTMLAttributeCollection;
-use GT\DomTemplate\ListBinder;
-use GT\DomTemplate\ListElementCollection;
-use GT\DomTemplate\PlaceholderBinder;
-use GT\DomTemplate\TableBinder;
+use Gt\DomTemplate\ComponentBinder;
+use Gt\DomTemplate\DocumentBinder;
+use Gt\DomTemplate\ElementBinder;
+use Gt\DomTemplate\HTMLAttributeBinder;
+use Gt\DomTemplate\HTMLAttributeCollection;
+use Gt\DomTemplate\ListBinder;
+use Gt\DomTemplate\ListElementCollection;
+use Gt\DomTemplate\PlaceholderBinder;
+use Gt\DomTemplate\TableBinder;
 use Gt\Http\Request;
 use Gt\Http\Response;
 use Gt\Http\ResponseStatusException\ClientError\HttpNotFound;
 use Gt\Http\ResponseStatusException\ResponseStatusException;
 use Gt\Http\StatusCode;
 use Gt\Http\Stream;
-use GT\Input\Input;
-use GT\Input\InputData\InputData;
+use Gt\Input\Input;
+use Gt\Input\InputData\InputData;
+use Gt\Json\Schema\JsonDocument;
 use GT\Routing\Assembly;
 use Gt\Routing\BaseRouter;
 use GT\Routing\Path\DynamicPath;
-use GT\ServiceContainer\Container;
-use GT\ServiceContainer\Injector;
-use GT\WebEngine\DefaultRouter;
+use Gt\ServiceContainer\Container;
+use Gt\ServiceContainer\Injector;
 use GT\WebEngine\Init\RequestInit;
 use GT\WebEngine\Init\RouterInit;
 use GT\WebEngine\Init\SessionInit;
@@ -44,9 +45,14 @@ use GT\WebEngine\View\NullView;
 use GT\WebEngine\View\ViewStreamer;
 use Throwable;
 
+/**
+ * @SuppressWarnings("PHPMD.TooManyFields")
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ */
 class Dispatcher {
 	private Config $config;
 	private Request $request;
+	/** @var array<string, array<string, string|array<string, string>>> */
 	private array $globals;
 	private Closure $finishCallback;
 
@@ -58,8 +64,8 @@ class Dispatcher {
 
 	private Injector $injector;
 	private NullView|JSONView|HTMLView $view;
-	private HTMLDocument/*|NullViewModel*/ $viewModel;
-	private ViewModelProcessor $viewModelProcessor;
+	private HTMLDocument|JsonDocument $viewModel;
+	private ?ViewModelProcessor $viewModelProcessor;
 	private BaseRouter $router;
 	private ?SessionInit $sessionInit = null;
 	private Assembly $logicAssembly;
@@ -68,12 +74,15 @@ class Dispatcher {
 	private ViewStreamer $viewStreamer;
 
 	private HeaderManager $headerManager;
-	private Closure $viewModelInitCallback;
+	private Closure $viewInitCb;
 	private bool $redirectPrepared = false;
 
 	/**
 	 * @param array<string, array<string, string|array<string, string>>> $globals
+	 * @SuppressWarnings("PHPMD.ExcessiveMethodLength")
+	 * @SuppressWarnings("PHPMD.ExcessiveParameterList")
 	 */
+	// phpcs:disable Generic.Metrics.CyclomaticComplexity.TooHigh
 	public function __construct(
 		Config $config,
 		Request $request,
@@ -126,9 +135,11 @@ class Dispatcher {
 		$this->logicStreamHandler->setup();
 
 		$pathNormaliser = new PathNormaliser();
+		/** @var \Gt\Http\Uri $requestUri */
+		$requestUri = $request->getUri();
 		$requestInit = $requestInit ?? new RequestInit(
 			$pathNormaliser,
-			$request->getUri(),
+			$requestUri,
 			$config->getBool("app.force_trailing_slash") ?? true,
 			$this->response->redirect(...),
 			$this->globals["_GET"],
@@ -152,7 +163,7 @@ class Dispatcher {
 			$this->config->getString("router.router_file"),
 			$this->config->getString("router.router_class"),
 			dirname(__FILE__, 3) . DIRECTORY_SEPARATOR . "router.default.php",
-			DefaultRouter::class,
+			"\\GT\\WebEngine\\DefaultRouter",
 			$this->config->getInt("router.redirect_response_code"),
 			$this->config->getString("router.default_content_type"),
 			$errorStatus,
@@ -186,17 +197,23 @@ class Dispatcher {
 			$this->config->getString("view.partial_directory"),
 		);
 		$this->viewModelProcessor = $viewModelInit->getViewModelProcessor();
-		$this->viewModelInitCallback = fn() => $viewModelInit->initHTMLDocument(
-			$this->serviceContainer->get(Binder::class),
-			$this->serviceContainer->get(HTMLAttributeBinder::class),
-			$this->serviceContainer->get(ListBinder::class),
-			$this->serviceContainer->get(TableBinder::class),
-			$this->serviceContainer->get(ElementBinder::class),
-			$this->serviceContainer->get(PlaceholderBinder::class),
-			$this->serviceContainer->get(HTMLAttributeCollection::class),
-			$this->serviceContainer->get(ListElementCollection::class),
-			$this->serviceContainer->get(BindableCache::class),
-		);
+		$this->viewInitCb = $this->viewModel instanceof HTMLDocument
+		? function()use($viewModelInit):void {
+			$documentBinder = $this->serviceContainer->get(Binder::class);
+			assert($documentBinder instanceof DocumentBinder);
+			$viewModelInit->initHTMLDocument(
+				$documentBinder,
+				$this->serviceContainer->get(HTMLAttributeBinder::class),
+				$this->serviceContainer->get(ListBinder::class),
+				$this->serviceContainer->get(TableBinder::class),
+				$this->serviceContainer->get(ElementBinder::class),
+				$this->serviceContainer->get(PlaceholderBinder::class),
+				$this->serviceContainer->get(HTMLAttributeCollection::class),
+				$this->serviceContainer->get(ListElementCollection::class),
+				$this->serviceContainer->get(BindableCache::class),
+			);
+		}
+		: static fn() => null;
 
 		$this->logicExecutor = $logicExecutor ?? new LogicExecutor(
 			$appNamespace,
@@ -205,6 +222,7 @@ class Dispatcher {
 		$this->viewStreamer = $viewStreamer ?? new ViewStreamer();
 		$this->headerManager = $headerManager ?? new HeaderManager();
 	}
+	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
 
 	public function generateResponse():Response {
 		if($this->redirectPrepared) {
@@ -238,10 +256,10 @@ class Dispatcher {
 		}
 
 		if(!$this->viewAssembly->containsDistinctFile()) {
-			throw new ErrorPageNotFoundException($errorStatusCode);
+			throw new ErrorPageNotFoundException(code: $errorStatusCode);
 		}
 
-		$this->processResponse(true, $throwable);
+		$this->processResponse($throwable);
 		$this->response = $this->response->withStatus($errorStatusCode);
 		return $this->response;
 	}
@@ -263,7 +281,8 @@ class Dispatcher {
 				$errorMessage = "The server could not find the requested resource.";
 
 				if(!$this->config->getBool("app.production")) {
-					$detail .= " Additionally, there was no error page found in your application at <strong>$errorPageDir/$errorStatusCode.html</strong>";
+					$detail .= " Additionally, there was no error page found in your "
+						. "application at <strong>$errorPageDir/$errorStatusCode.html</strong>";
 				}
 			}
 		}
@@ -296,11 +315,13 @@ class Dispatcher {
 
 		$body = new Stream();
 		$body->write($html);
-		return new Response(request: $this->request)->withBody($body)->withStatus($errorStatusCode);
+		$response = new Response(null, null, $this->request);
+		$response = $response->withBody($body);
+		return $response->withStatus($errorStatusCode);
 	}
 
 	private function setupResponse():Response {
-		$response = new Response(request: $this->request);
+		$response = new Response(null, null, $this->request);
 		$response->setExitCallback(function() {
 			($this->finishCallback)($this->response);
 		});
@@ -333,7 +354,8 @@ class Dispatcher {
 		}
 
 		foreach($this->logicExecutor->invoke($logicAssembly, "go_before", $extraArgs) as $file) {
-			// TODO: Hook up to debug output
+			// Force generator execution even when debug output is disabled.
+			continue;
 		}
 
 // TODO: No need to have the whole Input class. Just pass a nullable string in called $doMethod, from $input->getString("do")
@@ -346,47 +368,50 @@ class Dispatcher {
 					);
 
 				foreach($this->logicExecutor->invoke($logicAssembly, $doName, $extraArgs) as $file) {
-					// TODO: Hook up to debug output
+					// Force generator execution even when debug output is disabled.
+					continue;
 				}
 			}
 		);
 
 		foreach($this->logicExecutor->invoke($logicAssembly, "go", $extraArgs) as $file) {
-			// TODO: Hook up to debug output
+			// Force generator execution even when debug output is disabled.
+			continue;
 		}
 
 		foreach($this->logicExecutor->invoke($logicAssembly, "go_after", $extraArgs) as $file) {
-			// TODO: Hook up to debug output
+			// Force generator execution even when debug output is disabled.
+			continue;
 		}
 	}
 
 	/**
 	 * @return void
 	 */
+	// phpcs:disable Generic.Metrics.CyclomaticComplexity.TooHigh
 	public function processResponse(
-		bool $processingError = false,
 		?Throwable $errorThrowable = null,
 	):void {
 		$dynamicPath = $this->serviceContainer->get(DynamicPath::class);
 
-		$this->viewModelProcessor->processDynamicPath(
+		$this->viewModelProcessor?->processDynamicPath(
 			$this->viewModel,
 			$dynamicPath,
 		);
 
-		$logicAssemblyComponentList = $this->viewModelProcessor->processPartialContent(
+		$componentList = $this->viewModelProcessor?->processPartialContent(
 			$this->viewModel,
 		);
 
 // TODO: CSRF handling - needs to be done on any POST request.
-		($this->viewModelInitCallback)();
-		if($processingError && $errorThrowable) {
+		($this->viewInitCb)();
+		if($errorThrowable) {
 			$this->bindErrorDetails($errorThrowable);
 		}
 
-		foreach($logicAssemblyComponentList as $logicAssemblyComponent) {
-			$assembly = $logicAssemblyComponent->assembly;
-			$componentElement = $logicAssemblyComponent->component;
+		foreach($componentList ?? [] as $componentLogic) {
+			$assembly = $componentLogic->assembly;
+			$componentElement = $componentLogic->component;
 			$this->serviceContainer->set($componentElement);
 
 			try {
@@ -397,7 +422,7 @@ class Dispatcher {
 				);
 			}
 			catch(Throwable $throwable) {
-				if(!$processingError) {
+				if(!$errorThrowable) {
 					throw $throwable;
 				}
 			}
@@ -410,7 +435,7 @@ class Dispatcher {
 			);
 		}
 		catch(Throwable $throwable) {
-			if(!$processingError) {
+			if(!$errorThrowable) {
 				throw $throwable;
 			}
 		}
@@ -423,10 +448,12 @@ class Dispatcher {
 		}
 
 		$documentBinder = $this->serviceContainer->get(Binder::class);
+		assert($documentBinder instanceof DocumentBinder);
 		$documentBinder->cleanupDocument();
 
 		$this->viewStreamer->stream($this->view, $this->viewModel);
 	}
+	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
 
 	public function getSessionInit():?SessionInit {
 		return $this->sessionInit;
@@ -441,6 +468,7 @@ class Dispatcher {
 		return $this->response->hasHeader("Location");
 	}
 
+	// phpcs:disable Generic.Metrics.CyclomaticComplexity.TooHigh
 	private function bindErrorDetails(Throwable $throwable):void {
 		$trace = $throwable->getTrace();
 		array_unshift($trace, [
@@ -487,4 +515,5 @@ class Dispatcher {
 			$binder->bindKeyValue("trace", $traceString);
 		}
 	}
+	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
 }

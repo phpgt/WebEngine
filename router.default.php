@@ -4,15 +4,11 @@ namespace GT\WebEngine;
 use Gt\Http\Request;
 use GT\Routing\BaseRouter;
 use GT\Routing\Method\Any;
-use GT\Routing\Method\Get;
-use GT\Routing\Method\Post;
 use GT\Routing\Path\FileMatch\BasicFileMatch;
 use GT\Routing\Path\FileMatch\MagicFileMatch;
 use GT\Routing\Path\PathMatcher;
-use GT\Routing\Path\DynamicPath;
-use GT\WebEngine\View\BaseView;
 use GT\WebEngine\View\HTMLView;
-use GT\WebEngine\View\NullView;
+use GT\WebEngine\View\JSONView;
 
 class DefaultRouter extends BaseRouter {
 	#[Any(name: "page-route", accept: "text/html,application/xhtml+xml")]
@@ -118,7 +114,7 @@ class DefaultRouter extends BaseRouter {
 	):void {
 		$pathMatcher = new PathMatcher("api");
 		$this->pathMatcherFilter($pathMatcher);
-		$this->setViewClass(NullView::class);
+		$this->setViewClass(JSONView::class);
 		$sortNestLevelCallback = fn(string $a, string $b) =>
 		substr_count($a, "/") > substr_count($b, "/")
 			? 1

@@ -62,7 +62,11 @@ class Timer {
 			return;
 		}
 
-		$this->deltaLogCallback->call($this, "Timer ended with $message delta time: $delta seconds. https://www.php.gt/webengine/slow-delta");
+		$this->deltaLogCallback->call(
+			$this,
+			"Timer ended with $message delta time: $delta seconds. "
+			. "https://www.php.gt/webengine/slow-delta"
+		);
 	}
 
 }

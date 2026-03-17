@@ -1,18 +1,14 @@
 <?php
-namespace Gt\WebEngine;
+namespace GT\WebEngine;
 
 use Gt\Http\Request;
-use Gt\Routing\BaseRouter;
-use Gt\Routing\Method\Any;
-use Gt\Routing\Method\Get;
-use Gt\Routing\Method\Post;
-use Gt\Routing\Path\FileMatch\BasicFileMatch;
-use Gt\Routing\Path\FileMatch\MagicFileMatch;
-use Gt\Routing\Path\PathMatcher;
-use Gt\Routing\Path\DynamicPath;
-use Gt\WebEngine\View\BaseView;
-use Gt\WebEngine\View\HTMLView;
-use Gt\WebEngine\View\NullView;
+use GT\Routing\BaseRouter;
+use GT\Routing\Method\Any;
+use GT\Routing\Path\FileMatch\BasicFileMatch;
+use GT\Routing\Path\FileMatch\MagicFileMatch;
+use GT\Routing\Path\PathMatcher;
+use GT\WebEngine\View\HTMLView;
+use GT\WebEngine\View\JSONView;
 
 class DefaultRouter extends BaseRouter {
 	#[Any(name: "page-route", accept: "text/html,application/xhtml+xml")]
@@ -84,8 +80,15 @@ class DefaultRouter extends BaseRouter {
 			? -1
 			: 0);
 
+		if($this->errorStatus) {
+			$uriPath = "_error/$this->errorStatus";
+		}
+		else {
+			$uriPath = $request->getUri()->getPath();
+		}
+
 		$matchingLogics = $pathMatcher->findForUriPath(
-			$request->getUri()->getPath(),
+			$uriPath,
 			"page",
 			"php"
 		);
@@ -95,7 +98,7 @@ class DefaultRouter extends BaseRouter {
 		}
 
 		$matchingViews = $pathMatcher->findForUriPath(
-			$request->getUri()->getPath(),
+			$uriPath,
 			"page",
 			"html"
 		);
@@ -111,7 +114,7 @@ class DefaultRouter extends BaseRouter {
 	):void {
 		$pathMatcher = new PathMatcher("api");
 		$this->pathMatcherFilter($pathMatcher);
-		$this->setViewClass(NullView::class);
+		$this->setViewClass(JSONView::class);
 		$sortNestLevelCallback = fn(string $a, string $b) =>
 		substr_count($a, "/") > substr_count($b, "/")
 			? 1

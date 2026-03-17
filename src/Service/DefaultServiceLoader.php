@@ -1,32 +1,40 @@
-<?php /** @noinspection PhpUnused */
-namespace Gt\WebEngine\Middleware;
+<?php
+namespace GT\WebEngine\Service;
 
-use Gt\Config\Config;
-use Gt\Database\Connection\DefaultSettings;
-use Gt\Database\Connection\Settings;
-use Gt\Database\Database;
-use Gt\Dom\Document;
-use Gt\DomTemplate\BindableCache;
-use Gt\DomTemplate\Binder;
-use Gt\DomTemplate\DocumentBinder;
-use Gt\DomTemplate\ElementBinder;
-use Gt\DomTemplate\HTMLAttributeBinder;
-use Gt\DomTemplate\HTMLAttributeCollection;
-use Gt\DomTemplate\ListBinder;
-use Gt\DomTemplate\ListElementCollection;
-use Gt\DomTemplate\PlaceholderBinder;
-use Gt\DomTemplate\TableBinder;
-use Gt\Http\Header\ResponseHeaders;
-use Gt\Http\Request;
-use Gt\Http\Response;
-use Gt\Http\Uri;
-use Gt\ServiceContainer\Container;
+use GT\Config\Config;
+use GT\DomTemplate\HTMLAttributeBinder;
+use GT\Database\Connection\DefaultSettings;
+use GT\Database\Connection\Settings;
+use GT\Database\Database;
+use GT\Dom\Document;
+use GT\DomTemplate\BindableCache;
+use GT\DomTemplate\Binder;
+use GT\DomTemplate\DocumentBinder;
+use GT\DomTemplate\ElementBinder;
+use GT\DomTemplate\HTMLAttributeCollection;
+use GT\DomTemplate\ListBinder;
+use GT\DomTemplate\ListElementCollection;
+use GT\DomTemplate\PlaceholderBinder;
+use GT\DomTemplate\TableBinder;
+use GT\Http\Header\ResponseHeaders;
+use GT\Http\Request;
+use GT\Http\Response;
+use GT\ServiceContainer\Container;
+use Psr\Http\Message\UriInterface;
 
 class DefaultServiceLoader {
+	protected string $uniqid;
+
 	public function __construct(
 		protected Config $config,
 		protected Container $container
-	) {	}
+	) {
+		$this->uniqid = uniqid(more_entropy: true);
+	}
+
+	public function loadConfig():Config {
+		return $this->config;
+	}
 
 	public function loadResponseHeaders():ResponseHeaders {
 		$response = $this->container->get(Response::class);
@@ -88,7 +96,7 @@ class DefaultServiceLoader {
 		return new DocumentBinder($document);
 	}
 
-	public function loadRequestUri():Uri {
+	public function loadRequestUri():UriInterface {
 		return $this->container->get(Request::class)->getUri();
 	}
 }

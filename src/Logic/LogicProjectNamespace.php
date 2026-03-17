@@ -1,5 +1,5 @@
 <?php
-namespace Gt\WebEngine\Logic;
+namespace GT\WebEngine\Logic;
 
 use Stringable;
 

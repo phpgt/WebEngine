@@ -1,4 +1,5 @@
 /.idea
 /vendor
 /test/behaviour/project/*/vendor
-/test/unit/_coverage
+/test/phpunit/.phpunit.cache
+.phpunit*.cache

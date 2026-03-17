@@ -1,6 +1,6 @@
 {
 	"name": "phpgt/webengine",
-	"description": "Rapid development engine.",
+	"description": "Minimalistic, ergonomic PHP toolkit.",
 
 	"license": [
 		"MIT"
@@ -10,7 +10,8 @@
 	"require": {
 		"ext-dom": "*",
 		"ext-json": "*",
-		"php": ">=8.1",
+		"ext-curl": "*",
+		"php": ">=8.4",
 
 		"phpgt/async": "^1.0",
 		"phpgt/build": "^1.2",
@@ -28,36 +29,52 @@
 		"phpgt/domvalidation": "^1.0",
 		"phpgt/fetch": "^1.2",
 		"phpgt/filecache": "^1.2",
-		"phpgt/http": "^1.2",
+		"phpgt/http": "^1.3.5",
 		"phpgt/input": "^1.3",
 		"phpgt/logger": "^1.0",
 		"phpgt/promise": "^2.4",
-		"phpgt/protectedglobal": "^1.1",
-		"phpgt/routing": "1.1.3",
+		"phpgt/protectedglobal": "^2.0",
+		"phpgt/routing": "^1.1",
 		"phpgt/server": "^1.1",
 		"phpgt/servicecontainer": "^1.3",
-		"phpgt/session": "1.2.4",
+		"phpgt/session": "^1.2",
 		"phpgt/sync": "^1.3",
 		"phpgt/ulid": "^1.0",
-
-		"psr/http-server-middleware": "^1.0",
 		"willdurand/negotiation": "^3.0"
 	},
 
 	"require-dev": {
-		"phpstan/phpstan": "v1.8.0",
-		"phpunit/phpunit": "v9.5.21"
+		"phpstan/phpstan": "^2.1",
+		"phpunit/phpunit": "^12.4",
+		"phpmd/phpmd": "^2.13",
+		"squizlabs/php_codesniffer": "^3.7"
 	},
 
 	"autoload": {
+		"files": [
+			"./src/gt-compat.php"
+		],
 		"psr-4": {
-			"Gt\\WebEngine\\": "./src/"
+			"GT\\WebEngine\\": "./src/"
 		}
 	},
 	"autoload-dev": {
 		"psr-4": {
-			"Gt\\WebEngine\\Test\\": "./test/phpunit"
+			"GT\\WebEngine\\Test\\": "./test/phpunit"
 		}
+	},
+
+	"scripts": {
+		"phpunit": "vendor/bin/phpunit --configuration phpunit.xml",
+		"phpstan": "vendor/bin/phpstan analyse --memory-limit=512M --level 6 src",
+		"phpcs": "vendor/bin/phpcs src --standard=phpcs.xml",
+		"phpmd": "vendor/bin/phpmd src/ text phpmd.xml",
+		"test": [
+			"@phpunit",
+			"@phpstan",
+			"@phpcs",
+			"@phpmd"
+		]
 	},
 
 	"keywords": [
@@ -76,7 +93,7 @@
 	"funding": [
 		{
 			"type": "github",
-			"url": "https://github.com/sponsors/PhpGt"
+			"url": "https://github.com/sponsors/phpgt"
 		}
 	]
 }

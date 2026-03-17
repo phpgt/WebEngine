@@ -15,7 +15,7 @@
 		},
 		"execute": {
 			"command": "vendor/bin/sync",
-			"arguments": ["--pattern", "*.js", "script", "www/script"]
+			"arguments": ["--pattern", "**/*.js", "script", "www/script"]
 		}
 	},
 
@@ -35,7 +35,7 @@
 		},
 		"execute": {
 			"command": "vendor/bin/sync",
-			"arguments": ["--pattern", "*.css", "style", "www/style"]
+			"arguments": ["--pattern", "**/*.css", "style", "www/style"]
 		}
 	},
 

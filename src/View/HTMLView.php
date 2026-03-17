@@ -1,7 +1,7 @@
 <?php
-namespace Gt\WebEngine\View;
+namespace GT\WebEngine\View;
 
-use Gt\Dom\HTMLDocument;
+use GT\Dom\HTMLDocument;
 
 class HTMLView extends BaseView {
 	public function createViewModel():HTMLDocument {

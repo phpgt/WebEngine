@@ -8,8 +8,7 @@ use Psr\Http\Message\StreamInterface;
 class NullViewTest extends TestCase {
 	public function testCreateViewModel_returnsEmptyStringPlaceholder():void {
 		$sut = new NullView($this->newRecordingStream());
-
-		self::assertSame("", $sut->createViewModel());
+		self::assertNull($sut->createViewModel());
 	}
 
 	private function newRecordingStream():StreamInterface {

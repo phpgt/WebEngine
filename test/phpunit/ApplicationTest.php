@@ -1,25 +1,38 @@
 <?php
 namespace GT\WebEngine\Test;
 
+require_once __DIR__ . "/Fixture/TestLogHandler.php";
+
+use Closure;
 use Exception;
 use Gt\Config\Config;
 use Gt\Config\ConfigFactory;
 use Gt\Http\RequestFactory;
 use Gt\Http\Response;
+use Gt\Http\ResponseStatusException\ClientError\HttpNotFound;
 use Gt\Http\ServerRequest;
+use Gt\Http\Stream;
 use Gt\Http\Uri;
+use Gt\Logger\LogConfig;
 use Gt\ProtectedGlobal\Protection;
 use GT\WebEngine\Application;
 use GT\WebEngine\Debug\OutputBuffer;
 use GT\WebEngine\Debug\Timer;
 use GT\WebEngine\Dispatch\Dispatcher;
 use GT\WebEngine\Dispatch\DispatcherFactory;
+use GT\WebEngine\Init\SessionInit;
 use GT\WebEngine\Redirection\Redirect;
+use GT\WebEngine\Test\Fixture\TestLogHandler;
 use PHPUnit\Framework\MockObject\Invocation;
 use PHPUnit\Framework\MockObject\InvocationHandler;
 use PHPUnit\Framework\TestCase;
 
 class ApplicationTest extends TestCase {
+	protected function tearDown():void {
+		$this->resetApplicationLoggerState();
+		parent::tearDown();
+	}
+
 	public function testStart_callsRedirectExecute():void {
 		$redirect = self::createMock(Redirect::class);
 		$redirect->expects(self::once())
@@ -235,11 +248,454 @@ class ApplicationTest extends TestCase {
 		$output = ob_get_clean();
 		ob_end_clean();
 
-		self::assertStringContainsString("exception message is testing", $output);
+			self::assertStringContainsString("exception message is testing", $output);
+	}
+
+	public function testStart_protectsGlobalsUsingConfiguredWhitelists():void {
+		$config = $this->createTestConfig([
+			"app.globals_whitelist_env" => "ENV_OK",
+			"app.globals_whitelist_server" => "SERVER_OK,SERVER_OK_2",
+			"app.globals_whitelist_get" => "GET_OK",
+			"app.globals_whitelist_post" => "POST_OK",
+			"app.globals_whitelist_files" => "FILES_OK",
+			"app.globals_whitelist_cookies" => "COOKIE_OK",
+		]);
+		$globals = [
+			"_SERVER" => ["SERVER_OK" => "a", "SERVER_OK_2" => "b"],
+			"_FILES" => ["FILES_OK" => ["name" => "file.txt"]],
+			"_GET" => ["GET_OK" => "search"],
+			"_POST" => ["POST_OK" => "token"],
+			"_ENV" => ["ENV_OK" => "1"],
+			"_COOKIE" => ["COOKIE_OK" => "cookie"],
+		];
+
+		$globalProtection = self::createMock(Protection::class);
+		$globalProtection->expects(self::once())
+			->method("removeGlobals")
+			->with(
+				[
+					"server" => $globals["_SERVER"],
+					"files" => $globals["_FILES"],
+					"get" => $globals["_GET"],
+					"post" => $globals["_POST"],
+					"env" => $globals["_ENV"],
+					"cookie" => $globals["_COOKIE"],
+				],
+				[
+					"_ENV" => ["ENV_OK"],
+					"_SERVER" => ["SERVER_OK", "SERVER_OK_2"],
+					"_GET" => ["GET_OK"],
+					"_POST" => ["POST_OK"],
+					"_FILES" => ["FILES_OK"],
+					"_COOKIE" => ["COOKIE_OK"],
+				]
+			)
+			->willReturn(["server" => "protected"]);
+		$globalProtection->expects(self::once())
+			->method("overrideInternals")
+			->with(["server" => "protected"]);
+
+		$requestFactory = self::createMock(RequestFactory::class);
+		$requestFactory->expects(self::once())
+			->method("createServerRequestFromGlobalState")
+			->with(
+				$globals["_SERVER"],
+				$globals["_FILES"],
+				$globals["_GET"],
+				$globals["_POST"],
+			)
+			->willReturn($this->createServerRequest());
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willReturn($this->createResponse());
+
+		$dispatcherFactory = self::createMock(DispatcherFactory::class);
+		$dispatcherFactory->expects(self::once())
+			->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globals: $globals,
+			globalProtection: $globalProtection,
+		);
+
+		$sut->start();
+	}
+
+	public function testStart_rebuildsDispatcherWithErrorStatusAndSessionInit():void {
+		$config = $this->createTestConfig(["app.error_script" => ""]);
+		$request = $this->createServerRequest("/missing-page");
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($request);
+
+		$sessionInit = self::createMock(SessionInit::class);
+		$firstDispatcher = self::createMock(Dispatcher::class);
+		$firstDispatcher->expects(self::once())
+			->method("generateResponse")
+			->willThrowException(new HttpNotFound());
+		$firstDispatcher->expects(self::once())
+			->method("getSessionInit")
+			->willReturn($sessionInit);
+
+		$errorResponse = $this->createResponse(404, "<body>not found</body>");
+		$secondDispatcher = self::createMock(Dispatcher::class);
+		$secondDispatcher->expects(self::once())
+			->method("generateErrorResponse")
+			->with(self::isInstanceOf(HttpNotFound::class))
+			->willReturn($errorResponse);
+
+		$dispatcherFactory = self::createMock(DispatcherFactory::class);
+		$createCalls = [];
+		$dispatcherFactory->expects(self::exactly(2))
+			->method("create")
+			->willReturnCallback(function(
+				Config $passedConfig,
+				ServerRequest $passedRequest,
+				array $passedGlobals,
+				Closure $finishCallback,
+				?int $errorStatus = null,
+				?SessionInit $passedSessionInit = null,
+			)use($config, $request, $sessionInit, &$createCalls, $firstDispatcher, $secondDispatcher) {
+				$createCalls[] = [
+					"config" => $passedConfig,
+					"request" => $passedRequest,
+					"errorStatus" => $errorStatus,
+					"sessionInit" => $passedSessionInit,
+					"globalsKeys" => array_keys($passedGlobals),
+					"finishCallback" => $finishCallback,
+				];
+
+				return count($createCalls) === 1
+					? $firstDispatcher
+					: $secondDispatcher;
+			});
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+
+		self::assertSame($config, $createCalls[0]["config"]);
+		self::assertSame($request, $createCalls[0]["request"]);
+		self::assertNull($createCalls[0]["errorStatus"]);
+		self::assertNull($createCalls[0]["sessionInit"]);
+		self::assertSame(["_SERVER", "_FILES", "_GET", "_POST", "_ENV", "_COOKIE"], $createCalls[0]["globalsKeys"]);
+		self::assertSame($config, $createCalls[1]["config"]);
+		self::assertSame($request, $createCalls[1]["request"]);
+		self::assertSame(404, $createCalls[1]["errorStatus"]);
+		self::assertSame($sessionInit, $createCalls[1]["sessionInit"]);
+	}
+
+	public function testStart_fallsBackToBasicErrorResponseWhenErrorPageRenderingFails():void {
+		$config = $this->createTestConfig(["app.error_script" => ""]);
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($this->createServerRequest("/broken-error"));
+
+		$originalThrowable = new Exception("page failed");
+		$innerThrowable = new Exception("error page failed");
+		$fallbackResponse = $this->createResponse(500, "<body>fallback</body>");
+
+		$firstDispatcher = self::createMock(Dispatcher::class);
+		$firstDispatcher->expects(self::once())
+			->method("generateResponse")
+			->willThrowException($originalThrowable);
+		$firstDispatcher->method("getSessionInit")
+			->willReturn(null);
+
+		$secondDispatcher = self::createMock(Dispatcher::class);
+		$secondDispatcher->expects(self::once())
+			->method("generateErrorResponse")
+			->with(self::identicalTo($originalThrowable))
+			->willThrowException($innerThrowable);
+		$secondDispatcher->expects(self::once())
+			->method("generateBasicErrorResponse")
+			->with(
+				self::identicalTo($originalThrowable),
+				self::identicalTo($innerThrowable),
+			)
+			->willReturn($fallbackResponse);
+
+		$dispatcherFactory = self::createMock(DispatcherFactory::class);
+		$dispatcherFactory->expects(self::exactly(2))
+			->method("create")
+			->willReturnOnConsecutiveCalls($firstDispatcher, $secondDispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+	}
+
+	public function testStart_restoresGlobalsBeforeExecutingErrorScript():void {
+		$php = <<<'PHP'
+		<?php
+		echo $_GET["restored"] . "|" . $_SERVER["RESTORED"] . "|" . $GLOBALS["GET"]["restored"];
+		PHP;
+
+		$tmpFile = tempnam(sys_get_temp_dir(), "webengine-test-");
+		file_put_contents($tmpFile, $php);
+
+		$config = $this->createTestConfig([
+			"app.error_script" => $tmpFile,
+		]);
+		$globals = [
+			"_SERVER" => ["RESTORED" => "server"],
+			"_FILES" => [],
+			"_GET" => ["restored" => "query"],
+			"_POST" => [],
+			"_ENV" => [],
+			"_COOKIE" => [],
+		];
+
+		$_GET = ["restored" => "wrong"];
+		$_SERVER["RESTORED"] = "wrong";
+		$GLOBALS["GET"] = ["restored" => "wrong"];
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willThrowException(new Exception("testing"));
+
+		$dispatcherFactory = self::createMock(DispatcherFactory::class);
+		$dispatcherFactory->expects(self::once())
+			->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			dispatcherFactory: $dispatcherFactory,
+			requestFactory: $this->createRequestFactory(),
+			globals: $globals,
+		);
+
+		ob_start();
+		$sut->start();
+		$output = ob_get_clean();
+
+		self::assertSame("query|server|query", $output);
+	}
+
+	public function testRestoreGlobals_restoresSuperglobalAliases():void {
+		$globals = [
+			"_SERVER" => ["RESTORED" => "server"],
+			"_FILES" => ["upload" => ["name" => "file.txt"]],
+			"_GET" => ["query" => "value"],
+			"_POST" => ["token" => "abc"],
+			"_ENV" => ["APP_ENV" => "test"],
+			"_COOKIE" => ["session" => "cookie"],
+		];
+
+		$sut = new Application(
+			config: $this->createTestConfig([]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globals: $globals,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$_GET = [];
+		$_POST = [];
+		$_SERVER = [];
+		$_COOKIE = [];
+		$_FILES = [];
+		$_ENV = [];
+		$GLOBALS["GET"] = [];
+		$GLOBALS["POST"] = [];
+		$GLOBALS["SERVER"] = [];
+		$GLOBALS["COOKIE"] = [];
+		$GLOBALS["FILES"] = [];
+		$GLOBALS["ENV"] = [];
+
+		$sut->restoreGlobals();
+
+		self::assertSame($globals["_GET"], $_GET);
+		self::assertSame($globals["_POST"], $_POST);
+		self::assertSame($globals["_SERVER"], $_SERVER);
+		self::assertSame($globals["_COOKIE"], $_COOKIE);
+		self::assertSame($globals["_FILES"], $_FILES);
+		self::assertSame($globals["_ENV"], $_ENV);
+		self::assertSame($globals["_GET"], $GLOBALS["GET"]);
+		self::assertSame($globals["_POST"], $GLOBALS["POST"]);
+		self::assertSame($globals["_SERVER"], $GLOBALS["SERVER"]);
+		self::assertSame($globals["_COOKIE"], $GLOBALS["COOKIE"]);
+		self::assertSame($globals["_FILES"], $GLOBALS["FILES"]);
+		self::assertSame($globals["_ENV"], $GLOBALS["ENV"]);
+	}
+
+	public function testFinish_injectsDebugScriptAndRunsOnlyOnce():void {
+		$config = $this->createTestConfig([
+			"logger.log_all_requests" => false,
+			"app.render_buffer_size" => 8192,
+		]);
+		$timer = self::createMock(Timer::class);
+		$timer->expects(self::once())->method("stop");
+		$timer->expects(self::once())->method("logDelta");
+		$outputBuffer = self::createMock(OutputBuffer::class);
+		$outputBuffer->expects(self::once())
+			->method("debugOutput")
+			->willReturn("<script>debug()</script>");
+
+		$stream = new Stream();
+		$stream->write("<html><body>Hello</body></html>");
+
+		$response = self::createMock(Response::class);
+		$response->expects(self::once())->method("getStatusCode")->willReturn(200);
+		$response->expects(self::once())->method("getHeaders")->willReturn([]);
+		$response->expects(self::once())->method("getBody")->willReturn($stream);
+
+		$sut = new Application(
+			config: $config,
+			timer: $timer,
+			outputBuffer: $outputBuffer,
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		ob_start();
+		$this->invokePrivateMethod($sut, "finish", $response);
+		$this->invokePrivateMethod($sut, "finish", $response);
+		$output = ob_get_clean();
+
+		self::assertSame("<html><body>Hello<script>debug()</script></body></html>", $output);
+	}
+
+	public function testStart_logsAllRequestsWithRequestContext():void {
+		$this->resetApplicationLoggerState();
+		TestLogHandler::$records = [];
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$config = $this->createTestConfig([
+			"logger.log_all_requests" => true,
+		]);
+		$request = $this->createServerRequest(
+			"/search",
+			["q" => "php"],
+			["token" => "abc"],
+			["REMOTE_ADDR" => "127.0.0.1"],
+		);
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($request);
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willReturn($this->createResponse(204));
+
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("INFO", TestLogHandler::$records[0]["level"]);
+		self::assertSame("HTTP 204", TestLogHandler::$records[0]["message"]);
+		self::assertSame("/search", TestLogHandler::$records[0]["context"]["uri"]);
+		self::assertSame(["q" => "php"], TestLogHandler::$records[0]["context"]["query"]);
+		self::assertSame(["token" => "abc"], TestLogHandler::$records[0]["context"]["post"]);
+		self::assertSame("127.0.0.1:", TestLogHandler::$records[0]["context"]["id"]);
+	}
+
+	public function testLogError_doesNotLogClientErrors():void {
+		$this->resetApplicationLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$sut = new Application(
+			config: $this->createTestConfig([]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$this->invokePrivateMethod($sut, "logError", new HttpNotFound());
+
+		self::assertSame([], TestLogHandler::$records);
+	}
+
+	public function testLogError_usesConfiguredLoggerHandlers():void {
+		$this->resetApplicationLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$sut = new Application(
+			config: $this->createTestConfig([]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$this->invokePrivateMethod($sut, "logError", new Exception("boom"));
+
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("ERROR", TestLogHandler::$records[0]["level"]);
+		self::assertStringContainsString("boom", TestLogHandler::$records[0]["message"]);
+	}
+
+	public function testGetStderrMinimumLogLevel_fallsBackToErrorForInvalidConfig():void {
+		$sut = new Application(
+			config: $this->createTestConfig([
+				"logger.stderr_min_level" => "banana",
+			]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$level = $this->invokePrivateMethod($sut, "getStderrMinimumLogLevel");
+
+		self::assertSame("ERROR", $level);
+	}
+
+	public function testConfigureLoggerStreams_registersSplitStdoutAndStderrHandlers():void {
+		$this->resetApplicationLoggerState();
+
+		new Application(
+			config: $this->createTestConfig([
+				"logger.stderr_min_level" => "WARNING",
+			]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$handlers = $this->getStaticProperty(LogConfig::class, "handlers");
+		$minLevels = $this->getStaticProperty(LogConfig::class, "handlerMinLevels");
+		$maxLevels = $this->getStaticProperty(LogConfig::class, "handlerMaxLevels");
+
+		self::assertCount(2, $handlers);
+		self::assertSame(["DEBUG", "WARNING"], $minLevels);
+		self::assertSame(["NOTICE", "EMERGENCY"], $maxLevels);
+		self::assertTrue($this->getStaticProperty(Application::class, "loggerStreamsConfigured"));
 	}
 
 	private function createTestConfig(array $mockedValues):Config {
-		$config = self::createMock(Config::class);
+		$config = self::createStub(Config::class);
 
 		$configFile = "config.default.ini";
 		$configContents = parse_ini_file($configFile, true);
@@ -269,5 +725,73 @@ class ApplicationTest extends TestCase {
 		});
 
 		return $config;
+	}
+
+	private function createRequestFactory(?ServerRequest $request = null):RequestFactory {
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($request ?? $this->createServerRequest());
+		return $requestFactory;
+	}
+
+	private function createServerRequest(
+		string $path = "/",
+		array $query = [],
+		array $post = [],
+		array $serverParams = ["REMOTE_ADDR" => "127.0.0.1"],
+	):ServerRequest {
+		$request = self::createStub(ServerRequest::class);
+		$request->method("getUri")
+			->willReturn(new Uri("https://example.test" . $path));
+		$request->method("getHeaderLine")
+			->willReturnCallback(
+				fn(string $name):string => strtolower($name) === "accept" ? "*/*" : ""
+			);
+		$request->method("getMethod")
+			->willReturn("GET");
+		$request->method("getServerParams")
+			->willReturn($serverParams);
+		$request->method("getQueryParams")
+			->willReturn($query);
+		$request->method("getParsedBody")
+			->willReturn($post);
+		return $request;
+	}
+
+	private function createResponse(int $statusCode = 200, string $body = ""):Response {
+		$response = self::createStub(Response::class);
+		$stream = new Stream();
+		$stream->write($body);
+		$response->method("getStatusCode")->willReturn($statusCode);
+		$response->method("getHeaders")->willReturn([]);
+		$response->method("getBody")->willReturn($stream);
+		return $response;
+	}
+
+	private function invokePrivateMethod(object $object, string $method, mixed ...$args):mixed {
+		$reflectionMethod = new \ReflectionMethod($object, $method);
+		return $reflectionMethod->invokeArgs($object, $args);
+	}
+
+	private function resetApplicationLoggerState():void {
+		$this->setStaticProperty(Application::class, "loggerStreamsConfigured", false);
+		$this->setStaticProperty(LogConfig::class, "handlers", []);
+		$this->setStaticProperty(LogConfig::class, "handlerMinLevels", []);
+		$this->setStaticProperty(LogConfig::class, "handlerMaxLevels", []);
+		TestLogHandler::$records = [];
+	}
+
+	private function setApplicationLoggerConfigured(bool $configured):void {
+		$this->setStaticProperty(Application::class, "loggerStreamsConfigured", $configured);
+	}
+
+	private function setStaticProperty(string $className, string $propertyName, mixed $value):void {
+		$property = new \ReflectionProperty($className, $propertyName);
+		$property->setValue(null, $value);
+	}
+
+	private function getStaticProperty(string $className, string $propertyName):mixed {
+		$property = new \ReflectionProperty($className, $propertyName);
+		return $property->getValue();
 	}
 }

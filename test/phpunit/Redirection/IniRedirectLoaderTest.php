@@ -86,7 +86,7 @@ class IniRedirectLoaderTest extends TestCase {
 	}
 
 	public function testLoad_emptyKeyOrValue_isIgnored():void {
-		$ini = "/= /x\n/x=\n/good=/yes\n";
+		$ini = "= /x\n/x=\n/good=/yes\n";
 		file_put_contents($this->tmpFile, $ini);
 		$map = new RedirectMap();
 		$sut = new IniRedirectLoader();

@@ -2,34 +2,34 @@
 namespace GT\WebEngine\Dispatch;
 
 use Closure;
-use GT\Config\Config;
+use Gt\Config\Config;
 use GT\Dom\Element;
 use GT\Dom\HTMLDocument;
-use GT\DomTemplate\BindableCache;
+use Gt\DomTemplate\BindableCache;
 use Gt\DomTemplate\Binder;
 use Gt\DomTemplate\ComponentBinder;
-use GT\DomTemplate\ElementBinder;
-use GT\DomTemplate\HTMLAttributeBinder;
-use GT\DomTemplate\HTMLAttributeCollection;
-use GT\DomTemplate\ListBinder;
-use GT\DomTemplate\ListElementCollection;
-use GT\DomTemplate\PlaceholderBinder;
-use GT\DomTemplate\TableBinder;
+use Gt\DomTemplate\DocumentBinder;
+use Gt\DomTemplate\ElementBinder;
+use Gt\DomTemplate\HTMLAttributeBinder;
+use Gt\DomTemplate\HTMLAttributeCollection;
+use Gt\DomTemplate\ListBinder;
+use Gt\DomTemplate\ListElementCollection;
+use Gt\DomTemplate\PlaceholderBinder;
+use Gt\DomTemplate\TableBinder;
 use Gt\Http\Request;
 use Gt\Http\Response;
 use Gt\Http\ResponseStatusException\ClientError\HttpNotFound;
 use Gt\Http\ResponseStatusException\ResponseStatusException;
 use Gt\Http\StatusCode;
 use Gt\Http\Stream;
-use GT\Input\Input;
-use GT\Input\InputData\InputData;
+use Gt\Input\Input;
+use Gt\Input\InputData\InputData;
 use Gt\Json\Schema\JsonDocument;
 use GT\Routing\Assembly;
 use Gt\Routing\BaseRouter;
 use GT\Routing\Path\DynamicPath;
-use GT\ServiceContainer\Container;
-use GT\ServiceContainer\Injector;
-use GT\WebEngine\DefaultRouter;
+use Gt\ServiceContainer\Container;
+use Gt\ServiceContainer\Injector;
 use GT\WebEngine\Init\RequestInit;
 use GT\WebEngine\Init\RouterInit;
 use GT\WebEngine\Init\SessionInit;
@@ -48,6 +48,7 @@ use Throwable;
 class Dispatcher {
 	private Config $config;
 	private Request $request;
+	/** @var array<string, array<string, string|array<string, string>>> */
 	private array $globals;
 	private Closure $finishCallback;
 
@@ -127,9 +128,11 @@ class Dispatcher {
 		$this->logicStreamHandler->setup();
 
 		$pathNormaliser = new PathNormaliser();
+		/** @var \Gt\Http\Uri $requestUri */
+		$requestUri = $request->getUri();
 		$requestInit = $requestInit ?? new RequestInit(
 			$pathNormaliser,
-			$request->getUri(),
+			$requestUri,
 			$config->getBool("app.force_trailing_slash") ?? true,
 			$this->response->redirect(...),
 			$this->globals["_GET"],
@@ -153,7 +156,7 @@ class Dispatcher {
 			$this->config->getString("router.router_file"),
 			$this->config->getString("router.router_class"),
 			dirname(__FILE__, 3) . DIRECTORY_SEPARATOR . "router.default.php",
-			DefaultRouter::class,
+			"\\GT\\WebEngine\\DefaultRouter",
 			$this->config->getInt("router.redirect_response_code"),
 			$this->config->getString("router.default_content_type"),
 			$errorStatus,
@@ -188,18 +191,22 @@ class Dispatcher {
 		);
 		$this->viewModelProcessor = $viewModelInit->getViewModelProcessor();
 		$this->viewModelInitCallback = $this->viewModel instanceof HTMLDocument
-		? fn() => $viewModelInit->initHTMLDocument(
-			$this->serviceContainer->get(Binder::class),
-			$this->serviceContainer->get(HTMLAttributeBinder::class),
-			$this->serviceContainer->get(ListBinder::class),
-			$this->serviceContainer->get(TableBinder::class),
-			$this->serviceContainer->get(ElementBinder::class),
-			$this->serviceContainer->get(PlaceholderBinder::class),
-			$this->serviceContainer->get(HTMLAttributeCollection::class),
-			$this->serviceContainer->get(ListElementCollection::class),
-			$this->serviceContainer->get(BindableCache::class),
-		)
-		: fn() => null;
+		? function()use($viewModelInit):void {
+			$documentBinder = $this->serviceContainer->get(Binder::class);
+			assert($documentBinder instanceof DocumentBinder);
+			$viewModelInit->initHTMLDocument(
+				$documentBinder,
+				$this->serviceContainer->get(HTMLAttributeBinder::class),
+				$this->serviceContainer->get(ListBinder::class),
+				$this->serviceContainer->get(TableBinder::class),
+				$this->serviceContainer->get(ElementBinder::class),
+				$this->serviceContainer->get(PlaceholderBinder::class),
+				$this->serviceContainer->get(HTMLAttributeCollection::class),
+				$this->serviceContainer->get(ListElementCollection::class),
+				$this->serviceContainer->get(BindableCache::class),
+			);
+		}
+		: static fn() => null;
 
 		$this->logicExecutor = $logicExecutor ?? new LogicExecutor(
 			$appNamespace,
@@ -426,6 +433,7 @@ class Dispatcher {
 		}
 
 		$documentBinder = $this->serviceContainer->get(Binder::class);
+		assert($documentBinder instanceof DocumentBinder);
 		$documentBinder->cleanupDocument();
 
 		$this->viewStreamer->stream($this->view, $this->viewModel);

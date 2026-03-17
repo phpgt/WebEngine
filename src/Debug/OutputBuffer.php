@@ -36,7 +36,7 @@ class OutputBuffer {
 
 	public function cleanBuffer():void {
 		// ob_get_clean can return false; normalise to empty string.
-		$this->buffer .= ($this->obGetCleanHandler)() ?? "";
+		$this->fillBuffer(($this->obGetCleanHandler)() ?? "");
 	}
 
 	public function debugOutput():?string {

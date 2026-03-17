@@ -19,8 +19,8 @@ use Gt\DomTemplate\TableBinder;
 use Gt\Http\Header\ResponseHeaders;
 use Gt\Http\Request;
 use Gt\Http\Response;
-use Gt\Http\Uri;
 use Gt\ServiceContainer\Container;
+use Psr\Http\Message\UriInterface;
 
 class DefaultServiceLoader {
 	protected string $uniqid;
@@ -96,7 +96,7 @@ class DefaultServiceLoader {
 		return new DocumentBinder($document);
 	}
 
-	public function loadRequestUri():Uri {
+	public function loadRequestUri():UriInterface {
 		return $this->container->get(Request::class)->getUri();
 	}
 }

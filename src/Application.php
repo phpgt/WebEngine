@@ -10,7 +10,6 @@ use Gt\Logger\LogHandler\StdErrHandler;
 use Gt\Logger\LogLevel;
 use Throwable;
 use ErrorException;
-use ReflectionException;
 use ReflectionMethod;
 use GT\WebEngine\Debug\OutputBuffer;
 use GT\WebEngine\Debug\Timer;
@@ -19,11 +18,12 @@ use GT\WebEngine\Dispatch\Dispatcher;
 use GT\WebEngine\Dispatch\DispatcherFactory;
 use Gt\Config\Config;
 use Gt\Config\ConfigFactory;
+use Gt\Http\Request;
 use Gt\Http\RequestFactory;
 use Gt\Http\Response;
-use Gt\Http\ServerRequest;
 use Gt\Http\Stream;
 use Gt\ProtectedGlobal\Protection;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * The fundamental purpose of any PHP framework is to provide a mechanism for
@@ -40,7 +40,8 @@ class Application {
 	private Timer $timer;
 	private OutputBuffer $outputBuffer;
 	private RequestFactory $requestFactory;
-	private ServerRequest $request;
+	/** @var Request&ServerRequestInterface */
+	private Request $request;
 	/** @var array<string, array<string, string|array<string, string>>> */
 	private array $globals;
 	private Protection $globalProtection;
@@ -116,12 +117,14 @@ class Application {
 // $_GET contains query parameters from the URL, and $_POST contains form data.
 // These arrays are optional and will default to empty arrays if not provided,
 // ensuring the ServerRequest can always be constructed safely.
-		$this->request = $this->requestFactory->createServerRequestFromGlobalState(
+		$request = $this->requestFactory->createServerRequestFromGlobalState(
 			$this->globals["_SERVER"] ?? [],
 			$this->globals["_FILES"] ?? [],
 			$this->globals["_GET"] ?? [],
 			$this->globals["_POST"] ?? [],
 		);
+		assert($request instanceof Request);
+		$this->request = $request;
 
 // The Dispatcher is a core component responsible for:
 // 1. Executing the application's routing logic to match the incoming request
@@ -296,12 +299,7 @@ class Application {
 			return;
 		}
 
-		try {
-			$addHandlerMethod = new ReflectionMethod(LogConfig::class, "addHandler");
-		}
-		catch(ReflectionException) {
-			return;
-		}
+		$addHandlerMethod = new ReflectionMethod(LogConfig::class, "addHandler");
 
 		if($addHandlerMethod->getNumberOfParameters() < 3) {
 			return;
@@ -388,7 +386,7 @@ class Application {
 		$stderrMinLevel = $this->getStderrMinimumLogLevel();
 		$stderrMinLevelIndex = array_search($stderrMinLevel, LogLevel::ALL_LEVELS, true);
 		$errorLevelIndex = array_search(LogLevel::ERROR, LogLevel::ALL_LEVELS, true);
-		if($stderrMinLevelIndex === false || $errorLevelIndex === false || $stderrMinLevelIndex > $errorLevelIndex) {
+		if($stderrMinLevelIndex === false || $stderrMinLevelIndex > $errorLevelIndex) {
 			Log::error((string)$throwable);
 			return;
 		}
@@ -411,7 +409,7 @@ class Application {
 		return LogLevel::ERROR;
 	}
 
-	/** @return array<string, string> */
+	/** @return array<string, mixed> */
 	private function getLogContext():array {
 		$uri = $this->request->getUri();
 		$uriPath = $uri->getPath();

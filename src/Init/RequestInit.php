@@ -3,9 +3,9 @@ namespace GT\WebEngine\Init;
 
 use Closure;
 use Gt\Input\Input;
-use Gt\Http\Uri;
 use Gt\Http\ServerInfo;
 use GT\WebEngine\Dispatch\PathNormaliser;
+use Psr\Http\Message\UriInterface;
 
 class RequestInit {
 	private Input $input;
@@ -19,7 +19,7 @@ class RequestInit {
 	 */
 	public function __construct(
 		private PathNormaliser $pathNormaliser,
-		private Uri $requestUri,
+		private UriInterface $requestUri,
 		private bool $forceTrailingSlash,
 		private Closure $redirect,
 		array $get,

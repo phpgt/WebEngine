@@ -15,7 +15,10 @@ class LogicExecutor {
 	) {
 	}
 
-	/** @return Generator<string> filename::function() */
+	/**
+	 * @param array<string, mixed> $extraArgs
+	 * @return Generator<string> filename::function()
+	 */
 	public function invoke(Assembly $logicAssembly, string $name, array $extraArgs = []):Generator {
 		foreach($logicAssembly as $file) {
 			$this->loadLogicFile($file);

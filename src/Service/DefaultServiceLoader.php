@@ -32,6 +32,10 @@ class DefaultServiceLoader {
 		$this->uniqid = uniqid(more_entropy: true);
 	}
 
+	public function loadConfig():Config {
+		return $this->config;
+	}
+
 	public function loadResponseHeaders():ResponseHeaders {
 		$response = $this->container->get(Response::class);
 		return $response->headers;

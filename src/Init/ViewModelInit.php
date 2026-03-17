@@ -14,6 +14,7 @@ use Gt\DomTemplate\ListBinder;
 use Gt\DomTemplate\ListElementCollection;
 use Gt\DomTemplate\PlaceholderBinder;
 use Gt\DomTemplate\TableBinder;
+use Gt\Json\Schema\JsonDocument;
 use GT\WebEngine\Logic\HTMLDocumentProcessor;
 use GT\WebEngine\Logic\ViewModelProcessor;
 
@@ -22,7 +23,7 @@ class ViewModelInit {
 	private bool $initialised = false;
 
 	public function __construct(
-		HTMLDocument $model,
+		HTMLDocument|JsonDocument $model,
 		string $componentDirectory,
 		string $partialDirectory,
 	) {
@@ -87,7 +88,7 @@ class ViewModelInit {
 		);
 	}
 
-	public function getViewModelProcessor():ViewModelProcessor {
-		return $this->viewModelProcessor;
+	public function getViewModelProcessor():?ViewModelProcessor {
+		return $this->viewModelProcessor ?? null;
 	}
 }

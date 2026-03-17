@@ -23,6 +23,7 @@ use Gt\Http\StatusCode;
 use Gt\Http\Stream;
 use GT\Input\Input;
 use GT\Input\InputData\InputData;
+use Gt\Json\Schema\JsonDocument;
 use GT\Routing\Assembly;
 use Gt\Routing\BaseRouter;
 use GT\Routing\Path\DynamicPath;
@@ -58,8 +59,8 @@ class Dispatcher {
 
 	private Injector $injector;
 	private NullView|JSONView|HTMLView $view;
-	private HTMLDocument/*|NullViewModel*/ $viewModel;
-	private ViewModelProcessor $viewModelProcessor;
+	private HTMLDocument|JsonDocument $viewModel;
+	private ?ViewModelProcessor $viewModelProcessor;
 	private BaseRouter $router;
 	private ?SessionInit $sessionInit = null;
 	private Assembly $logicAssembly;
@@ -186,7 +187,8 @@ class Dispatcher {
 			$this->config->getString("view.partial_directory"),
 		);
 		$this->viewModelProcessor = $viewModelInit->getViewModelProcessor();
-		$this->viewModelInitCallback = fn() => $viewModelInit->initHTMLDocument(
+		$this->viewModelInitCallback = $this->viewModel instanceof HTMLDocument
+		? fn() => $viewModelInit->initHTMLDocument(
 			$this->serviceContainer->get(Binder::class),
 			$this->serviceContainer->get(HTMLAttributeBinder::class),
 			$this->serviceContainer->get(ListBinder::class),
@@ -196,7 +198,8 @@ class Dispatcher {
 			$this->serviceContainer->get(HTMLAttributeCollection::class),
 			$this->serviceContainer->get(ListElementCollection::class),
 			$this->serviceContainer->get(BindableCache::class),
-		);
+		)
+		: fn() => null;
 
 		$this->logicExecutor = $logicExecutor ?? new LogicExecutor(
 			$appNamespace,
@@ -369,12 +372,12 @@ class Dispatcher {
 	):void {
 		$dynamicPath = $this->serviceContainer->get(DynamicPath::class);
 
-		$this->viewModelProcessor->processDynamicPath(
+		$this->viewModelProcessor?->processDynamicPath(
 			$this->viewModel,
 			$dynamicPath,
 		);
 
-		$logicAssemblyComponentList = $this->viewModelProcessor->processPartialContent(
+		$logicAssemblyComponentList = $this->viewModelProcessor?->processPartialContent(
 			$this->viewModel,
 		);
 
@@ -384,7 +387,7 @@ class Dispatcher {
 			$this->bindErrorDetails($errorThrowable);
 		}
 
-		foreach($logicAssemblyComponentList as $logicAssemblyComponent) {
+		foreach($logicAssemblyComponentList ?? [] as $logicAssemblyComponent) {
 			$assembly = $logicAssemblyComponent->assembly;
 			$componentElement = $logicAssemblyComponent->component;
 			$this->serviceContainer->set($componentElement);

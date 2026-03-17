@@ -39,16 +39,6 @@
 		}
 	},
 
-	"asset/_www/*": {
-		"require": {
-			"vendor/bin/sync": "*"
-		},
-		"execute": {
-			"command": "vendor/bin/sync",
-			"arguments": ["asset/_www", "www"]
-		}
-	},
-
 	"asset/**/*": {
 		"require": {
 			"vendor/bin/sync": "*"

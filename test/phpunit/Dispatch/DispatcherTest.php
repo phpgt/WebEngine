@@ -350,7 +350,7 @@ class DispatcherTest extends TestCase {
 			viewStreamer: $viewStreamer,
 		);
 
-		$sut->processResponse(true, $throwable);
+		$sut->processResponse($throwable);
 
 		$rendered = (string)$viewModel;
 		self::assertStringContainsString("render failed", $rendered);

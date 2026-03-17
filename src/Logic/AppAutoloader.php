@@ -48,7 +48,7 @@ readonly class AppAutoloader {
 			return;
 		}
 
-		$classNameWithoutAppNamespace = substr(
+		$classNameWithoutNs = substr(
 			$className,
 			strlen($this->namespace) + 1
 		);
@@ -58,7 +58,7 @@ readonly class AppAutoloader {
 		if(!str_starts_with($phpFilePath, "/") && !preg_match('/^[A-Za-z]:[\\\\\/]/', $phpFilePath)) {
 			$phpFilePath = "./" . $phpFilePath;
 		}
-		foreach(explode("\\", $classNameWithoutAppNamespace) as $classPart) {
+		foreach(explode("\\", $classNameWithoutNs) as $classPart) {
 			$phpFilePath .= "/";
 			$phpFilePath .= ucfirst($classPart);
 		}

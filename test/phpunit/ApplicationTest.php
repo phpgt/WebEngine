@@ -691,7 +691,7 @@ class ApplicationTest extends TestCase {
 		self::assertCount(2, $handlers);
 		self::assertSame(["DEBUG", "WARNING"], $minLevels);
 		self::assertSame(["NOTICE", "EMERGENCY"], $maxLevels);
-		self::assertTrue($this->getStaticProperty(Application::class, "loggerStreamsConfigured"));
+		self::assertTrue($this->getStaticProperty(Application::class, "loggerConfigured"));
 	}
 
 	private function createTestConfig(array $mockedValues):Config {
@@ -774,7 +774,7 @@ class ApplicationTest extends TestCase {
 	}
 
 	private function resetApplicationLoggerState():void {
-		$this->setStaticProperty(Application::class, "loggerStreamsConfigured", false);
+		$this->setStaticProperty(Application::class, "loggerConfigured", false);
 		$this->setStaticProperty(LogConfig::class, "handlers", []);
 		$this->setStaticProperty(LogConfig::class, "handlerMinLevels", []);
 		$this->setStaticProperty(LogConfig::class, "handlerMaxLevels", []);
@@ -782,7 +782,7 @@ class ApplicationTest extends TestCase {
 	}
 
 	private function setApplicationLoggerConfigured(bool $configured):void {
-		$this->setStaticProperty(Application::class, "loggerStreamsConfigured", $configured);
+		$this->setStaticProperty(Application::class, "loggerConfigured", $configured);
 	}
 
 	private function setStaticProperty(string $className, string $propertyName, mixed $value):void {

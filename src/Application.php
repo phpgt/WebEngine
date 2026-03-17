@@ -33,7 +33,8 @@ use Psr\Http\Message\ServerRequestInterface;
  * The heavy lifting of converting Request to Response is performed in the
  * Dispatcher's generateResponse() method.
  *
-  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 class Application {
 	private Redirect $redirect;
@@ -48,7 +49,7 @@ class Application {
 	private Config $config;
 	private DispatcherFactory $dispatcherFactory;
 	private Dispatcher $dispatcher;
-	private static bool $loggerStreamsConfigured = false;
+	private static bool $loggerConfigured = false;
 	private bool $finished = false;
 
 	/**
@@ -259,6 +260,7 @@ class Application {
 		);
 	}
 
+	/** @SuppressWarnings("PHPMD.Superglobals") */
 	public function restoreGlobals(): void {
 		foreach ($this->globals as $key => $value) {
 			$GLOBALS[$key] = $value;
@@ -285,7 +287,7 @@ class Application {
 	}
 
 	private function configureLoggerStreams():void {
-		if(self::$loggerStreamsConfigured) {
+		if(self::$loggerConfigured) {
 			return;
 		}
 
@@ -318,7 +320,7 @@ class Application {
 			$stderrMinLevel,
 			LogLevel::EMERGENCY,
 		);
-		self::$loggerStreamsConfigured = true;
+		self::$loggerConfigured = true;
 	}
 
 	private function handleShutdown():void {
@@ -378,7 +380,7 @@ class Application {
 			return;
 		}
 
-		if(self::$loggerStreamsConfigured) {
+		if(self::$loggerConfigured) {
 			Log::error((string)$throwable);
 			return;
 		}
@@ -409,7 +411,10 @@ class Application {
 		return LogLevel::ERROR;
 	}
 
-	/** @return array<string, mixed> */
+	/**
+	 * @return array<string, mixed>
+	 * @SuppressWarnings("PHPMD.Superglobals")
+	 */
 	private function getLogContext():array {
 		$uri = $this->request->getUri();
 		$uriPath = $uri->getPath();

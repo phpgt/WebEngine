@@ -23,6 +23,7 @@ class RouterInit {
 	private Assembly $viewAssembly;
 	private Assembly $logicAssembly;
 
+	/** @SuppressWarnings("PHPMD.ExcessiveParameterList") */
 	public function __construct(
 		Request $request,
 		Response $response,

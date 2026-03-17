@@ -10,14 +10,14 @@ use Gt\Routing\LogicStream\LogicStreamWrapper;
  * a classless PHP script with a single go() function.
  */
 class LogicStreamHandler {
-	private Closure $streamWrapperRegisterCallback;
+	private Closure $registerCallback;
 
 	public function __construct(
 		private readonly string $streamName = LogicStreamWrapper::STREAM_NAME,
 		private readonly string $logicStreamClassName = LogicStreamWrapper::class,
-		?Closure $streamWrapperRegisterCallback = null,
+		?Closure $registerCallback = null,
 	) {
-		$this->streamWrapperRegisterCallback = $streamWrapperRegisterCallback ??
+		$this->registerCallback = $registerCallback ??
 			fn() => stream_wrapper_register($this->streamName, $this->logicStreamClassName);
 	}
 
@@ -30,7 +30,7 @@ class LogicStreamHandler {
 			return;
 		}
 
-		($this->streamWrapperRegisterCallback)(
+		($this->registerCallback)(
 			$this->streamName,
 			$this->logicStreamClassName,
 		);

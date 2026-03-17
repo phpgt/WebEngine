@@ -33,9 +33,7 @@ class ViewModelInit {
 				$partialDirectory,
 			);
 		}
-		else {
 // TODO: Handle other view model types.
-		}
 	}
 
 	public function initHTMLDocument(
@@ -45,8 +43,8 @@ class ViewModelInit {
 		TableBinder $tableBinder,
 		ElementBinder $elementBinder,
 		PlaceholderBinder $placeholderBinder,
-		HTMLAttributeCollection $htmlAttributeCollection,
-		ListElementCollection $listElementCollection,
+		HTMLAttributeCollection $attrCollection,
+		ListElementCollection $elementCollection,
 		BindableCache $bindableCache,
 	):void {
 		if($this->initialised) {
@@ -61,20 +59,20 @@ class ViewModelInit {
 		);
 		$elementBinder->setDependencies(
 			$htmlAttributeBinder,
-			$htmlAttributeCollection,
+			$attrCollection,
 			$placeholderBinder,
 		);
 		$tableBinder->setDependencies(
 			$listBinder,
-			$listElementCollection,
+			$elementCollection,
 			$elementBinder,
 			$htmlAttributeBinder,
-			$htmlAttributeCollection,
+			$attrCollection,
 			$placeholderBinder,
 		);
 		$listBinder->setDependencies(
 			$elementBinder,
-			$listElementCollection,
+			$elementCollection,
 			$bindableCache,
 			$tableBinder,
 		);
@@ -83,7 +81,7 @@ class ViewModelInit {
 			$placeholderBinder,
 			$tableBinder,
 			$listBinder,
-			$listElementCollection,
+			$elementCollection,
 			$bindableCache,
 		);
 	}

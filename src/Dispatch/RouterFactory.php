@@ -6,29 +6,30 @@ use Gt\Routing\RouterConfig;
 use Gt\ServiceContainer\Container;
 
 class RouterFactory {
+	/** @SuppressWarnings("PHPMD.LongVariable") */
 	public function create(
 		Container $container,
-		string $configAppNamespace,
-		string $configAppRouterFile,
-		string $configAppRouterClass,
-		string $configDefaultRouterFile,
-		string $configDefaultRouterClass,
-		int $configRedirectResponseCode,
-		string $configDefaultContentType,
+		string $appNamespace,
+		string $appRouterFile,
+		string $appRouterClass,
+		string $defaultRouterFile,
+		string $defaultRouterClass,
+		int $redirectResponseCode,
+		string $defaultContentType,
 		?int $errorStatus = null,
 	):BaseRouter {
-		if(file_exists($configAppRouterFile)) {
-			require_once($configAppRouterFile);
-			$class = "\\$configAppNamespace\\$configAppRouterClass";
+		if(file_exists($appRouterFile)) {
+			require_once($appRouterFile);
+			$class = "\\$appNamespace\\$appRouterClass";
 		}
 		else {
-			require_once($configDefaultRouterFile);
-			$class = $configDefaultRouterClass;
+			require_once($defaultRouterFile);
+			$class = $defaultRouterClass;
 		}
 
 		$routerConfig = new RouterConfig(
-			$configRedirectResponseCode,
-			$configDefaultContentType,
+			$redirectResponseCode,
+			$defaultContentType,
 		);
 
 		/** @var BaseRouter $router */

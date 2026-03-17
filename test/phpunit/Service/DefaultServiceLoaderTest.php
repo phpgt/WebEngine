@@ -3,28 +3,24 @@ namespace GT\WebEngine\Test\Service;
 
 use Gt\Config\Config;
 use Gt\Database\Connection\DefaultSettings;
-use Gt\Database\Connection\Driver;
 use Gt\Database\Connection\Settings;
 use Gt\Database\Database;
 use Gt\Dom\HTMLDocument;
 use Gt\DomTemplate\BindableCache;
-use Gt\DomTemplate\Binder;
 use Gt\DomTemplate\DocumentBinder;
 use Gt\DomTemplate\ElementBinder;
 use Gt\DomTemplate\HTMLAttributeBinder;
 use Gt\DomTemplate\HTMLAttributeCollection;
 use Gt\DomTemplate\ListBinder;
-use Gt\DomTemplate\ListElement;
-use Gt\DomTemplate\ListElementCollection;
 use Gt\DomTemplate\PlaceholderBinder;
 use Gt\DomTemplate\TableBinder;
-use Gt\Http\Header\ResponseHeaders;
 use Gt\Http\Request;
 use Gt\Http\Response;
 use Gt\Http\Uri;
 use Gt\ServiceContainer\Container;
 use GT\WebEngine\Service\DefaultServiceLoader;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 
 class DefaultServiceLoaderTest extends TestCase {
 	public function testLoadResponseHeaders_returnsHeadersFromResponseInContainer():void {
@@ -115,8 +111,6 @@ class DefaultServiceLoaderTest extends TestCase {
 		$collection = $sut->loadListElementCollection();
 		$listElement = $collection->get($document, "items");
 
-		self::assertInstanceOf(ListElementCollection::class, $collection);
-		self::assertInstanceOf(ListElement::class, $listElement);
 		self::assertSame("li", strtolower($listElement->getClone()->tagName));
 	}
 
@@ -130,7 +124,6 @@ class DefaultServiceLoaderTest extends TestCase {
 
 		self::assertInstanceOf(DocumentBinder::class, $binder);
 		self::assertSame($document, $this->getObjectProperty($binder, "document"));
-		self::assertInstanceOf(Binder::class, $binder);
 	}
 
 	public function testLoadRequestUri_returnsRequestUriFromContainer():void {
@@ -159,12 +152,11 @@ class DefaultServiceLoaderTest extends TestCase {
 		string $connectionName = DefaultSettings::DEFAULT_NAME,
 	):Settings {
 		$driver = $database->getDriver($connectionName);
-		self::assertInstanceOf(Driver::class, $driver);
 		return $this->getObjectProperty($driver, "settings");
 	}
 
 	private function getObjectProperty(object $object, string $name):mixed {
-		$property = new \ReflectionProperty($object, $name);
+		$property = new ReflectionProperty($object, $name);
 		return $property->getValue($object);
 	}
 }

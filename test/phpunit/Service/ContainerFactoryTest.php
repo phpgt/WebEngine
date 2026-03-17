@@ -1,62 +1,44 @@
 <?php
-namespace Example\App {
+namespace GT\WebEngine\Test\Service;
 
-	use Gt\Config\Config;
-	use Gt\DomTemplate\BindableCache;
-	use Gt\ServiceContainer\Container;
+require_once __DIR__ . "/Fixture/CustomBindableCache.php";
+require_once __DIR__ . "/Fixture/CustomServiceLoader.php";
 
-	class CustomBindableCache extends BindableCache {}
+use Example\App\CustomBindableCache;
+use Gt\Config\Config;
+use Gt\DomTemplate\BindableCache;
+use Gt\Http\Header\ResponseHeaders;
+use GT\WebEngine\Service\ContainerFactory;
+use PHPUnit\Framework\TestCase;
 
-	class CustomServiceLoader {
-		public function __construct(
-			private readonly Config $config,
-			private readonly Container $container,
-		) {}
+class ContainerFactoryTest extends TestCase {
+	public function testCreate_registersDefaultServiceLoaderWhenNoCustomLoaderConfigured():void {
+		$config = $this->createStub(Config::class);
+		$config->method("get")
+			->willReturnMap([
+				["app.namespace", ""],
+				["app.service_loader", ""],
+			]);
 
-		public function loadBindableCache():BindableCache {
-			return new CustomBindableCache();
-		}
+		$sut = new ContainerFactory();
+		$container = $sut->create($config);
+
+		self::assertTrue($container->has(ResponseHeaders::class));
+		self::assertInstanceOf(BindableCache::class, $container->get(BindableCache::class));
 	}
-}
 
-namespace GT\WebEngine\Test\Service {
+	public function testCreate_registersCustomServiceLoaderWhenConfiguredClassExists():void {
+		$config = $this->createStub(Config::class);
+		$config->method("get")
+			->willReturnMap([
+				["app.namespace", "Example\\App"],
+				["app.service_loader", "CustomServiceLoader"],
+			]);
 
-	use Example\App\CustomBindableCache;
-	use Gt\Config\Config;
-	use Gt\DomTemplate\BindableCache;
-	use Gt\Http\Header\ResponseHeaders;
-	use GT\WebEngine\Service\ContainerFactory;
-	use PHPUnit\Framework\TestCase;
+		$sut = new ContainerFactory();
+		$container = $sut->create($config);
 
-	class ContainerFactoryTest extends TestCase {
-		public function testCreate_registersDefaultServiceLoaderWhenNoCustomLoaderConfigured():void {
-			$config = $this->createStub(Config::class);
-			$config->method("get")
-				->willReturnMap([
-					["app.namespace", ""],
-					["app.service_loader", ""],
-				]);
-
-			$sut = new ContainerFactory();
-			$container = $sut->create($config);
-
-			self::assertTrue($container->has(ResponseHeaders::class));
-			self::assertInstanceOf(BindableCache::class, $container->get(BindableCache::class));
-		}
-
-		public function testCreate_registersCustomServiceLoaderWhenConfiguredClassExists():void {
-			$config = $this->createStub(Config::class);
-			$config->method("get")
-				->willReturnMap([
-					["app.namespace", "Example\\App"],
-					["app.service_loader", "CustomServiceLoader"],
-				]);
-
-			$sut = new ContainerFactory();
-			$container = $sut->create($config);
-
-			self::assertInstanceOf(CustomBindableCache::class, $container->get(BindableCache::class));
-			self::assertFalse($container->has(ResponseHeaders::class));
-		}
+		self::assertInstanceOf(CustomBindableCache::class, $container->get(BindableCache::class));
+		self::assertFalse($container->has(ResponseHeaders::class));
 	}
 }

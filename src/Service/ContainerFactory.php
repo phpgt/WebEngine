@@ -1,8 +1,8 @@
 <?php
 namespace GT\WebEngine\Service;
 
-use Gt\Config\Config;
-use Gt\ServiceContainer\Container;
+use GT\Config\Config;
+use GT\ServiceContainer\Container;
 
 class ContainerFactory {
 	public function create(Config $config):Container {

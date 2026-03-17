@@ -5,9 +5,9 @@ require_once __DIR__ . "/Fixture/CustomBindableCache.php";
 require_once __DIR__ . "/Fixture/CustomServiceLoader.php";
 
 use Example\App\CustomBindableCache;
-use Gt\Config\Config;
-use Gt\DomTemplate\BindableCache;
-use Gt\Http\Header\ResponseHeaders;
+use GT\Config\Config;
+use GT\DomTemplate\BindableCache;
+use GT\Http\Header\ResponseHeaders;
 use GT\WebEngine\Service\ContainerFactory;
 use PHPUnit\Framework\TestCase;
 

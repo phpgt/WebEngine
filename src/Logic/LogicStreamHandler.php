@@ -2,7 +2,7 @@
 namespace GT\WebEngine\Logic;
 
 use Closure;
-use Gt\Routing\LogicStream\LogicStreamWrapper;
+use GT\Routing\LogicStream\LogicStreamWrapper;
 
 /**
  * Handles the registration of a custom stream wrapper, as defined by the

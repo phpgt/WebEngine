@@ -1,14 +1,14 @@
 <?php
 namespace GT\WebEngine\Init;
 
-use Gt\Dom\HTMLDocument;
+use GT\Dom\HTMLDocument;
 use GT\Http\Request;
 use GT\Http\Response;
-use Gt\Json\Schema\JsonDocument;
-use Gt\Routing\Assembly;
-use Gt\Routing\BaseRouter;
-use Gt\Routing\Path\DynamicPath;
-use Gt\ServiceContainer\Container;
+use GT\Json\Schema\JsonDocument;
+use GT\Routing\Assembly;
+use GT\Routing\BaseRouter;
+use GT\Routing\Path\DynamicPath;
+use GT\ServiceContainer\Container;
 use GT\WebEngine\Dispatch\RouterFactory;
 use GT\WebEngine\View\HTMLView;
 use GT\WebEngine\View\JSONView;
@@ -55,8 +55,8 @@ class RouterInit {
 		$viewClass = $this->baseRouter->getViewClass() ?? NullView::class;
 
 		// @codeCoverageIgnoreStart
-		if(str_starts_with($viewClass, "Gt\\")) {
-			$viewClass = str_replace("Gt\\", "GT\\", $viewClass);
+		if(strlen($viewClass) > 2 && $viewClass[0] === "G" && $viewClass[1] === "t" && $viewClass[2] === "\\") {
+			$viewClass[1] = "T";
 		}
 		// @codeCoverageIgnoreEnd
 

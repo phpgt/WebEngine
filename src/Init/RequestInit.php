@@ -2,8 +2,8 @@
 namespace GT\WebEngine\Init;
 
 use Closure;
-use Gt\Input\Input;
-use Gt\Http\ServerInfo;
+use GT\Input\Input;
+use GT\Http\ServerInfo;
 use GT\WebEngine\Dispatch\PathNormaliser;
 use Psr\Http\Message\UriInterface;
 

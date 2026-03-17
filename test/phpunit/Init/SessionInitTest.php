@@ -1,9 +1,9 @@
 <?php
 namespace GT\WebEngine\Test\Init;
 
-use Gt\Session\FileHandler;
-use Gt\Session\Session;
-use Gt\Session\SessionSetup;
+use GT\Session\FileHandler;
+use GT\Session\Session;
+use GT\Session\SessionSetup;
 use GT\WebEngine\Init\SessionInit;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\TestCase;

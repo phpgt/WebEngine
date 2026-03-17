@@ -2,34 +2,34 @@
 namespace GT\WebEngine\Dispatch;
 
 use Closure;
-use Gt\Config\Config;
+use GT\Config\Config;
 use GT\Dom\Element;
 use GT\Dom\HTMLDocument;
-use Gt\DomTemplate\BindableCache;
-use Gt\DomTemplate\Binder;
-use Gt\DomTemplate\ComponentBinder;
-use Gt\DomTemplate\DocumentBinder;
-use Gt\DomTemplate\ElementBinder;
-use Gt\DomTemplate\HTMLAttributeBinder;
-use Gt\DomTemplate\HTMLAttributeCollection;
-use Gt\DomTemplate\ListBinder;
-use Gt\DomTemplate\ListElementCollection;
-use Gt\DomTemplate\PlaceholderBinder;
-use Gt\DomTemplate\TableBinder;
-use Gt\Http\Request;
-use Gt\Http\Response;
-use Gt\Http\ResponseStatusException\ClientError\HttpNotFound;
-use Gt\Http\ResponseStatusException\ResponseStatusException;
-use Gt\Http\StatusCode;
-use Gt\Http\Stream;
-use Gt\Input\Input;
-use Gt\Input\InputData\InputData;
-use Gt\Json\Schema\JsonDocument;
+use GT\DomTemplate\BindableCache;
+use GT\DomTemplate\Binder;
+use GT\DomTemplate\ComponentBinder;
+use GT\DomTemplate\DocumentBinder;
+use GT\DomTemplate\ElementBinder;
+use GT\DomTemplate\HTMLAttributeBinder;
+use GT\DomTemplate\HTMLAttributeCollection;
+use GT\DomTemplate\ListBinder;
+use GT\DomTemplate\ListElementCollection;
+use GT\DomTemplate\PlaceholderBinder;
+use GT\DomTemplate\TableBinder;
+use GT\Http\Request;
+use GT\Http\Response;
+use GT\Http\ResponseStatusException\ClientError\HttpNotFound;
+use GT\Http\ResponseStatusException\ResponseStatusException;
+use GT\Http\StatusCode;
+use GT\Http\Stream;
+use GT\Input\Input;
+use GT\Input\InputData\InputData;
+use GT\Json\Schema\JsonDocument;
 use GT\Routing\Assembly;
-use Gt\Routing\BaseRouter;
+use GT\Routing\BaseRouter;
 use GT\Routing\Path\DynamicPath;
-use Gt\ServiceContainer\Container;
-use Gt\ServiceContainer\Injector;
+use GT\ServiceContainer\Container;
+use GT\ServiceContainer\Injector;
 use GT\WebEngine\Init\RequestInit;
 use GT\WebEngine\Init\RouterInit;
 use GT\WebEngine\Init\SessionInit;
@@ -135,7 +135,7 @@ class Dispatcher {
 		$this->logicStreamHandler->setup();
 
 		$pathNormaliser = new PathNormaliser();
-		/** @var \Gt\Http\Uri $requestUri */
+		/** @var \GT\Http\Uri $requestUri */
 		$requestUri = $request->getUri();
 		$requestInit = $requestInit ?? new RequestInit(
 			$pathNormaliser,
@@ -348,9 +348,11 @@ class Dispatcher {
 			$binder->setComponentBinderDependencies($component);
 			$extraArgs[Binder::class] = $binder;
 			$extraArgs[Element::class] = $component;
-// This is a temporary fix while repos transition from Gt to GT namespaces:
-			$extraArgs[str_replace("GT\\", "Gt\\", Binder::class)] = $binder;
-			$extraArgs[str_replace("GT\\", "Gt\\", Element::class)] = $component;
+// This is a temporary fix while repos transition to the GT namespace:
+			$legacyBinderClass = Binder::class[0] . strtolower(Binder::class[1]) . substr(Binder::class, 2);
+			$legacyElementClass = Element::class[0] . strtolower(Element::class[1]) . substr(Element::class, 2);
+			$extraArgs[$legacyBinderClass] = $binder;
+			$extraArgs[$legacyElementClass] = $component;
 		}
 
 		foreach($this->logicExecutor->invoke($logicAssembly, "go_before", $extraArgs) as $file) {

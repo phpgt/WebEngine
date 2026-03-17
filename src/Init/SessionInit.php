@@ -1,8 +1,8 @@
 <?php
 namespace GT\WebEngine\Init;
 
-use Gt\Session\Session;
-use Gt\Session\SessionSetup;
+use GT\Session\Session;
+use GT\Session\SessionSetup;
 
 class SessionInit {
 	private Session $session;

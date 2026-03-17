@@ -51,9 +51,11 @@
 	},
 
 	"autoload": {
+		"files": [
+			"./src/gt-compat.php"
+		],
 		"psr-4": {
-			"GT\\WebEngine\\": "./src/",
-			"Gt\\WebEngine\\": "./src/"
+			"GT\\WebEngine\\": "./src/"
 		}
 	},
 	"autoload-dev": {
@@ -64,7 +66,7 @@
 
 	"scripts": {
 		"phpunit": "vendor/bin/phpunit --configuration phpunit.xml",
-		"phpstan": "vendor/bin/phpstan analyse --level 6 src",
+		"phpstan": "vendor/bin/phpstan analyse --memory-limit=512M --level 6 src",
 		"phpcs": "vendor/bin/phpcs src --standard=phpcs.xml",
 		"phpmd": "vendor/bin/phpmd src/ text phpmd.xml",
 		"test": [

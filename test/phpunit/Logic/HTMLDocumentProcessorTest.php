@@ -2,10 +2,10 @@
 namespace GT\WebEngine\Test\Logic;
 
 use GT\WebEngine\Logic\HTMLDocumentProcessor;
-use Gt\Dom\Element;
-use Gt\Dom\HTMLDocument;
-use Gt\Routing\Assembly;
-use Gt\Routing\Path\DynamicPath;
+use GT\Dom\Element;
+use GT\Dom\HTMLDocument;
+use GT\Routing\Assembly;
+use GT\Routing\Path\DynamicPath;
 use PHPUnit\Framework\TestCase;
 
 class HTMLDocumentProcessorTest extends TestCase {

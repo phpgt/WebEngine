@@ -1,16 +1,16 @@
 <?php
 namespace GT\WebEngine\Test\Init;
 
-use Gt\Dom\HTMLDocument as GtHTMLDocument;
-use Gt\Http\Request;
-use Gt\Http\Response;
-use Gt\Http\Stream;
-use Gt\Http\Uri;
-use Gt\Routing\Assembly;
-use Gt\Routing\BaseRouter;
-use Gt\ServiceContainer\Container;
+use GT\Dom\HTMLDocument as GTHTMLDocument;
+use GT\Http\Request;
+use GT\Http\Response;
+use GT\Http\Stream;
+use GT\Http\Uri;
+use GT\Routing\Assembly;
+use GT\Routing\BaseRouter;
+use GT\ServiceContainer\Container;
 use GT\WebEngine\Init\RouterInit;
-use Gt\WebEngine\Dispatch\RouterFactory;
+use GT\WebEngine\Dispatch\RouterFactory;
 use GT\WebEngine\View\HTMLView;
 use GT\WebEngine\View\NullView;
 use PHPUnit\Framework\TestCase;
@@ -71,13 +71,13 @@ class RouterInitTest extends TestCase {
 
 		self::assertSame($baseRouter, $sut->getBaseRouter());
 		self::assertInstanceOf(HTMLView::class, $sut->getView());
-		self::assertInstanceOf(GtHTMLDocument::class, $sut->getViewModel());
+		self::assertInstanceOf(GTHTMLDocument::class, $sut->getViewModel());
 		self::assertSame($viewAssembly, $sut->getViewAssembly());
 		self::assertSame($logicAssembly, $sut->getLogicAssembly());
 		self::assertNotNull($sut->getDynamicPath());
 	}
 
-	public function testConstruct_legacyGtViewClassIsUsedDirectly():void {
+	public function testConstruct_legacyViewClassIsUsedDirectly():void {
 			$request = self::createStub(Request::class);
 			$request->method('getUri')->willReturn(new Uri('https://example.test/'));
 			$response = self::createStub(Response::class);

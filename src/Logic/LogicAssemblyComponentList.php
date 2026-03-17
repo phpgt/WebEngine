@@ -2,8 +2,8 @@
 namespace GT\WebEngine\Logic;
 
 use ArrayIterator;
-use Gt\Dom\Element;
-use Gt\Routing\Assembly;
+use GT\Dom\Element;
+use GT\Routing\Assembly;
 /** @extends ArrayIterator<int, LogicAssemblyComponent> */
 class LogicAssemblyComponentList extends ArrayIterator {
 	public function addAssemblyComponent(Assembly $assembly, Element $component):void {

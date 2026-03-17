@@ -5,16 +5,16 @@ require_once __DIR__ . "/Fixture/TestLogHandler.php";
 
 use Closure;
 use Exception;
-use Gt\Config\Config;
-use Gt\Config\ConfigFactory;
-use Gt\Http\RequestFactory;
-use Gt\Http\Response;
-use Gt\Http\ResponseStatusException\ClientError\HttpNotFound;
-use Gt\Http\ServerRequest;
-use Gt\Http\Stream;
-use Gt\Http\Uri;
-use Gt\Logger\LogConfig;
-use Gt\ProtectedGlobal\Protection;
+use GT\Config\Config;
+use GT\Config\ConfigFactory;
+use GT\Http\RequestFactory;
+use GT\Http\Response;
+use GT\Http\ResponseStatusException\ClientError\HttpNotFound;
+use GT\Http\ServerRequest;
+use GT\Http\Stream;
+use GT\Http\Uri;
+use GT\Logger\LogConfig;
+use GT\ProtectedGlobal\Protection;
 use GT\WebEngine\Application;
 use GT\WebEngine\Debug\OutputBuffer;
 use GT\WebEngine\Debug\Timer;
@@ -56,7 +56,7 @@ class ApplicationTest extends TestCase {
 			$response = self::createStub(Response::class);
 		$response->method('getStatusCode')->willReturn(200);
 		$response->method('getHeaders')->willReturn(['Content-Type' => ['text/html']]);
-		$response->method('getBody')->willReturn(new \Gt\Http\Stream());
+		$response->method('getBody')->willReturn(new \GT\Http\Stream());
 		$dispatcher->method('generateResponse')->willReturn($response);
 
 			$dispatcherFactory = self::createStub(DispatcherFactory::class);
@@ -87,7 +87,7 @@ class ApplicationTest extends TestCase {
 			$response = self::createStub(Response::class);
 		$response->method('getStatusCode')->willReturn(200);
 		$response->method('getHeaders')->willReturn(['Content-Type' => ['text/html']]);
-		$response->method('getBody')->willReturn(new \Gt\Http\Stream());
+		$response->method('getBody')->willReturn(new \GT\Http\Stream());
 		$dispatcher->method('generateResponse')->willReturn($response);
 			$dispatcherFactory = self::createStub(DispatcherFactory::class);
 			$dispatcherFactory->method('create')->willReturn($dispatcher);
@@ -124,7 +124,7 @@ class ApplicationTest extends TestCase {
 		$response = self::createMock(Response::class);
 		$response->method('getStatusCode')->willReturn(200);
 		$response->method('getHeaders')->willReturn(['Content-Type' => ['text/html']]);
-		$response->method('getBody')->willReturn(new \Gt\Http\Stream());
+		$response->method('getBody')->willReturn(new \GT\Http\Stream());
 		$dispatcher->method('generateResponse')->willReturn($response);
 		$dispatcherFactory = self::createMock(DispatcherFactory::class);
 		$dispatcherFactory->method('create')->willReturn($dispatcher);
@@ -156,7 +156,7 @@ class ApplicationTest extends TestCase {
 		$response = self::createMock(Response::class);
 		$response->method('getStatusCode')->willReturn(200);
 		$response->method('getHeaders')->willReturn(['Content-Type' => ['text/html']]);
-		$response->method('getBody')->willReturn(new \Gt\Http\Stream());
+		$response->method('getBody')->willReturn(new \GT\Http\Stream());
 		$dispatcher->method('generateResponse')->willReturn($response);
 		$dispatcherFactory = self::createMock(DispatcherFactory::class);
 		$dispatcherFactory->method('create')->willReturn($dispatcher);
@@ -202,7 +202,7 @@ class ApplicationTest extends TestCase {
 			->willReturn(['Content-Type' => ['text/html']]);
 		$response->expects(self::once())
 			->method("getBody")
-			->willReturn(new \Gt\Http\Stream());
+			->willReturn(new \GT\Http\Stream());
 
 		$globalProtection = self::createMock(Protection::class);
 

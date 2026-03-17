@@ -2,11 +2,11 @@
 namespace GT\WebEngine\Test\Init;
 
 use Closure;
-use Gt\Http\ServerInfo;
-use Gt\Http\Uri;
-use Gt\Input\Input;
+use GT\Http\ServerInfo;
+use GT\Http\Uri;
+use GT\Input\Input;
 use GT\WebEngine\Init\RequestInit;
-use Gt\WebEngine\Dispatch\PathNormaliser;
+use GT\WebEngine\Dispatch\PathNormaliser;
 use PHPUnit\Framework\TestCase;
 
 class RequestInitTest extends TestCase {

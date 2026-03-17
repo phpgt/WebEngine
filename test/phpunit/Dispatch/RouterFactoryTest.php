@@ -1,10 +1,10 @@
 <?php
 namespace GT\WebEngine\Test\Dispatch;
 
-use Gt\WebEngine\Dispatch\RouterFactory;
-use Gt\Routing\BaseRouter;
-use Gt\Routing\RouterConfig;
-use Gt\ServiceContainer\Container;
+use GT\WebEngine\Dispatch\RouterFactory;
+use GT\Routing\BaseRouter;
+use GT\Routing\RouterConfig;
+use GT\ServiceContainer\Container;
 use PHPUnit\Framework\TestCase;
 
 class RouterFactoryTest extends TestCase {
@@ -31,9 +31,9 @@ class RouterFactoryTest extends TestCase {
 		$template = <<<'PHP'
 		<?php
 		namespace %NAMESPACE%;
-		use Gt\Routing\BaseRouter;
-		use Gt\Routing\RouterConfig;
-		use Gt\ServiceContainer\Container;
+		use GT\Routing\BaseRouter;
+		use GT\Routing\RouterConfig;
+		use GT\ServiceContainer\Container;
 		class %CLASS% extends BaseRouter {
 			public ?RouterConfig $receivedConfig = null;
 			public ?Container $receivedContainer = null;

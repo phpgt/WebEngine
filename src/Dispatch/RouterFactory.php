@@ -1,9 +1,9 @@
 <?php
 namespace GT\WebEngine\Dispatch;
 
-use Gt\Routing\BaseRouter;
-use Gt\Routing\RouterConfig;
-use Gt\ServiceContainer\Container;
+use GT\Routing\BaseRouter;
+use GT\Routing\RouterConfig;
+use GT\ServiceContainer\Container;
 
 class RouterFactory {
 	/** @SuppressWarnings("PHPMD.LongVariable") */

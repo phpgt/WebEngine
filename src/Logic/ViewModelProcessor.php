@@ -2,8 +2,8 @@
 namespace GT\WebEngine\Logic;
 
 use Generator;
-use Gt\Dom\HTMLDocument;
-use Gt\Routing\Path\DynamicPath;
+use GT\Dom\HTMLDocument;
+use GT\Routing\Path\DynamicPath;
 
 abstract class ViewModelProcessor {
 	public function __construct(

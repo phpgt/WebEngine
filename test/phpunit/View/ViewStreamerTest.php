@@ -1,7 +1,7 @@
 <?php
 namespace GT\WebEngine\Test\View;
 
-use Gt\Dom\HTMLDocument;
+use GT\Dom\HTMLDocument;
 use GT\WebEngine\View\HTMLView;
 use GT\WebEngine\View\ViewStreamer;
 use PHPUnit\Framework\TestCase;

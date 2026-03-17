@@ -1,7 +1,7 @@
 <?php
 namespace GT\WebEngine\View;
 
-use Gt\Json\Schema\JsonDocument;
+use GT\Json\Schema\JsonDocument;
 
 /**
  * This file is just stubbed out for now, and does not need unit tests writing

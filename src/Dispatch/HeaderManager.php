@@ -2,7 +2,7 @@
 namespace GT\WebEngine\Dispatch;
 
 use Closure;
-use Gt\Http\Header\ResponseHeaders;
+use GT\Http\Header\ResponseHeaders;
 use GT\Http\Response;
 
 class HeaderManager {

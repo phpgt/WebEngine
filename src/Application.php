@@ -2,12 +2,12 @@
 namespace GT\WebEngine;
 
 use Closure;
-use Gt\Http\ResponseStatusException\ClientError\ClientErrorException;
-use Gt\Http\ResponseStatusException\ResponseStatusException;
-use Gt\Logger\Log;
-use Gt\Logger\LogConfig;
-use Gt\Logger\LogHandler\StdErrHandler;
-use Gt\Logger\LogLevel;
+use GT\Http\ResponseStatusException\ClientError\ClientErrorException;
+use GT\Http\ResponseStatusException\ResponseStatusException;
+use GT\Logger\Log;
+use GT\Logger\LogConfig;
+use GT\Logger\LogHandler\StdErrHandler;
+use GT\Logger\LogLevel;
 use Throwable;
 use ErrorException;
 use ReflectionMethod;
@@ -16,13 +16,13 @@ use GT\WebEngine\Debug\Timer;
 use GT\WebEngine\Redirection\Redirect;
 use GT\WebEngine\Dispatch\Dispatcher;
 use GT\WebEngine\Dispatch\DispatcherFactory;
-use Gt\Config\Config;
-use Gt\Config\ConfigFactory;
-use Gt\Http\Request;
-use Gt\Http\RequestFactory;
-use Gt\Http\Response;
-use Gt\Http\Stream;
-use Gt\ProtectedGlobal\Protection;
+use GT\Config\Config;
+use GT\Config\ConfigFactory;
+use GT\Http\Request;
+use GT\Http\RequestFactory;
+use GT\Http\Response;
+use GT\Http\Stream;
+use GT\ProtectedGlobal\Protection;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -216,28 +216,17 @@ class Application {
 
 	/**
 	 * Registers a namespace compatibility autoloader to bridge the
-	 * Gt -> GT namespace transition.
+	 * legacy-to-GT namespace transition.
 	 *
 	 * As part of the PHP.GT rebranding for WebEngine v5, all references to
 	 * "GT" are being standardised to uppercase. However, the framework
 	 * consists of 40+ repositories that cannot all be refactored
 	 * simultaneously. This compatibility layer allows new code to reference
 	 * classes using the GT\ namespace while the underlying packages still
-	 * define classes with the Gt\ namespace.
+	 * define classes with the legacy namespace casing.
 	 */
 	private function gtCompatibility():void {
-		spl_autoload_register(function(string $class):void {
-			if(str_starts_with($class, 'GT\\')) {
-				$legacyClass = 'Gt' . substr($class, 2);
-				// Trigger autoloading for the legacy class
-				spl_autoload_call($legacyClass);
-				// Only create alias if it was loaded and target doesn't already exist
-				if((class_exists($legacyClass, false) || interface_exists($legacyClass, false) || trait_exists($legacyClass, false))
-					&& !class_exists($class, false) && !interface_exists($class, false) && !trait_exists($class, false)) {
-					class_alias($legacyClass, $class);
-				}
-			}
-		}, true, true);
+		registerNamespaceCompatibilityAutoloader();
 	}
 
 	private function protectGlobals():void {

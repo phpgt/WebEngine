@@ -1,8 +1,8 @@
 <?php
 namespace GT\WebEngine\Test\Dispatch;
 
-use Gt\Http\Header\ResponseHeaders;
-use Gt\WebEngine\Dispatch\HeaderManager;
+use GT\Http\Header\ResponseHeaders;
+use GT\WebEngine\Dispatch\HeaderManager;
 use PHPUnit\Framework\TestCase;
 
 class HeaderManagerTest extends TestCase {

@@ -2,19 +2,19 @@
 namespace GT\WebEngine\Init;
 
 use Closure;
-use Gt\Dom\Document;
+use GT\Dom\Document;
 use GT\Dom\HTMLDocument;
-use Gt\DomTemplate\BindableCache;
-use Gt\DomTemplate\Binder;
-use Gt\DomTemplate\DocumentBinder;
-use Gt\DomTemplate\ElementBinder;
-use Gt\DomTemplate\HTMLAttributeBinder;
-use Gt\DomTemplate\HTMLAttributeCollection;
-use Gt\DomTemplate\ListBinder;
-use Gt\DomTemplate\ListElementCollection;
-use Gt\DomTemplate\PlaceholderBinder;
-use Gt\DomTemplate\TableBinder;
-use Gt\Json\Schema\JsonDocument;
+use GT\DomTemplate\BindableCache;
+use GT\DomTemplate\Binder;
+use GT\DomTemplate\DocumentBinder;
+use GT\DomTemplate\ElementBinder;
+use GT\DomTemplate\HTMLAttributeBinder;
+use GT\DomTemplate\HTMLAttributeCollection;
+use GT\DomTemplate\ListBinder;
+use GT\DomTemplate\ListElementCollection;
+use GT\DomTemplate\PlaceholderBinder;
+use GT\DomTemplate\TableBinder;
+use GT\Json\Schema\JsonDocument;
 use GT\WebEngine\Logic\HTMLDocumentProcessor;
 use GT\WebEngine\Logic\ViewModelProcessor;
 

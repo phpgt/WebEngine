@@ -1,7 +1,7 @@
 <?php
 namespace GT\WebEngine\Test\View;
 
-use Gt\Dom\HTMLDocument;
+use GT\Dom\HTMLDocument;
 use GT\WebEngine\View\HTMLView;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;

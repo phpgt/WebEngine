@@ -1,13 +1,13 @@
 <?php
 namespace GT\WebEngine\Logic;
 
-use Gt\Dom\HTMLDocument;
-use Gt\DomTemplate\ComponentExpander;
-use Gt\DomTemplate\PartialContent;
-use Gt\DomTemplate\PartialContentDirectoryNotFoundException;
-use Gt\DomTemplate\PartialExpander;
-use Gt\Routing\Assembly;
-use Gt\Routing\Path\DynamicPath;
+use GT\Dom\HTMLDocument;
+use GT\DomTemplate\ComponentExpander;
+use GT\DomTemplate\PartialContent;
+use GT\DomTemplate\PartialContentDirectoryNotFoundException;
+use GT\DomTemplate\PartialExpander;
+use GT\Routing\Assembly;
+use GT\Routing\Path\DynamicPath;
 
 class HTMLDocumentProcessor extends ViewModelProcessor {
 	function processDynamicPath(

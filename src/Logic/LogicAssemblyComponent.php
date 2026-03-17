@@ -1,8 +1,8 @@
 <?php
 namespace GT\WebEngine\Logic;
 
-use Gt\Dom\Element;
-use Gt\Routing\Assembly;
+use GT\Dom\Element;
+use GT\Routing\Assembly;
 
 readonly class LogicAssemblyComponent {
 	public function __construct(

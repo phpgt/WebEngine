@@ -1,6 +1,6 @@
 <?php
 namespace Example\App;
 
-use Gt\DomTemplate\BindableCache;
+use GT\DomTemplate\BindableCache;
 
 class CustomBindableCache extends BindableCache {}

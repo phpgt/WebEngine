@@ -434,7 +434,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Async\\": "./src"
+                    "GT\\Async\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -488,7 +488,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Build\\": "./src"
+                    "GT\\Build\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -537,7 +537,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Cli\\": "./src"
+                    "GT\\Cli\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -600,7 +600,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Config\\": "./src"
+                    "GT\\Config\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -652,7 +652,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Cookie\\": "./src"
+                    "GT\\Cookie\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -709,7 +709,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Cron\\": "./src/"
+                    "GT\\Cron\\": "./src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -752,7 +752,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Csrf\\": "./src"
+                    "GT\\Csrf\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -810,7 +810,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\CssXPath\\": "./src"
+                    "GT\\CssXPath\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -867,7 +867,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Curl\\": "./src"
+                    "GT\\Curl\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -926,7 +926,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Daemon\\": "./src"
+                    "GT\\Daemon\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -977,7 +977,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Database\\": "./src"
+                    "GT\\Database\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1039,7 +1039,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\DataObject\\": "./src"
+                    "GT\\DataObject\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1097,7 +1097,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Dom\\": "./src"
+                    "GT\\Dom\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1193,7 +1193,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\DomTemplate\\": "./src"
+                    "GT\\DomTemplate\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1241,7 +1241,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\DomValidation\\": "./src/"
+                    "GT\\DomValidation\\": "./src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1295,7 +1295,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Fetch\\": "./src"
+                    "GT\\Fetch\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1361,7 +1361,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\FileCache\\": "./src"
+                    "GT\\FileCache\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1432,7 +1432,7 @@
             },
             "autoload": {
                 "psr-4": {
-                    "Gt\\Http\\": "./src"
+                    "GT\\Http\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1480,7 +1480,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Input\\": "./src"
+                    "GT\\Input\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1529,7 +1529,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Json\\": "./src"
+                    "GT\\Json\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1579,7 +1579,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Logger\\": "./src"
+                    "GT\\Logger\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1631,7 +1631,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Promise\\": "./src"
+                    "GT\\Promise\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1686,7 +1686,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\PropFunc\\": "./src"
+                    "GT\\PropFunc\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1738,7 +1738,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\ProtectedGlobal\\": "./src/"
+                    "GT\\ProtectedGlobal\\": "./src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1785,7 +1785,7 @@
             "autoload": {
                 "psr-4": {
                     "GT\\Routing\\": "./src",
-                    "Gt\\Routing\\": "./src"
+                    "GT\\Routing\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1853,7 +1853,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Server\\": "./src/"
+                    "GT\\Server\\": "./src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1900,7 +1900,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\ServiceContainer\\": "./src"
+                    "GT\\ServiceContainer\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1947,7 +1947,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Session\\": "./src"
+                    "GT\\Session\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1998,7 +1998,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Sync\\": "./src"
+                    "GT\\Sync\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -2051,7 +2051,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\TypeSafeGetter\\": "./src"
+                    "GT\\TypeSafeGetter\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -2103,7 +2103,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Gt\\Ulid\\": "./src"
+                    "GT\\Ulid\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",

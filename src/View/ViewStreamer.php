@@ -1,7 +1,7 @@
 <?php
 namespace GT\WebEngine\View;
 
-use Gt\Dom\HTMLDocument;
+use GT\Dom\HTMLDocument;
 
 class ViewStreamer {
 	public function stream(

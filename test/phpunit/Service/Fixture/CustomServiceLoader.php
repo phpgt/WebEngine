@@ -1,9 +1,9 @@
 <?php
 namespace Example\App;
 
-use Gt\Config\Config;
-use Gt\DomTemplate\BindableCache;
-use Gt\ServiceContainer\Container;
+use GT\Config\Config;
+use GT\DomTemplate\BindableCache;
+use GT\ServiceContainer\Container;
 
 class CustomServiceLoader {
 	public function __construct(

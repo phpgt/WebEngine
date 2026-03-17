@@ -6,18 +6,18 @@ use PHPUnit\Framework\TestCase;
 
 class ViewModelInitTest extends TestCase {
 	public function testInitHTMLDocument_wiresBindersAndIsIdempotent():void {
-		$model = new \Gt\Dom\HTMLDocument('<main></main>');
+		$model = new \GT\Dom\HTMLDocument('<main></main>');
 		$sut = new ViewModelInit($model, '/components', '/partials');
 
-		$documentBinder = self::createMock(\Gt\DomTemplate\DocumentBinder::class);
-		$htmlAttributeBinder = self::createMock(\Gt\DomTemplate\HTMLAttributeBinder::class);
-		$listBinder = self::createMock(\Gt\DomTemplate\ListBinder::class);
-		$tableBinder = self::createMock(\Gt\DomTemplate\TableBinder::class);
-		$elementBinder = self::createMock(\Gt\DomTemplate\ElementBinder::class);
-			$placeholderBinder = self::createStub(\Gt\DomTemplate\PlaceholderBinder::class);
-			$htmlAttributeCollection = self::createStub(\Gt\DomTemplate\HTMLAttributeCollection::class);
-			$listElementCollection = self::createStub(\Gt\DomTemplate\ListElementCollection::class);
-			$bindableCache = self::createStub(\Gt\DomTemplate\BindableCache::class);
+		$documentBinder = self::createMock(\GT\DomTemplate\DocumentBinder::class);
+		$htmlAttributeBinder = self::createMock(\GT\DomTemplate\HTMLAttributeBinder::class);
+		$listBinder = self::createMock(\GT\DomTemplate\ListBinder::class);
+		$tableBinder = self::createMock(\GT\DomTemplate\TableBinder::class);
+		$elementBinder = self::createMock(\GT\DomTemplate\ElementBinder::class);
+			$placeholderBinder = self::createStub(\GT\DomTemplate\PlaceholderBinder::class);
+			$htmlAttributeCollection = self::createStub(\GT\DomTemplate\HTMLAttributeCollection::class);
+			$listElementCollection = self::createStub(\GT\DomTemplate\ListElementCollection::class);
+			$bindableCache = self::createStub(\GT\DomTemplate\BindableCache::class);
 
 		$htmlAttributeBinder->expects(self::once())
 			->method('setDependencies')

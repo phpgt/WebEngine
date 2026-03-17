@@ -1,8 +1,8 @@
 <?php
 namespace GT\WebEngine\Test\Dispatch;
 
-use Gt\WebEngine\Dispatch\PathNormaliser;
-use Gt\Http\Uri;
+use GT\WebEngine\Dispatch\PathNormaliser;
+use GT\Http\Uri;
 use PHPUnit\Framework\TestCase;
 
 class PathNormaliserTest extends TestCase {

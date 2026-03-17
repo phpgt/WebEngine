@@ -1,11 +1,11 @@
 <?php
 namespace GT\WebEngine\Test\Dispatch;
 
-use Gt\Config\Config;
-use Gt\Http\Request;
-use Gt\Http\ResponseStatusException\ClientError\HttpNotAcceptable;
-use Gt\Http\Uri;
-use Gt\Session\FileHandler;
+use GT\Config\Config;
+use GT\Http\Request;
+use GT\Http\ResponseStatusException\ClientError\HttpNotAcceptable;
+use GT\Http\Uri;
+use GT\Session\FileHandler;
 use GT\WebEngine\Dispatch\DispatcherFactory;
 use PHPUnit\Framework\TestCase;
 

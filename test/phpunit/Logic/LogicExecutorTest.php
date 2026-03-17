@@ -6,8 +6,8 @@ require_once __DIR__ . "/../Fixture/TestAttribute.php";
 use GT\WebEngine\Logic\LogicExecutor;
 use GT\WebEngine\Logic\LogicProjectNamespace;
 use GT\WebEngine\Logic\LogicStreamHandler;
-use Gt\Routing\Assembly;
-use Gt\ServiceContainer\Injector;
+use GT\Routing\Assembly;
+use GT\ServiceContainer\Injector;
 use PHPUnit\Framework\TestCase;
 
 class LogicExecutorTest extends TestCase {

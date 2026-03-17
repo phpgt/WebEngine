@@ -2,8 +2,8 @@
 namespace GT\WebEngine\Dispatch;
 
 use Closure;
-use Gt\Config\Config;
-use Gt\Http\Request;
+use GT\Config\Config;
+use GT\Http\Request;
 use GT\WebEngine\Init\SessionInit;
 
 class DispatcherFactory {

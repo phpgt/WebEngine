@@ -1,7 +1,7 @@
 <?php
 namespace GT\WebEngine\Test\Fixture;
 
-use Gt\Logger\LogHandler\LogHandler;
+use GT\Logger\LogHandler\LogHandler;
 
 class TestLogHandler extends LogHandler {
 	/** @var array<int, array{level:string,message:string,context:array<string, mixed>}> */

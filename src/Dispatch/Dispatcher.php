@@ -7,7 +7,7 @@ use GT\Dom\Element;
 use GT\Dom\HTMLDocument;
 use GT\DomTemplate\BindableCache;
 use Gt\DomTemplate\Binder;
-use GT\DomTemplate\ComponentBinder;
+use Gt\DomTemplate\ComponentBinder;
 use GT\DomTemplate\ElementBinder;
 use GT\DomTemplate\HTMLAttributeBinder;
 use GT\DomTemplate\HTMLAttributeCollection;
@@ -238,7 +238,7 @@ class Dispatcher {
 		}
 
 		if(!$this->viewAssembly->containsDistinctFile()) {
-			throw new ErrorPageNotFoundException($errorStatusCode);
+			throw new ErrorPageNotFoundException(code: $errorStatusCode);
 		}
 
 		$this->processResponse(true, $throwable);

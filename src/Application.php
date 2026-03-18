@@ -67,7 +67,6 @@ class Application {
 		?Closure $handleShutdown = null,
 		?Protection $globalProtection = null,
 	) {
-		$this->gtCompatibility();
 		$this->redirect = $redirect ?? new Redirect();
 		$this->config = $config ?? $this->loadConfig();
 		$this->configureLoggerStreams();
@@ -212,21 +211,6 @@ class Application {
 
 		$this->timer->stop();
 		$this->timer->logDelta();
-	}
-
-	/**
-	 * Registers a namespace compatibility autoloader to bridge the
-	 * legacy-to-GT namespace transition.
-	 *
-	 * As part of the PHP.GT rebranding for WebEngine v5, all references to
-	 * "GT" are being standardised to uppercase. However, the framework
-	 * consists of 40+ repositories that cannot all be refactored
-	 * simultaneously. This compatibility layer allows new code to reference
-	 * classes using the GT\ namespace while the underlying packages still
-	 * define classes with the legacy namespace casing.
-	 */
-	private function gtCompatibility():void {
-		registerNamespaceCompatibilityAutoloader();
 	}
 
 	private function protectGlobals():void {

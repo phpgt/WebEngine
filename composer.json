@@ -52,7 +52,7 @@
 
 	"autoload": {
 		"files": [
-			"./src/gt-compat.php"
+			"./gt-compat.php"
 		],
 		"psr-4": {
 			"GT\\WebEngine\\": "./src/"

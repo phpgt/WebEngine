@@ -434,7 +434,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Async\\": "./src"
+                    "Gt\\Async\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -488,7 +488,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Build\\": "./src"
+                    "Gt\\Build\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -537,7 +537,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Cli\\": "./src"
+                    "Gt\\Cli\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -600,7 +600,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Config\\": "./src"
+                    "Gt\\Config\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -652,7 +652,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Cookie\\": "./src"
+                    "Gt\\Cookie\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -709,7 +709,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Cron\\": "./src/"
+                    "Gt\\Cron\\": "./src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -752,7 +752,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Csrf\\": "./src"
+                    "Gt\\Csrf\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -810,7 +810,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\CssXPath\\": "./src"
+                    "Gt\\CssXPath\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -867,7 +867,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Curl\\": "./src"
+                    "Gt\\Curl\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -926,7 +926,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Daemon\\": "./src"
+                    "Gt\\Daemon\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -977,7 +977,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Database\\": "./src"
+                    "Gt\\Database\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1039,7 +1039,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\DataObject\\": "./src"
+                    "Gt\\DataObject\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1097,7 +1097,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Dom\\": "./src"
+                    "Gt\\Dom\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1193,7 +1193,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\DomTemplate\\": "./src"
+                    "Gt\\DomTemplate\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1241,7 +1241,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\DomValidation\\": "./src/"
+                    "Gt\\DomValidation\\": "./src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1295,7 +1295,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Fetch\\": "./src"
+                    "Gt\\Fetch\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1361,7 +1361,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\FileCache\\": "./src"
+                    "Gt\\FileCache\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1432,7 +1432,7 @@
             },
             "autoload": {
                 "psr-4": {
-                    "GT\\Http\\": "./src"
+                    "Gt\\Http\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1480,7 +1480,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Input\\": "./src"
+                    "Gt\\Input\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1529,7 +1529,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Json\\": "./src"
+                    "Gt\\Json\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1579,7 +1579,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Logger\\": "./src"
+                    "Gt\\Logger\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1631,7 +1631,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Promise\\": "./src"
+                    "Gt\\Promise\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1686,7 +1686,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\PropFunc\\": "./src"
+                    "Gt\\PropFunc\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1738,7 +1738,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\ProtectedGlobal\\": "./src/"
+                    "Gt\\ProtectedGlobal\\": "./src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1785,7 +1785,7 @@
             "autoload": {
                 "psr-4": {
                     "GT\\Routing\\": "./src",
-                    "GT\\Routing\\": "./src"
+                    "Gt\\Routing\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1853,7 +1853,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Server\\": "./src/"
+                    "Gt\\Server\\": "./src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1900,7 +1900,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\ServiceContainer\\": "./src"
+                    "Gt\\ServiceContainer\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1947,7 +1947,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Session\\": "./src"
+                    "Gt\\Session\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1998,7 +1998,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Sync\\": "./src"
+                    "Gt\\Sync\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -2051,7 +2051,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\TypeSafeGetter\\": "./src"
+                    "Gt\\TypeSafeGetter\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -2103,7 +2103,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "GT\\Ulid\\": "./src"
+                    "Gt\\Ulid\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -2983,11 +2983,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.1.41",
+            "version": "2.1.42",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/a2eae8f20856b3afe74bf1f9726ce8c11438e300",
-                "reference": "a2eae8f20856b3afe74bf1f9726ce8c11438e300",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/1279e1ce86ba768f0780c9d889852b4e02ff40d0",
+                "reference": "1279e1ce86ba768f0780c9d889852b4e02ff40d0",
                 "shasum": ""
             },
             "require": {
@@ -3032,7 +3032,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-03-16T18:24:10+00:00"
+            "time": "2026-03-17T14:58:32+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",

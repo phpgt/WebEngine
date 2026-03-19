@@ -14,7 +14,7 @@ spl_autoload_register(static function(string $className):void {
 		strlen(GT_COMPAT_MODERN_PREFIX)
 	);
 
-	$classMapPath = __DIR__ . "/vendor/composer/autoload_classmap.php";
+	$classMapPath = "vendor/composer/autoload_classmap.php";
 	if(is_file($classMapPath)) {
 		/** @var array<string,string> $classMap */
 		$classMap = require $classMapPath;
@@ -24,7 +24,7 @@ spl_autoload_register(static function(string $className):void {
 		}
 	}
 
-	$psr4Path = __DIR__ . "/vendor/composer/autoload_psr4.php";
+	$psr4Path = "vendor/composer/autoload_psr4.php";
 	if(!is_file($psr4Path)) {
 		return;
 	}

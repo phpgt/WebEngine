@@ -1,11 +1,19 @@
 <?php
 namespace GT\WebEngine\Test;
 
+use GT\Dom\HTMLDocument;
+use GT\DomTemplate\ComponentExpander;
+use GT\DomTemplate\PartialContent;
+use GT\DomTemplate\PartialContentDirectoryNotFoundException;
+use GT\DomTemplate\PartialExpander;
 use Gt\Http\Request;
+use Gt\Http\Stream;
 use Gt\Http\Uri;
+use GT\WebEngine\Logic\HTMLDocumentProcessor;
 use GT\Routing\RouterConfig;
 use GT\WebEngine\DefaultRouter;
 use Gt\ServiceContainer\Container;
+use GT\WebEngine\View\HTMLView;
 use PHPUnit\Framework\TestCase;
 
 require_once dirname(__DIR__, 2) . "/router.default.php";
@@ -59,6 +67,53 @@ class DefaultRouterTest extends TestCase {
 			],
 			iterator_to_array($sut->getViewAssembly()),
 		);
+	}
+
+	public function testRoute_pageRequest_withHeadersFootersAndPartials_throwsLogicException():void {
+		class_exists(HTMLDocument::class);
+		class_exists(ComponentExpander::class);
+		class_exists(PartialContent::class);
+		class_exists(PartialContentDirectoryNotFoundException::class);
+		class_exists(PartialExpander::class);
+
+		file_put_contents($this->tmpDir . "/page/_header.html", "<html><body><header>site</header>");
+		file_put_contents($this->tmpDir . "/page/admin/_header.html", "<nav>admin</nav>");
+		file_put_contents($this->tmpDir . "/page/admin/users.html", "<!-- extends=layout --><main>users</main>");
+		file_put_contents($this->tmpDir . "/page/admin/_footer.html", "<footer>admin</footer>");
+		file_put_contents($this->tmpDir . "/page/_footer.html", "<footer>site</footer></body></html>");
+		mkdir($this->tmpDir . "/page/_partial", recursive: true);
+		file_put_contents(
+			$this->tmpDir . "/page/_partial/layout.html",
+			"<!doctype html><html><body><section data-partial></section></body></html>",
+		);
+
+		chdir($this->tmpDir);
+
+		$request = self::createMock(Request::class);
+		$request->method("getMethod")->willReturn("GET");
+		$request->method("getHeaderLine")
+			->with("accept")
+			->willReturn("text/html");
+		$request->method("getUri")->willReturn(new Uri("https://example.test/admin/users"));
+
+		$sut = new DefaultRouter(new RouterConfig(307, "text/html"));
+		$container = new Container();
+		$container->set($request);
+		$sut->setContainer($container);
+		$sut->route($request);
+
+		$view = new HTMLView(new Stream());
+		foreach($sut->getViewAssembly() as $viewFile) {
+			$view->addViewFile($viewFile);
+		}
+		$viewModel = $view->createViewModel();
+
+		$processor = new HTMLDocumentProcessor("components", "page/_partial");
+		$this->expectException(\LogicException::class);
+		$this->expectExceptionMessage(
+			"Header/footer view files cannot be combined with partial views."
+		);
+		$processor->processPartialContent($viewModel);
 	}
 
 	private function removeDirectory(string $dir):void {

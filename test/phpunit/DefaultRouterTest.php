@@ -13,6 +13,7 @@ use GT\WebEngine\Logic\HTMLDocumentProcessor;
 use GT\Routing\RouterConfig;
 use GT\WebEngine\DefaultRouter;
 use Gt\ServiceContainer\Container;
+use GT\WebEngine\View\HeaderFooterPartialConflictException;
 use GT\WebEngine\View\HTMLView;
 use PHPUnit\Framework\TestCase;
 
@@ -109,11 +110,11 @@ class DefaultRouterTest extends TestCase {
 		$viewModel = $view->createViewModel();
 
 		$processor = new HTMLDocumentProcessor("components", "page/_partial");
-		$this->expectException(\LogicException::class);
+		$this->expectException(HeaderFooterPartialConflictException::class);
 		$this->expectExceptionMessage(
 			"Header/footer view files cannot be combined with partial views."
 		);
-		$processor->processPartialContent($viewModel);
+		$processor->processPartialContent($viewModel, $sut->getViewAssembly());
 	}
 
 	private function removeDirectory(string $dir):void {

@@ -1,8 +1,8 @@
 <?php
 namespace GT\WebEngine\Logic;
 
-use Generator;
 use GT\Dom\HTMLDocument;
+use GT\Routing\Assembly;
 use GT\Routing\Path\DynamicPath;
 
 abstract class ViewModelProcessor {
@@ -18,5 +18,6 @@ abstract class ViewModelProcessor {
 
 	abstract function processPartialContent(
 		HTMLDocument $model,
+		?Assembly $viewAssembly = null,
 	):LogicAssemblyComponentList;
 }

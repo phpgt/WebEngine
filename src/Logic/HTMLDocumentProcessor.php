@@ -8,6 +8,7 @@ use GT\DomTemplate\PartialContentDirectoryNotFoundException;
 use GT\DomTemplate\PartialExpander;
 use GT\Routing\Assembly;
 use GT\Routing\Path\DynamicPath;
+use GT\WebEngine\View\HeaderFooterPartialConflictException;
 
 class HTMLDocumentProcessor extends ViewModelProcessor {
 	function processDynamicPath(
@@ -30,7 +31,16 @@ class HTMLDocumentProcessor extends ViewModelProcessor {
 
 	function processPartialContent(
 		HTMLDocument $model,
+		?Assembly $viewAssembly = null,
 	):LogicAssemblyComponentList {
+		if($viewAssembly
+		&& $this->containsPartialExtends($model)
+		&& $this->containsHeaderOrFooterView($viewAssembly)) {
+			throw new HeaderFooterPartialConflictException(
+				"Header/footer view files cannot be combined with partial views."
+			);
+		}
+
 		$componentList = new LogicAssemblyComponentList();
 
 		try {
@@ -80,5 +90,55 @@ class HTMLDocumentProcessor extends ViewModelProcessor {
 		catch(PartialContentDirectoryNotFoundException) {}
 
 		return $componentList;
+	}
+
+	private function containsHeaderOrFooterView(Assembly $viewAssembly):bool {
+		foreach($viewAssembly as $viewFile) {
+			$fileName = pathinfo($viewFile, PATHINFO_FILENAME);
+			if($fileName === "_header" || $fileName === "_footer") {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private function containsPartialExtends(HTMLDocument $model):bool {
+		return $this->containsPartialExtendsInNode($model->documentElement);
+	}
+
+	/** @return ?array<string, array<string, string>|string> */
+	private function parseCommentIni(string $data):?array {
+		set_error_handler(
+			static fn() => true
+		);
+
+		try {
+			$parsed = parse_ini_string($data, true);
+		}
+		finally {
+			restore_error_handler();
+		}
+
+		return is_array($parsed)
+			? $parsed
+			: null;
+	}
+
+	private function containsPartialExtendsInNode(\DOMNode $node):bool {
+		if($node->nodeType === XML_COMMENT_NODE) {
+			$parsed = $this->parseCommentIni(trim($node->textContent));
+			if(isset($parsed["extends"])) {
+				return true;
+			}
+		}
+
+		foreach($node->childNodes as $childNode) {
+			if($this->containsPartialExtendsInNode($childNode)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

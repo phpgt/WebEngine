@@ -47,15 +47,5 @@
 			"command": "vendor/bin/sync",
 			"arguments": ["asset/", "www/asset", "--delete", "--symlink"]
 		}
-	},
-
-	"data/**/*": {
-		"require": {
-			"vendor/bin/sync": "*"
-		},
-		"execute": {
-			"command": "vendor/bin/sync",
-			"arguments": ["data/", "www/data", "--delete", "--symlink"]
-		}
 	}
 }

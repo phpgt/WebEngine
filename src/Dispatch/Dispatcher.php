@@ -403,6 +403,7 @@ class Dispatcher {
 
 		$componentList = $this->viewModelProcessor?->processPartialContent(
 			$this->viewModel,
+			$this->viewAssembly,
 		);
 
 // TODO: CSRF handling - needs to be done on any POST request.

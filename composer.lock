@@ -456,28 +456,28 @@
         },
         {
             "name": "phpgt/build",
-            "version": "v1.2.3",
+            "version": "v1.3.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/PhpGt/Build.git",
-                "reference": "27d247590819c4b5dd6052a5758844ff1bb03b17"
+                "url": "https://github.com/phpgt/Build.git",
+                "reference": "c5edb31451cabe42d2dd716c1010c8374845dc1f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PhpGt/Build/zipball/27d247590819c4b5dd6052a5758844ff1bb03b17",
-                "reference": "27d247590819c4b5dd6052a5758844ff1bb03b17",
+                "url": "https://api.github.com/repos/phpgt/Build/zipball/c5edb31451cabe42d2dd716c1010c8374845dc1f",
+                "reference": "c5edb31451cabe42d2dd716c1010c8374845dc1f",
                 "shasum": ""
             },
             "require": {
                 "composer/semver": "v3.*",
                 "ext-json": "*",
-                "php": ">=7.4",
-                "phpgt/cli": "^v1.3.0",
-                "phpgt/sync": "^1.3.0",
+                "php": ">=8.2",
+                "phpgt/cli": "^1.4",
+                "phpgt/sync": "^1.3",
                 "webmozart/glob": "v4.4.*"
             },
             "require-dev": {
-                "phpmd/phpmd": "^2.13",
+                "phpmd/phpmd": "^2.15",
                 "phpstan/phpstan": "^1.10",
                 "phpunit/phpunit": "^10.1",
                 "squizlabs/php_codesniffer": "^3.7"
@@ -497,8 +497,8 @@
             ],
             "description": "Client-side build system for PHP projects.",
             "support": {
-                "issues": "https://github.com/PhpGt/Build/issues",
-                "source": "https://github.com/PhpGt/Build/tree/v1.2.3"
+                "issues": "https://github.com/phpgt/Build/issues",
+                "source": "https://github.com/phpgt/Build/tree/v1.3.0"
             },
             "funding": [
                 {
@@ -506,7 +506,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-08-09T10:34:24+00:00"
+            "time": "2026-04-07T22:25:38+00:00"
         },
         {
             "name": "phpgt/cli",
@@ -1972,21 +1972,21 @@
         },
         {
             "name": "phpgt/sync",
-            "version": "v1.3.1",
+            "version": "v1.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Sync.git",
-                "reference": "147c2ae1f3670bc606093892a01175584c082e64"
+                "reference": "62d68ff44929a62d2185943f64415c257efc6e5b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Sync/zipball/147c2ae1f3670bc606093892a01175584c082e64",
-                "reference": "147c2ae1f3670bc606093892a01175584c082e64",
+                "url": "https://api.github.com/repos/phpgt/Sync/zipball/62d68ff44929a62d2185943f64415c257efc6e5b",
+                "reference": "62d68ff44929a62d2185943f64415c257efc6e5b",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.0",
-                "phpgt/cli": "^1.3",
+                "php": ">=8.2",
+                "phpgt/cli": "^1.4",
                 "webmozart/glob": "4.4.*"
             },
             "require-dev": {
@@ -2018,7 +2018,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpgt/Sync/issues",
-                "source": "https://github.com/phpgt/Sync/tree/v1.3.1"
+                "source": "https://github.com/phpgt/Sync/tree/v1.3.2"
             },
             "funding": [
                 {
@@ -2026,7 +2026,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-03-15T17:45:10+00:00"
+            "time": "2026-04-07T22:32:03+00:00"
         },
         {
             "name": "phpgt/typesafegetter",

@@ -84,70 +84,6 @@
             "time": "2025-08-20T19:15:30+00:00"
         },
         {
-            "name": "dragonmantank/cron-expression",
-            "version": "v2.3.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/dragonmantank/cron-expression.git",
-                "reference": "65b2d8ee1f10915efb3b55597da3404f096acba2"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/dragonmantank/cron-expression/zipball/65b2d8ee1f10915efb3b55597da3404f096acba2",
-                "reference": "65b2d8ee1f10915efb3b55597da3404f096acba2",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^7.0|^8.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^6.4|^7.0|^8.0|^9.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.3-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Cron\\": "src/Cron/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Michael Dowling",
-                    "email": "mtdowling@gmail.com",
-                    "homepage": "https://github.com/mtdowling"
-                },
-                {
-                    "name": "Chris Tankersley",
-                    "email": "chris@ctankersley.com",
-                    "homepage": "https://github.com/dragonmantank"
-                }
-            ],
-            "description": "CRON for PHP: Calculate the next or previous run date and determine if a CRON expression is due",
-            "keywords": [
-                "cron",
-                "schedule"
-            ],
-            "support": {
-                "issues": "https://github.com/dragonmantank/cron-expression/issues",
-                "source": "https://github.com/dragonmantank/cron-expression/tree/v2.3.1"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/dragonmantank",
-                    "type": "github"
-                }
-            ],
-            "time": "2020-10-13T00:52:37+00:00"
-        },
-        {
             "name": "greenlion/php-sql-parser",
             "version": "v4.7.0",
             "source": {
@@ -209,16 +145,16 @@
         },
         {
             "name": "justinrainbow/json-schema",
-            "version": "v6.7.2",
+            "version": "6.8.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jsonrainbow/json-schema.git",
-                "reference": "6fea66c7204683af437864e7c4e7abf383d14bc0"
+                "reference": "89ac92bcfe5d0a8a4433c7b89d394553ae7250cc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jsonrainbow/json-schema/zipball/6fea66c7204683af437864e7c4e7abf383d14bc0",
-                "reference": "6fea66c7204683af437864e7c4e7abf383d14bc0",
+                "url": "https://api.github.com/repos/jsonrainbow/json-schema/zipball/89ac92bcfe5d0a8a4433c7b89d394553ae7250cc",
+                "reference": "89ac92bcfe5d0a8a4433c7b89d394553ae7250cc",
                 "shasum": ""
             },
             "require": {
@@ -278,9 +214,9 @@
             ],
             "support": {
                 "issues": "https://github.com/jsonrainbow/json-schema/issues",
-                "source": "https://github.com/jsonrainbow/json-schema/tree/v6.7.2"
+                "source": "https://github.com/jsonrainbow/json-schema/tree/6.8.0"
             },
-            "time": "2026-02-15T15:06:22+00:00"
+            "time": "2026-04-02T12:43:11+00:00"
         },
         {
             "name": "magicalex/write-ini-file",
@@ -680,22 +616,24 @@
         },
         {
             "name": "phpgt/cron",
-            "version": "v1.0.4",
+            "version": "v1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Cron.git",
-                "reference": "12e2e741d623cf05422f6afa55865b2b15543999"
+                "reference": "8a9ea03e5f3656f00375d772ed1e218d161c944b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Cron/zipball/12e2e741d623cf05422f6afa55865b2b15543999",
-                "reference": "12e2e741d623cf05422f6afa55865b2b15543999",
+                "url": "https://api.github.com/repos/phpgt/Cron/zipball/8a9ea03e5f3656f00375d772ed1e218d161c944b",
+                "reference": "8a9ea03e5f3656f00375d772ed1e218d161c944b",
                 "shasum": ""
             },
             "require": {
-                "dragonmantank/cron-expression": "^2.2",
-                "php": ">=8.1",
-                "phpgt/cli": "1.*"
+                "php": ">=8.2",
+                "phpgt/cli": "^1.4",
+                "phpgt/config": "^1.1",
+                "phpgt/input": "^1.3",
+                "phpgt/servicecontainer": "^1.3"
             },
             "require-dev": {
                 "phpmd/phpmd": "^2.13",
@@ -716,7 +654,7 @@
             "description": "Run scripts or static functions at regular intervals.",
             "support": {
                 "issues": "https://github.com/phpgt/Cron/issues",
-                "source": "https://github.com/phpgt/Cron/tree/v1.0.4"
+                "source": "https://github.com/phpgt/Cron/tree/v1.1.0"
             },
             "funding": [
                 {
@@ -724,7 +662,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-03-07T18:07:32+00:00"
+            "time": "2026-04-07T22:05:39+00:00"
         },
         {
             "name": "phpgt/csrf",

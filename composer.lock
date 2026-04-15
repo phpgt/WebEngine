@@ -392,16 +392,16 @@
         },
         {
             "name": "phpgt/build",
-            "version": "v1.3.0",
+            "version": "v1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Build.git",
-                "reference": "c5edb31451cabe42d2dd716c1010c8374845dc1f"
+                "reference": "4268532d33a30b68bddbfdc19bf0ee036738c851"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Build/zipball/c5edb31451cabe42d2dd716c1010c8374845dc1f",
-                "reference": "c5edb31451cabe42d2dd716c1010c8374845dc1f",
+                "url": "https://api.github.com/repos/phpgt/Build/zipball/4268532d33a30b68bddbfdc19bf0ee036738c851",
+                "reference": "4268532d33a30b68bddbfdc19bf0ee036738c851",
                 "shasum": ""
             },
             "require": {
@@ -424,6 +424,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "GT\\Build\\": "./src",
                     "Gt\\Build\\": "./src"
                 }
             },
@@ -434,7 +435,7 @@
             "description": "Client-side build system for PHP projects.",
             "support": {
                 "issues": "https://github.com/phpgt/Build/issues",
-                "source": "https://github.com/phpgt/Build/tree/v1.3.0"
+                "source": "https://github.com/phpgt/Build/tree/v1.4.0"
             },
             "funding": [
                 {
@@ -442,7 +443,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-04-07T22:25:38+00:00"
+            "time": "2026-04-14T16:44:46+00:00"
         },
         {
             "name": "phpgt/cli",
@@ -4807,16 +4808,16 @@
         },
         {
             "name": "symfony/polyfill-ctype",
-            "version": "v1.33.0",
+            "version": "v1.35.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-ctype.git",
-                "reference": "a3cc8b044a6ea513310cbd48ef7333b384945638"
+                "reference": "141046a8f9477948ff284fa65be2095baafb94f2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/a3cc8b044a6ea513310cbd48ef7333b384945638",
-                "reference": "a3cc8b044a6ea513310cbd48ef7333b384945638",
+                "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/141046a8f9477948ff284fa65be2095baafb94f2",
+                "reference": "141046a8f9477948ff284fa65be2095baafb94f2",
                 "shasum": ""
             },
             "require": {
@@ -4866,7 +4867,7 @@
                 "portable"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.33.0"
+                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.35.0"
             },
             "funding": [
                 {
@@ -4886,7 +4887,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-09-09T11:45:10+00:00"
+            "time": "2026-04-10T16:19:22+00:00"
         },
         {
             "name": "symfony/polyfill-mbstring",

@@ -886,24 +886,25 @@
         },
         {
             "name": "phpgt/database",
-            "version": "v1.6.3",
+            "version": "v1.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Database.git",
-                "reference": "73f8cb414e7d2592dc2c9728db79f771cff6fec8"
+                "reference": "d5a939e91ce3d5c78b77d9e9b3e1a54b13948db9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Database/zipball/73f8cb414e7d2592dc2c9728db79f771cff6fec8",
-                "reference": "73f8cb414e7d2592dc2c9728db79f771cff6fec8",
+                "url": "https://api.github.com/repos/phpgt/Database/zipball/d5a939e91ce3d5c78b77d9e9b3e1a54b13948db9",
+                "reference": "d5a939e91ce3d5c78b77d9e9b3e1a54b13948db9",
                 "shasum": ""
             },
             "require": {
                 "ext-pdo": "*",
                 "greenlion/php-sql-parser": "^4.6",
-                "php": ">=8.1",
-                "phpgt/cli": "^1.3",
-                "phpgt/config": "^v1.1.0"
+                "php": ">=8.3",
+                "phpgt/cli": "^1.4",
+                "phpgt/config": "^v1.1.0",
+                "phpgt/sqlbuilder": "^1.0.1"
             },
             "require-dev": {
                 "ext-sqlite3": "*",
@@ -928,7 +929,7 @@
             "authors": [
                 {
                     "name": "Greg Bowler",
-                    "email": "greg.bowler@g105b.com"
+                    "email": "greg@g105b.com"
                 },
                 {
                     "name": "James Fellows",
@@ -942,7 +943,7 @@
             "description": "Database API organisation.",
             "support": {
                 "issues": "https://github.com/phpgt/Database/issues",
-                "source": "https://github.com/phpgt/Database/tree/v1.6.3"
+                "source": "https://github.com/phpgt/Database/tree/v1.7.0"
             },
             "funding": [
                 {
@@ -950,7 +951,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-10-11T14:57:21+00:00"
+            "time": "2026-04-07T22:13:10+00:00"
         },
         {
             "name": "phpgt/dataobject",
@@ -1913,6 +1914,49 @@
                 }
             ],
             "time": "2025-10-31T16:04:32+00:00"
+        },
+        {
+            "name": "phpgt/sqlbuilder",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/PhpGt/SqlBuilder.git",
+                "reference": "ac60cad74bb1ac2d8d667e142a56fd6c9d23291a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/PhpGt/SqlBuilder/zipball/ac60cad74bb1ac2d8d667e142a56fd6c9d23291a",
+                "reference": "ac60cad74bb1ac2d8d667e142a56fd6c9d23291a",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0"
+            },
+            "require-dev": {
+                "phpmd/phpmd": "^2.13",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^10.3",
+                "squizlabs/php_codesniffer": "^3.7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Gt\\SqlBuilder\\": "./src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "description": "Object oriented representation of SQL queries.",
+            "support": {
+                "issues": "https://github.com/PhpGt/SqlBuilder/issues",
+                "source": "https://github.com/PhpGt/SqlBuilder/tree/v1.0.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sponsors/PhpGt",
+                    "type": "github"
+                }
+            ],
+            "time": "2023-09-17T12:33:25+00:00"
         },
         {
             "name": "phpgt/sync",

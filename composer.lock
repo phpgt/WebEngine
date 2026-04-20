@@ -2072,20 +2072,20 @@
         },
         {
             "name": "phpgt/ulid",
-            "version": "v1.2.1",
+            "version": "v1.2.2",
             "source": {
                 "type": "git",
-                "url": "https://github.com/PhpGt/Ulid.git",
-                "reference": "8026eb5ba18292e80c7fc04eb49a8aeca7fcb546"
+                "url": "https://github.com/phpgt/Ulid.git",
+                "reference": "3dc7c618d788b8354847d3c240124e3c0cd1f9dd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PhpGt/Ulid/zipball/8026eb5ba18292e80c7fc04eb49a8aeca7fcb546",
-                "reference": "8026eb5ba18292e80c7fc04eb49a8aeca7fcb546",
+                "url": "https://api.github.com/repos/phpgt/Ulid/zipball/3dc7c618d788b8354847d3c240124e3c0cd1f9dd",
+                "reference": "3dc7c618d788b8354847d3c240124e3c0cd1f9dd",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.0"
+                "php": ">=8.1"
             },
             "require-dev": {
                 "phpmd/phpmd": "^2.13",
@@ -2096,6 +2096,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "GT\\Ulid\\": "./src",
                     "Gt\\Ulid\\": "./src"
                 }
             },
@@ -2113,8 +2114,8 @@
             ],
             "description": "Unique, lexicographically sortable identifiers.",
             "support": {
-                "issues": "https://github.com/PhpGt/Ulid/issues",
-                "source": "https://github.com/PhpGt/Ulid/tree/v1.2.1"
+                "issues": "https://github.com/phpgt/Ulid/issues",
+                "source": "https://github.com/phpgt/Ulid/tree/v1.2.2"
             },
             "funding": [
                 {
@@ -2122,7 +2123,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-10-19T10:57:57+00:00"
+            "time": "2026-04-19T21:10:01+00:00"
         },
         {
             "name": "psr/container",

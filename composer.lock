@@ -1280,16 +1280,16 @@
         },
         {
             "name": "phpgt/filecache",
-            "version": "v1.2.0",
+            "version": "v1.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/FileCache.git",
-                "reference": "607077f0f0263ba6a45f055184d7d97881722b77"
+                "reference": "dd6e4f185a558968a562845114047cbf770fe590"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/FileCache/zipball/607077f0f0263ba6a45f055184d7d97881722b77",
-                "reference": "607077f0f0263ba6a45f055184d7d97881722b77",
+                "url": "https://api.github.com/repos/phpgt/FileCache/zipball/dd6e4f185a558968a562845114047cbf770fe590",
+                "reference": "dd6e4f185a558968a562845114047cbf770fe590",
                 "shasum": ""
             },
             "require": {
@@ -1298,13 +1298,14 @@
             },
             "require-dev": {
                 "phpmd/phpmd": "^2.13",
-                "phpstan/phpstan": "^1.10",
+                "phpstan/phpstan": "^1.10 || ^2.0",
                 "phpunit/phpunit": "^10.1",
-                "squizlabs/php_codesniffer": "^3.7"
+                "squizlabs/php_codesniffer": "^3.7 || ^4.0"
             },
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "GT\\FileCache\\": "./src",
                     "Gt\\FileCache\\": "./src"
                 }
             },
@@ -1323,7 +1324,7 @@
             "description": " Cache data in local files.",
             "support": {
                 "issues": "https://github.com/phpgt/FileCache/issues",
-                "source": "https://github.com/phpgt/FileCache/tree/v1.2.0"
+                "source": "https://github.com/phpgt/FileCache/tree/v1.3.0"
             },
             "funding": [
                 {
@@ -1331,7 +1332,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-07-08T20:46:43+00:00"
+            "time": "2026-04-19T19:09:39+00:00"
         },
         {
             "name": "phpgt/http",

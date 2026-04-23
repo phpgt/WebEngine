@@ -344,16 +344,16 @@
         },
         {
             "name": "phpgt/async",
-            "version": "v1.0.1",
+            "version": "v1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Async.git",
-                "reference": "3daab887eacd04d297a1383a22957f0ab7ecaf68"
+                "reference": "12a032eb8800747395d1aa976193d46378eb7781"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Async/zipball/3daab887eacd04d297a1383a22957f0ab7ecaf68",
-                "reference": "3daab887eacd04d297a1383a22957f0ab7ecaf68",
+                "url": "https://api.github.com/repos/phpgt/Async/zipball/12a032eb8800747395d1aa976193d46378eb7781",
+                "reference": "12a032eb8800747395d1aa976193d46378eb7781",
                 "shasum": ""
             },
             "require": {
@@ -370,6 +370,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "GT\\Async\\": "./src",
                     "Gt\\Async\\": "./src"
                 }
             },
@@ -380,28 +381,28 @@
             "description": "Promise-based non-blocking operations.",
             "support": {
                 "issues": "https://github.com/phpgt/Async/issues",
-                "source": "https://github.com/phpgt/Async/tree/v1.0.1"
+                "source": "https://github.com/phpgt/Async/tree/v1.0.2"
             },
             "funding": [
                 {
-                    "url": "https://github.com/phpgt",
+                    "url": "https://github.com/sponsors/PhpGt",
                     "type": "github"
                 }
             ],
-            "time": "2025-03-07T17:26:32+00:00"
+            "time": "2026-04-16T16:17:36+00:00"
         },
         {
             "name": "phpgt/build",
-            "version": "v1.3.0",
+            "version": "v1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Build.git",
-                "reference": "c5edb31451cabe42d2dd716c1010c8374845dc1f"
+                "reference": "4268532d33a30b68bddbfdc19bf0ee036738c851"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Build/zipball/c5edb31451cabe42d2dd716c1010c8374845dc1f",
-                "reference": "c5edb31451cabe42d2dd716c1010c8374845dc1f",
+                "url": "https://api.github.com/repos/phpgt/Build/zipball/4268532d33a30b68bddbfdc19bf0ee036738c851",
+                "reference": "4268532d33a30b68bddbfdc19bf0ee036738c851",
                 "shasum": ""
             },
             "require": {
@@ -424,6 +425,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "GT\\Build\\": "./src",
                     "Gt\\Build\\": "./src"
                 }
             },
@@ -434,7 +436,7 @@
             "description": "Client-side build system for PHP projects.",
             "support": {
                 "issues": "https://github.com/phpgt/Build/issues",
-                "source": "https://github.com/phpgt/Build/tree/v1.3.0"
+                "source": "https://github.com/phpgt/Build/tree/v1.4.0"
             },
             "funding": [
                 {
@@ -442,7 +444,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-04-07T22:25:38+00:00"
+            "time": "2026-04-14T16:44:46+00:00"
         },
         {
             "name": "phpgt/cli",
@@ -886,24 +888,25 @@
         },
         {
             "name": "phpgt/database",
-            "version": "v1.6.3",
+            "version": "v1.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Database.git",
-                "reference": "73f8cb414e7d2592dc2c9728db79f771cff6fec8"
+                "reference": "d5a939e91ce3d5c78b77d9e9b3e1a54b13948db9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Database/zipball/73f8cb414e7d2592dc2c9728db79f771cff6fec8",
-                "reference": "73f8cb414e7d2592dc2c9728db79f771cff6fec8",
+                "url": "https://api.github.com/repos/phpgt/Database/zipball/d5a939e91ce3d5c78b77d9e9b3e1a54b13948db9",
+                "reference": "d5a939e91ce3d5c78b77d9e9b3e1a54b13948db9",
                 "shasum": ""
             },
             "require": {
                 "ext-pdo": "*",
                 "greenlion/php-sql-parser": "^4.6",
-                "php": ">=8.1",
-                "phpgt/cli": "^1.3",
-                "phpgt/config": "^v1.1.0"
+                "php": ">=8.3",
+                "phpgt/cli": "^1.4",
+                "phpgt/config": "^v1.1.0",
+                "phpgt/sqlbuilder": "^1.0.1"
             },
             "require-dev": {
                 "ext-sqlite3": "*",
@@ -928,7 +931,7 @@
             "authors": [
                 {
                     "name": "Greg Bowler",
-                    "email": "greg.bowler@g105b.com"
+                    "email": "greg@g105b.com"
                 },
                 {
                     "name": "James Fellows",
@@ -942,7 +945,7 @@
             "description": "Database API organisation.",
             "support": {
                 "issues": "https://github.com/phpgt/Database/issues",
-                "source": "https://github.com/phpgt/Database/tree/v1.6.3"
+                "source": "https://github.com/phpgt/Database/tree/v1.7.0"
             },
             "funding": [
                 {
@@ -950,7 +953,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-10-11T14:57:21+00:00"
+            "time": "2026-04-07T22:13:10+00:00"
         },
         {
             "name": "phpgt/dataobject",
@@ -1395,16 +1398,16 @@
         },
         {
             "name": "phpgt/input",
-            "version": "v1.3.2",
+            "version": "v1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Input.git",
-                "reference": "cb6780cbed5f7de2366fba85bb6b695f6143298b"
+                "reference": "7710776d7437d3e24f37bb786236ff0c3da20785"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Input/zipball/cb6780cbed5f7de2366fba85bb6b695f6143298b",
-                "reference": "cb6780cbed5f7de2366fba85bb6b695f6143298b",
+                "url": "https://api.github.com/repos/phpgt/Input/zipball/7710776d7437d3e24f37bb786236ff0c3da20785",
+                "reference": "7710776d7437d3e24f37bb786236ff0c3da20785",
                 "shasum": ""
             },
             "require": {
@@ -1419,8 +1422,14 @@
                 "squizlabs/php_codesniffer": "^3.7"
             },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.x-dev"
+                }
+            },
             "autoload": {
                 "psr-4": {
+                    "GT\\Input\\": "./src",
                     "Gt\\Input\\": "./src"
                 }
             },
@@ -1431,7 +1440,7 @@
             "description": "Encapsulated user input.",
             "support": {
                 "issues": "https://github.com/phpgt/Input/issues",
-                "source": "https://github.com/phpgt/Input/tree/v1.3.2"
+                "source": "https://github.com/phpgt/Input/tree/v1.4.0"
             },
             "funding": [
                 {
@@ -1439,7 +1448,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-05-02T11:54:06+00:00"
+            "time": "2026-04-14T20:44:25+00:00"
         },
         {
             "name": "phpgt/json",
@@ -1695,16 +1704,16 @@
         },
         {
             "name": "phpgt/routing",
-            "version": "v1.1.6",
+            "version": "v1.1.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Routing.git",
-                "reference": "83e5ec5910c4c9cf8bd5df78a6fd62c3fb117276"
+                "reference": "701479c7223a88e9649733e8e43a359150da9f8d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Routing/zipball/83e5ec5910c4c9cf8bd5df78a6fd62c3fb117276",
-                "reference": "83e5ec5910c4c9cf8bd5df78a6fd62c3fb117276",
+                "url": "https://api.github.com/repos/phpgt/Routing/zipball/701479c7223a88e9649733e8e43a359150da9f8d",
+                "reference": "701479c7223a88e9649733e8e43a359150da9f8d",
                 "shasum": ""
             },
             "require": {
@@ -1755,15 +1764,15 @@
             ],
             "support": {
                 "issues": "https://github.com/phpgt/Routing/issues",
-                "source": "https://github.com/phpgt/Routing/tree/v1.1.6"
+                "source": "https://github.com/phpgt/Routing/tree/v1.1.7"
             },
             "funding": [
                 {
-                    "url": "https://github.com/sponsors/PhpGt",
+                    "url": "https://github.com/sponsors/phpgt",
                     "type": "github"
                 }
             ],
-            "time": "2026-03-09T12:46:01+00:00"
+            "time": "2026-04-16T17:15:54+00:00"
         },
         {
             "name": "phpgt/server",
@@ -1907,6 +1916,49 @@
                 }
             ],
             "time": "2025-10-31T16:04:32+00:00"
+        },
+        {
+            "name": "phpgt/sqlbuilder",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/PhpGt/SqlBuilder.git",
+                "reference": "ac60cad74bb1ac2d8d667e142a56fd6c9d23291a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/PhpGt/SqlBuilder/zipball/ac60cad74bb1ac2d8d667e142a56fd6c9d23291a",
+                "reference": "ac60cad74bb1ac2d8d667e142a56fd6c9d23291a",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0"
+            },
+            "require-dev": {
+                "phpmd/phpmd": "^2.13",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^10.3",
+                "squizlabs/php_codesniffer": "^3.7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Gt\\SqlBuilder\\": "./src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "description": "Object oriented representation of SQL queries.",
+            "support": {
+                "issues": "https://github.com/PhpGt/SqlBuilder/issues",
+                "source": "https://github.com/PhpGt/SqlBuilder/tree/v1.0.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sponsors/PhpGt",
+                    "type": "github"
+                }
+            ],
+            "time": "2023-09-17T12:33:25+00:00"
         },
         {
             "name": "phpgt/sync",
@@ -2977,16 +3029,16 @@
         },
         {
             "name": "phpunit/php-code-coverage",
-            "version": "12.5.3",
+            "version": "12.5.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-code-coverage.git",
-                "reference": "b015312f28dd75b75d3422ca37dff2cd1a565e8d"
+                "reference": "876099a072646c7745f673d7aeab5382c4439691"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/b015312f28dd75b75d3422ca37dff2cd1a565e8d",
-                "reference": "b015312f28dd75b75d3422ca37dff2cd1a565e8d",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/876099a072646c7745f673d7aeab5382c4439691",
+                "reference": "876099a072646c7745f673d7aeab5382c4439691",
                 "shasum": ""
             },
             "require": {
@@ -2995,7 +3047,6 @@
                 "ext-xmlwriter": "*",
                 "nikic/php-parser": "^5.7.0",
                 "php": ">=8.3",
-                "phpunit/php-file-iterator": "^6.0",
                 "phpunit/php-text-template": "^5.0",
                 "sebastian/complexity": "^5.0",
                 "sebastian/environment": "^8.0.3",
@@ -3042,7 +3093,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/php-code-coverage/issues",
                 "security": "https://github.com/sebastianbergmann/php-code-coverage/security/policy",
-                "source": "https://github.com/sebastianbergmann/php-code-coverage/tree/12.5.3"
+                "source": "https://github.com/sebastianbergmann/php-code-coverage/tree/12.5.6"
             },
             "funding": [
                 {
@@ -3062,7 +3113,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-02-06T06:01:44+00:00"
+            "time": "2026-04-15T08:23:17+00:00"
         },
         {
             "name": "phpunit/php-file-iterator",
@@ -3323,16 +3374,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "12.5.14",
+            "version": "12.5.22",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "47283cfd98d553edcb1353591f4e255dc1bb61f0"
+                "reference": "e07667405f0f43317a1799d3907c43a123bc5587"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/47283cfd98d553edcb1353591f4e255dc1bb61f0",
-                "reference": "47283cfd98d553edcb1353591f4e255dc1bb61f0",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/e07667405f0f43317a1799d3907c43a123bc5587",
+                "reference": "e07667405f0f43317a1799d3907c43a123bc5587",
                 "shasum": ""
             },
             "require": {
@@ -3346,15 +3397,15 @@
                 "phar-io/manifest": "^2.0.4",
                 "phar-io/version": "^3.2.1",
                 "php": ">=8.3",
-                "phpunit/php-code-coverage": "^12.5.3",
+                "phpunit/php-code-coverage": "^12.5.6",
                 "phpunit/php-file-iterator": "^6.0.1",
                 "phpunit/php-invoker": "^6.0.0",
                 "phpunit/php-text-template": "^5.0.0",
                 "phpunit/php-timer": "^8.0.0",
                 "sebastian/cli-parser": "^4.2.0",
-                "sebastian/comparator": "^7.1.4",
+                "sebastian/comparator": "^7.1.6",
                 "sebastian/diff": "^7.0.0",
-                "sebastian/environment": "^8.0.3",
+                "sebastian/environment": "^8.1.0",
                 "sebastian/exporter": "^7.0.2",
                 "sebastian/global-state": "^8.0.2",
                 "sebastian/object-enumerator": "^7.0.0",
@@ -3401,31 +3452,15 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.14"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.22"
             },
             "funding": [
                 {
-                    "url": "https://phpunit.de/sponsors.html",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://github.com/sebastianbergmann",
-                    "type": "github"
-                },
-                {
-                    "url": "https://liberapay.com/sebastianbergmann",
-                    "type": "liberapay"
-                },
-                {
-                    "url": "https://thanks.dev/u/gh/sebastianbergmann",
-                    "type": "thanks_dev"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/phpunit/phpunit",
-                    "type": "tidelift"
+                    "url": "https://phpunit.de/sponsoring.html",
+                    "type": "other"
                 }
             ],
-            "time": "2026-02-18T12:38:40+00:00"
+            "time": "2026-04-17T12:51:04+00:00"
         },
         {
             "name": "psr/log",
@@ -3548,16 +3583,16 @@
         },
         {
             "name": "sebastian/comparator",
-            "version": "7.1.4",
+            "version": "7.1.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/comparator.git",
-                "reference": "6a7de5df2e094f9a80b40a522391a7e6022df5f6"
+                "reference": "c769009dee98f494e0edc3fd4f4087501688f11e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/6a7de5df2e094f9a80b40a522391a7e6022df5f6",
-                "reference": "6a7de5df2e094f9a80b40a522391a7e6022df5f6",
+                "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/c769009dee98f494e0edc3fd4f4087501688f11e",
+                "reference": "c769009dee98f494e0edc3fd4f4087501688f11e",
                 "shasum": ""
             },
             "require": {
@@ -3616,7 +3651,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/comparator/issues",
                 "security": "https://github.com/sebastianbergmann/comparator/security/policy",
-                "source": "https://github.com/sebastianbergmann/comparator/tree/7.1.4"
+                "source": "https://github.com/sebastianbergmann/comparator/tree/7.1.6"
             },
             "funding": [
                 {
@@ -3636,7 +3671,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-01-24T09:28:48+00:00"
+            "time": "2026-04-14T08:23:15+00:00"
         },
         {
             "name": "sebastian/complexity",
@@ -3765,16 +3800,16 @@
         },
         {
             "name": "sebastian/environment",
-            "version": "8.0.4",
+            "version": "8.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/environment.git",
-                "reference": "7b8842c2d8e85d0c3a5831236bf5869af6ab2a11"
+                "reference": "b121608b28a13f721e76ffbbd386d08eff58f3f6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/environment/zipball/7b8842c2d8e85d0c3a5831236bf5869af6ab2a11",
-                "reference": "7b8842c2d8e85d0c3a5831236bf5869af6ab2a11",
+                "url": "https://api.github.com/repos/sebastianbergmann/environment/zipball/b121608b28a13f721e76ffbbd386d08eff58f3f6",
+                "reference": "b121608b28a13f721e76ffbbd386d08eff58f3f6",
                 "shasum": ""
             },
             "require": {
@@ -3789,7 +3824,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "8.0-dev"
+                    "dev-main": "8.1-dev"
                 }
             },
             "autoload": {
@@ -3817,7 +3852,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/environment/issues",
                 "security": "https://github.com/sebastianbergmann/environment/security/policy",
-                "source": "https://github.com/sebastianbergmann/environment/tree/8.0.4"
+                "source": "https://github.com/sebastianbergmann/environment/tree/8.1.0"
             },
             "funding": [
                 {
@@ -3837,7 +3872,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-03-15T07:05:40+00:00"
+            "time": "2026-04-15T12:13:01+00:00"
         },
         {
             "name": "sebastian/exporter",
@@ -4807,16 +4842,16 @@
         },
         {
             "name": "symfony/polyfill-ctype",
-            "version": "v1.33.0",
+            "version": "v1.35.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-ctype.git",
-                "reference": "a3cc8b044a6ea513310cbd48ef7333b384945638"
+                "reference": "141046a8f9477948ff284fa65be2095baafb94f2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/a3cc8b044a6ea513310cbd48ef7333b384945638",
-                "reference": "a3cc8b044a6ea513310cbd48ef7333b384945638",
+                "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/141046a8f9477948ff284fa65be2095baafb94f2",
+                "reference": "141046a8f9477948ff284fa65be2095baafb94f2",
                 "shasum": ""
             },
             "require": {
@@ -4866,7 +4901,7 @@
                 "portable"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.33.0"
+                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.35.0"
             },
             "funding": [
                 {
@@ -4886,7 +4921,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-09-09T11:45:10+00:00"
+            "time": "2026-04-10T16:19:22+00:00"
         },
         {
             "name": "symfony/polyfill-mbstring",

@@ -3,6 +3,9 @@ namespace GT\WebEngine\Dispatch;
 
 use Closure;
 use GT\Config\Config;
+use GT\Csrf\Exception\CsrfException;
+use GT\Csrf\HTMLDocumentProtector;
+use GT\Csrf\SessionTokenStore;
 use GT\Dom\Element;
 use GT\Dom\HTMLDocument;
 use GT\DomTemplate\BindableCache;
@@ -24,7 +27,7 @@ use GT\Http\StatusCode;
 use GT\Http\Stream;
 use GT\Input\Input;
 use GT\Input\InputData\InputData;
-use GT\Json\Schema\JsonDocument;
+use GT\Json\Schema\JSONDocument;
 use GT\Routing\Assembly;
 use GT\Routing\BaseRouter;
 use GT\Routing\Path\DynamicPath;
@@ -64,7 +67,7 @@ class Dispatcher {
 
 	private Injector $injector;
 	private NullView|JSONView|HTMLView $view;
-	private HTMLDocument|JsonDocument $viewModel;
+	private HTMLDocument|JSONDocument $viewModel;
 	private ?ViewModelProcessor $viewModelProcessor;
 	private BaseRouter $router;
 	private ?SessionInit $sessionInit = null;
@@ -228,7 +231,7 @@ class Dispatcher {
 		if($this->redirectPrepared) {
 			return $this->response;
 		}
-
+		
 // The routing is now complete and all services are properly configured. This
 // function's responsibility is to execute the logic that builds the response.
 // Since this involves running user code that may throw errors, we execute each
@@ -270,7 +273,13 @@ class Dispatcher {
 	):Response {
 // TODO: Handle innerThrowable for if there's an error thrown in WebEngine itself.
 		$errorStatusCode = $this->response->getStatusCode();
+		if(!$errorStatusCode) {
+			$errorStatusCode = $actualThrowable instanceof ResponseStatusException
+				? $actualThrowable->getHttpCode()
+				: StatusCode::INTERNAL_SERVER_ERROR;
+		}
 		$errorType = get_class($actualThrowable);
+//		var_dump($errorType);die();
 		$errorMessage = $actualThrowable->getMessage();
 		$detail = "";
 
@@ -406,7 +415,10 @@ class Dispatcher {
 			$this->viewAssembly,
 		);
 
-// TODO: CSRF handling - needs to be done on any POST request.
+		$this->verifyCsrfRequest(
+			$this->request->getMethod(),
+			$this->input->getAll(Input::DATA_BODY),
+		);
 		($this->viewInitCb)();
 		if($errorThrowable) {
 			$this->bindErrorDetails($errorThrowable);
@@ -453,10 +465,80 @@ class Dispatcher {
 		$documentBinder = $this->serviceContainer->get(Binder::class);
 		assert($documentBinder instanceof DocumentBinder);
 		$documentBinder->cleanupDocument();
+		$this->protectHtmlDocumentFromCsrf();
 
 		$this->viewStreamer->stream($this->view, $this->viewModel);
 	}
 	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
+
+	private function verifyCsrfRequest(string $method, InputData $inputData):void {
+		if($method !== "POST" || $this->isIgnoredCsrfPath()) {
+			return;
+		}
+
+		$tokenStore = $this->createCsrfTokenStore();
+
+		try {
+			$tokenStore->verify($inputData);
+		}
+		catch(CsrfException $exception) {
+			throw $this->createCsrfForbiddenException($exception->getMessage());
+		}
+	}
+
+	private function protectHtmlDocumentFromCsrf():void {
+		if(!($this->viewModel instanceof HTMLDocument)) {
+			return;
+		}
+
+		$protector = new HTMLDocumentProtector(
+			$this->viewModel,
+			$this->createCsrfTokenStore(),
+		);
+		$protector->protect($this->getCsrfTokenSharingMode());
+	}
+
+	private function createCsrfTokenStore():SessionTokenStore {
+		$tokenStore = new SessionTokenStore(
+			$this->sessionInit->getSession(),
+			$this->config->getInt("security.csrf_max_tokens"),
+		);
+		$tokenStore->setTokenLength(
+			$this->config->getInt("security.csrf_token_length")
+		);
+		return $tokenStore;
+	}
+
+	private function getCsrfTokenSharingMode():string {
+		return match(strtolower($this->config->getString("security.csrf_token_sharing"))) {
+			"per-form" => HTMLDocumentProtector::ONE_TOKEN_PER_FORM,
+			default => HTMLDocumentProtector::ONE_TOKEN_PER_PAGE,
+		};
+	}
+
+	private function isIgnoredCsrfPath():bool {
+		$ignoredPathList = array_filter(array_map(
+			trim(...),
+			explode(",", $this->config->getString("security.csrf_ignore_path")),
+		));
+		$requestPath = $this->request->getUri()->getPath();
+
+		foreach($ignoredPathList as $ignoredPathPattern) {
+			if(fnmatch($ignoredPathPattern, $requestPath)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private function createCsrfForbiddenException(string $message):ResponseStatusException {
+		return new class($message) extends ResponseStatusException {
+			public function getHttpCode():int {
+				return StatusCode::FORBIDDEN;
+			}
+		};
+	}
 
 	public function getSessionInit():?SessionInit {
 		return $this->sessionInit;

@@ -470,8 +470,124 @@ class DispatcherTest extends TestCase {
 		self::assertStringNotContainsString("#0", $body);
 	}
 
+	public function testGenerateBasicErrorResponse_defaultsToThrowableHttpCodeWhenResponseStatusUnset():void {
+		$sut = $this->createDispatcher(production: false);
+
+		$throwable = new class("CSRF Token not found") extends ResponseStatusException {
+			public function getHttpCode():int {
+				return StatusCode::FORBIDDEN;
+			}
+		};
+
+		$response = $sut->generateBasicErrorResponse(
+			$throwable,
+			new Exception("inner"),
+		);
+
+		$body = (string)$response->getBody();
+		self::assertSame(StatusCode::FORBIDDEN, $response->getStatusCode());
+		self::assertStringContainsString("Error 403", $body);
+		self::assertStringContainsString("CSRF Token not found", $body);
+	}
+
+	public function testGenerateResponse_injectsCsrfTokenIntoPostForms():void {
+		$viewModel = new HTMLDocument(
+			'<!doctype html><html><head></head><body>'
+			. '<form method="post"><button>Save</button></form>'
+			. '<form method="get"><button>Search</button></form>'
+			. '</body></html>'
+		);
+		$sessionState = [];
+		$viewStreamer = $this->createMock(ViewStreamer::class);
+		$viewStreamer->expects(self::once())
+			->method("stream")
+			->willReturnCallback(function(HTMLView $view, HTMLDocument $document)use(&$sessionState):void {
+				$postForm = $document->querySelector("form[method='post']");
+				self::assertInstanceOf(Element::class, $postForm);
+				$tokenInput = $postForm->querySelector("input[name='csrf-token'][type='hidden']");
+				self::assertInstanceOf(Element::class, $tokenInput);
+
+				$metaToken = $document->querySelector("meta[name='csrf-token']");
+				self::assertInstanceOf(Element::class, $metaToken);
+				self::assertSame(
+					$tokenInput->getAttribute("value"),
+					$metaToken->getAttribute("content"),
+				);
+
+				$getForm = $document->querySelector("form[method='get']");
+				self::assertInstanceOf(Element::class, $getForm);
+				self::assertNull($getForm->querySelector("input[name='csrf-token']"));
+				self::assertArrayHasKey($tokenInput->getAttribute("value"), $sessionState["tokenList"]);
+			});
+
+		$sut = $this->createDispatcher(
+			viewModel: $viewModel,
+			viewAssembly: $this->createAssembly("/tmp/page.html"),
+			sessionInit: $this->createSessionInitWithState($sessionState),
+			viewStreamer: $viewStreamer,
+		);
+
+		$sut->generateResponse();
+	}
+
+	public function testGenerateResponse_verifiesValidCsrfTokenBeforeLogic():void {
+		$token = "CSRF_valid-token";
+		$sessionState = [
+			"tokenList" => [$token => null],
+		];
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->expects(self::exactly(3))
+			->method("invoke")
+			->willReturnCallback(fn():\Generator => $this->emptyGenerator());
+
+		$sut = $this->createDispatcher(
+			request: $this->createRequest("/page/", "POST"),
+			globals: $this->createGlobals(post: ["csrf-token" => $token]),
+			viewAssembly: $this->createAssembly("/tmp/page.html"),
+			logicAssembly: $this->createAssembly("/tmp/page.php"),
+			logicExecutor: $logicExecutor,
+			sessionInit: $this->createSessionInitWithState($sessionState),
+		);
+
+		$response = $sut->generateResponse();
+
+		self::assertSame(StatusCode::OK, $response->getStatusCode());
+		self::assertIsInt($sessionState["tokenList"][$token]);
+	}
+
+	public function testGenerateResponse_throwsForbiddenOnInvalidCsrfToken():void {
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->expects(self::never())
+			->method("invoke");
+		$sessionState = [
+			"tokenList" => ["CSRF_other-token" => null],
+		];
+
+		$sut = $this->createDispatcher(
+			request: $this->createRequest("/page/", "POST"),
+			globals: $this->createGlobals(post: ["csrf-token" => "CSRF_invalid-token"]),
+			viewAssembly: $this->createAssembly("/tmp/page.html"),
+			logicAssembly: $this->createAssembly("/tmp/page.php"),
+			logicExecutor: $logicExecutor,
+			sessionInit: $this->createSessionInitWithState($sessionState),
+		);
+
+		try {
+			$sut->generateResponse();
+			self::fail("Expected invalid CSRF token to abort the request.");
+		}
+		catch(ResponseStatusException $exception) {
+			self::assertSame(StatusCode::FORBIDDEN, $exception->getHttpCode());
+			self::assertSame(StatusCode::FORBIDDEN, $exception->getCode());
+			self::assertStringContainsString("CSRF", $exception->getMessage());
+		}
+	}
+
 	private function createDispatcher(
 		bool $production = false,
+		?Config $config = null,
+		?Request $request = null,
+		?array $globals = null,
 		?Input $input = null,
 		?HTMLView $view = null,
 		?HTMLDocument $viewModel = null,
@@ -482,8 +598,17 @@ class DispatcherTest extends TestCase {
 		?LogicExecutor $logicExecutor = null,
 		?ViewStreamer $viewStreamer = null,
 		?HeaderManager $headerManager = null,
+		?SessionInit $sessionInit = null,
 	):Dispatcher {
-		$input ??= new Input([], [], []);
+		$config ??= $this->createConfig($production);
+		$request ??= $this->createRequest("/page/");
+		$globals ??= $this->createGlobals();
+		$input ??= new Input(
+			$globals["_GET"],
+			$globals["_POST"],
+			$globals["_FILES"],
+			requestMethod: $request->getMethod(),
+		);
 		$view ??= new HTMLView(new Stream());
 		$viewModel ??= new HTMLDocument("<!doctype html><body></body>");
 		$viewAssembly ??= new Assembly();
@@ -491,8 +616,6 @@ class DispatcherTest extends TestCase {
 		$viewModelProcessor ??= $this->createConfiguredMock(ViewModelProcessor::class, [
 			"processPartialContent" => new LogicAssemblyComponentList(),
 		]);
-
-		$request = $this->createRequest("/page/");
 		$requestInit = $this->createMock(RequestInit::class);
 		$requestInit->method("getInput")
 			->willReturn($input);
@@ -513,9 +636,11 @@ class DispatcherTest extends TestCase {
 		$routerInit->method("getLogicAssembly")
 			->willReturn($logicAssembly);
 
-		$sessionInit = $this->createMock(SessionInit::class);
-		$sessionInit->method("getSession")
-			->willReturn($this->createStub(Session::class));
+		if(!$sessionInit) {
+			$sessionInit = $this->createMock(SessionInit::class);
+			$sessionInit->method("getSession")
+				->willReturn($this->createStub(Session::class));
+		}
 
 		$viewModelInit ??= $this->createViewModelInit($viewModelProcessor);
 
@@ -532,9 +657,9 @@ class DispatcherTest extends TestCase {
 		$headerManager->method("applyWithHeader")->willReturn(null);
 
 		return new Dispatcher(
-			$this->createConfig($production),
+			$config,
 			$request,
-			$this->createGlobals(),
+			$globals,
 			static fn() => null,
 			null,
 			$appAutoloader,
@@ -564,6 +689,8 @@ class DispatcherTest extends TestCase {
 				"view.component_directory" => "/tmp/components",
 				"view.partial_directory" => "/tmp/partials",
 				"app.error_page_dir" => "/error-pages",
+				"security.csrf_ignore_path" => "",
+				"security.csrf_token_sharing" => "per-page",
 			][$key] ?? "");
 		$config->method("getBool")
 			->willReturnCallback(fn(string $key):?bool => [
@@ -575,26 +702,54 @@ class DispatcherTest extends TestCase {
 		$config->method("getInt")
 			->willReturnCallback(fn(string $key):int => [
 				"router.redirect_response_code" => 303,
+				"security.csrf_max_tokens" => 100,
+				"security.csrf_token_length" => 10,
 			][$key] ?? 0);
 		return $config;
 	}
 
-	private function createRequest(string $path):Request&MockObject {
+	private function createRequest(string $path, string $method = "GET"):Request&MockObject {
 		$request = $this->createMock(Request::class);
 		$request->method("getUri")
 			->willReturn(new Uri("https://example.test" . $path));
+		$request->method("getMethod")
+			->willReturn($method);
 		return $request;
 	}
 
 	/** @return array<string, array<string, string|array<string, string>>> */
-	private function createGlobals():array {
+	private function createGlobals(
+		array $get = [],
+		array $post = [],
+		array $files = [],
+		array $server = [],
+		array $cookie = [],
+	):array {
 		return [
-			"_GET" => [],
-			"_POST" => [],
-			"_FILES" => [],
-			"_SERVER" => [],
-			"_COOKIE" => [],
+			"_GET" => $get,
+			"_POST" => $post,
+			"_FILES" => $files,
+			"_SERVER" => $server,
+			"_COOKIE" => $cookie,
 		];
+	}
+
+	/** @param array<string, mixed> $sessionState */
+	private function createSessionInitWithState(array &$sessionState):SessionInit&MockObject {
+		$session = $this->createMock(Session::class);
+		$session->method("get")
+			->willReturnCallback(function(string $key)use(&$sessionState):mixed {
+				return $sessionState[$key] ?? null;
+			});
+		$session->method("set")
+			->willReturnCallback(function(string $key, mixed $value)use(&$sessionState):void {
+				$sessionState[$key] = $value;
+			});
+
+		$sessionInit = $this->createMock(SessionInit::class);
+		$sessionInit->method("getSession")
+			->willReturn($session);
+		return $sessionInit;
 	}
 
 	private function createAssembly(string ...$pathList):Assembly {

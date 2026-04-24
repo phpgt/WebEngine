@@ -19,7 +19,7 @@
 		"phpgt/config": "^1.1",
 		"phpgt/cookie": "^1.0",
 		"phpgt/cron": "^1.0",
-		"phpgt/csrf": "^1.9",
+		"phpgt/csrf": "^1.9.1",
 		"phpgt/cssxpath": "^1.3",
 		"phpgt/curl": "^3.1",
 		"phpgt/daemon": "^1.1",

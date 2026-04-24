@@ -4,7 +4,7 @@ namespace GT\WebEngine\Init;
 use GT\Dom\HTMLDocument;
 use GT\Http\Request;
 use GT\Http\Response;
-use GT\Json\Schema\JsonDocument;
+use GT\Json\Schema\JSONDocument;
 use GT\Routing\Assembly;
 use GT\Routing\BaseRouter;
 use GT\Routing\Path\DynamicPath;
@@ -18,7 +18,7 @@ class RouterInit {
 	private BaseRouter $baseRouter;
 	private NullView|HTMLView|JSONView $view;
 // TODO: What other viewModels are there?
-	private HTMLDocument|JsonDocument $viewModel;
+	private HTMLDocument|JSONDocument $viewModel;
 	private DynamicPath $dynamicPath;
 	private Assembly $viewAssembly;
 	private Assembly $logicAssembly;
@@ -81,7 +81,7 @@ class RouterInit {
 		return $this->view;
 	}
 
-	public function getViewModel():HTMLDocument|JsonDocument {
+	public function getViewModel():HTMLDocument|JSONDocument {
 		return $this->viewModel;
 	}
 

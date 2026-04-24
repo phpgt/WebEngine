@@ -1,11 +1,8 @@
 <?php
 namespace GT\WebEngine\Init;
 
-use Closure;
-use GT\Dom\Document;
 use GT\Dom\HTMLDocument;
 use GT\DomTemplate\BindableCache;
-use GT\DomTemplate\Binder;
 use GT\DomTemplate\DocumentBinder;
 use GT\DomTemplate\ElementBinder;
 use GT\DomTemplate\HTMLAttributeBinder;
@@ -14,7 +11,7 @@ use GT\DomTemplate\ListBinder;
 use GT\DomTemplate\ListElementCollection;
 use GT\DomTemplate\PlaceholderBinder;
 use GT\DomTemplate\TableBinder;
-use GT\Json\Schema\JsonDocument;
+use GT\Json\Schema\JSONDocument;
 use GT\WebEngine\Logic\HTMLDocumentProcessor;
 use GT\WebEngine\Logic\ViewModelProcessor;
 
@@ -23,7 +20,7 @@ class ViewModelInit {
 	private bool $initialised = false;
 
 	public function __construct(
-		HTMLDocument|JsonDocument $model,
+		HTMLDocument|JSONDocument $model,
 		string $componentDirectory,
 		string $partialDirectory,
 	) {

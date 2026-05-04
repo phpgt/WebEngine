@@ -1117,16 +1117,16 @@
         },
         {
             "name": "phpgt/domtemplate",
-            "version": "v3.5.1",
+            "version": "v3.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/DomTemplate.git",
-                "reference": "f724ad744ebd32f753c63782ebeebb756fd01f08"
+                "reference": "d32ef669f572939027a653f268af67aafe5d01e8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/DomTemplate/zipball/f724ad744ebd32f753c63782ebeebb756fd01f08",
-                "reference": "f724ad744ebd32f753c63782ebeebb756fd01f08",
+                "url": "https://api.github.com/repos/phpgt/DomTemplate/zipball/d32ef669f572939027a653f268af67aafe5d01e8",
+                "reference": "d32ef669f572939027a653f268af67aafe5d01e8",
                 "shasum": ""
             },
             "require": {
@@ -1143,6 +1143,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "GT\\DomTemplate\\": "./src",
                     "Gt\\DomTemplate\\": "./src"
                 }
             },
@@ -1153,7 +1154,7 @@
             "description": "Bind dynamic data to reusable HTML components.",
             "support": {
                 "issues": "https://github.com/phpgt/DomTemplate/issues",
-                "source": "https://github.com/phpgt/DomTemplate/tree/v3.5.1"
+                "source": "https://github.com/phpgt/DomTemplate/tree/v3.6.0"
             },
             "funding": [
                 {
@@ -1161,7 +1162,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-03-14T13:50:44+00:00"
+            "time": "2026-04-23T13:45:56+00:00"
         },
         {
             "name": "phpgt/domvalidation",

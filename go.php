@@ -7,32 +7,25 @@
  * lifecycle in the documentation:
  * https://github.com/PhpGt/WebEngine/wiki/From-request-to-response
  */
+use Gt\Config\ConfigFactory;
+use Gt\Logger\Log;
+use Gt\Logger\LogConfig;
+use Gt\Logger\LogLevel;
 use GT\WebEngine\Application;
 
-chdir(dirname($_SERVER["DOCUMENT_ROOT"]));
+$projectRoot = dirname($_SERVER["DOCUMENT_ROOT"]);
+chdir($projectRoot);
 ini_set("display_errors", "on");
 ini_set("html_errors", "false");
-/**
- * Step 1 - Static files:
- * Before any code is executed, return false here if a static file is requested.
- * When running the PHP inbuilt server, this will output the static file.
- * Other webservers should not get to this point, but it's safe to prevent
- * unnecessary execution.
- */
-$uri = urldecode(parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH));
-if(is_file($_SERVER["DOCUMENT_ROOT"] . $uri)) {
-	return false;
-}
 
 /**
- * Step 2 - Composer:
- * Require the Composer autoloader, so the rest of the script can locate
- * classes by their namespace, rather than having to know where on disk the
- * files exist.
+ * Step 1 - Composer:
+ * Require the Composer autoloader before doing anything else, so config and
+ * logging are available even for static-file requests.
  * @link https://getcomposer.org/doc/00-intro.md
  */
 $vendorDirectoryList = [
-	dirname($_SERVER["DOCUMENT_ROOT"]),
+	$projectRoot,
 	__DIR__,
 ];
 foreach($vendorDirectoryList as $dir) {
@@ -41,6 +34,34 @@ foreach($vendorDirectoryList as $dir) {
 		require $autoloadPath;
 		break;
 	}
+}
+
+$configFactory = new ConfigFactory();
+$config = $configFactory->createForProject(
+	$projectRoot,
+	__DIR__ . "/config.default.ini"
+);
+$minimumLogLevel = strtoupper($config->getString("logger.level") ?: LogLevel::DEBUG);
+if(!in_array($minimumLogLevel, LogLevel::ALL_LEVELS, true)) {
+	$minimumLogLevel = LogLevel::DEBUG;
+}
+LogConfig::setDefaultHandlerLevel($minimumLogLevel);
+
+/**
+ * Step 2 - Static files:
+ * Before any code is executed, return false here if a static file is requested.
+ * When running the PHP inbuilt server, this will output the static file.
+ * Other webservers should not get to this point, but it's safe to prevent
+ * unnecessary execution.
+ */
+$uri = urldecode(parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH));
+if(is_file($_SERVER["DOCUMENT_ROOT"] . $uri)) {
+	if($config->getBool("logger.log_static_requests")) {
+		Log::info("HTTP 200", [
+			"uri" => $uri,
+		]);
+	}
+	return false;
 }
 
 /**
@@ -61,7 +82,7 @@ if(file_exists("setup.php")) {
  * Buckle up and enjoy the ride!
  * @link https://github.com/PhpGt/WebEngine/wiki/From-request-to-response
  */
-$app = new Application();
+$app = new Application($config);
 $app->start();
 
 if(file_exists("teardown.php")) {

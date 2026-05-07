@@ -2,6 +2,7 @@
 namespace GT\WebEngine;
 
 use Closure;
+use GT\Http\ResponseStatusException\ClientError\HttpNotFound;
 use GT\Http\ResponseStatusException\ClientError\ClientErrorException;
 use GT\Http\ResponseStatusException\ResponseStatusException;
 use GT\Logger\Log;
@@ -14,6 +15,7 @@ use ReflectionMethod;
 use GT\WebEngine\Debug\OutputBuffer;
 use GT\WebEngine\Debug\Timer;
 use GT\WebEngine\Redirection\Redirect;
+use GT\WebEngine\Redirection\RedirectUri;
 use GT\WebEngine\Dispatch\Dispatcher;
 use GT\WebEngine\Dispatch\DispatcherFactory;
 use GT\Config\Config;
@@ -57,8 +59,8 @@ class Application {
 	 * @SuppressWarnings("PHPMD.Superglobals")
 	 */
 	public function __construct(
-		?Redirect $redirect = null,
 		?Config $config = null,
+		?Redirect $redirect = null,
 		?Timer $timer = null,
 		?OutputBuffer $outputBuffer = null,
 		?RequestFactory $requestFactory = null,
@@ -67,12 +69,14 @@ class Application {
 		?Closure $handleShutdown = null,
 		?Protection $globalProtection = null,
 	) {
-		$this->redirect = $redirect ?? new Redirect();
 		$this->config = $config ?? $this->loadConfig();
+		$this->redirect = $redirect ?? new Redirect();
 		$this->configureLoggerStreams();
+		$application = $this;
 		$this->timer = $timer ?? new Timer(
 			$this->config->getFloat("app.slow_delta"),
 			$this->config->getFloat("app.very_slow_delta"),
+			fn(string $message) => Log::notice($message, $application->getLogContext()),
 		);
 		$this->outputBuffer = $outputBuffer ?? new OutputBuffer(
 			$this->config->getBool("logger.debug_to_javascript")
@@ -94,7 +98,12 @@ class Application {
 	public function start():void {
 // Before we start, we check if the current URI should be redirected. If it
 // should, we won't go any further into the lifecycle.
-		$this->redirect->execute();
+		$requestedPath = $this->getRequestedPath();
+		$redirectUri = $this->redirect->execute($requestedPath);
+		if($redirectUri) {
+			$this->logRedirect($redirectUri, $requestedPath);
+			return;
+		}
 
 // The first thing done within the WebEngine lifecycle is start a timer.
 // This timer is only used again at the end of the call, when finish() is
@@ -195,10 +204,16 @@ class Application {
 			$response->getHeaders(),
 		);
 
-		if($this->config->getBool("logger.log_all_requests")) {
+		if($this->shouldLogRedirectResponse($response)) {
+			$this->logInfoResponse(
+				$response->getStatusCode(),
+				$this->getLogContext($response)
+			);
+		}
+		elseif($this->shouldLogRequest($response)) {
 			Log::info(
 				"HTTP " . $response->getStatusCode(),
-				$this->getLogContext(),
+				$this->getLogContext($response),
 			);
 		}
 
@@ -264,6 +279,12 @@ class Application {
 			return;
 		}
 
+		$minimumLogLevel = $this->getMinimumLogLevel();
+		$minimumLogLevelIndex = array_search($minimumLogLevel, LogLevel::ALL_LEVELS, true);
+		if($minimumLogLevelIndex === false) {
+			return;
+		}
+
 		$stderrMinLevel = $this->getStderrMinimumLogLevel();
 		$stderrMinLevelIndex = array_search($stderrMinLevel, LogLevel::ALL_LEVELS, true);
 		if($stderrMinLevelIndex === false) {
@@ -280,17 +301,19 @@ class Application {
 			return;
 		}
 
-		if($stderrMinLevelIndex > 0) {
+		LogConfig::setDefaultHandlerLevel($minimumLogLevel);
+
+		if($stderrMinLevelIndex > $minimumLogLevelIndex) {
 			$stdoutMaxLevel = LogLevel::ALL_LEVELS[$stderrMinLevelIndex - 1];
 			LogConfig::addHandler(
 				LogConfig::getDefaultHandler(),
-				LogLevel::DEBUG,
+				$minimumLogLevel,
 				$stdoutMaxLevel,
 			);
 		}
 		LogConfig::addHandler(
 			new StdErrHandler(),
-			$stderrMinLevel,
+			LogLevel::ALL_LEVELS[max($stderrMinLevelIndex, $minimumLogLevelIndex)],
 			LogLevel::EMERGENCY,
 		);
 		self::$loggerConfigured = true;
@@ -349,12 +372,27 @@ class Application {
 	}
 
 	private function logError(Throwable $throwable):void {
+		if($throwable instanceof HttpNotFound) {
+			if($this->config->getBool("logger.log_404_to_error_log")) {
+				$this->logErrorMessage(
+					"HTTP " . $throwable->getHttpCode(),
+					$this->getLogContext(),
+				);
+			}
+			return;
+		}
+
 		if($throwable instanceof ClientErrorException) {
 			return;
 		}
 
+		$this->logErrorMessage((string)$throwable);
+	}
+
+	/** @param array<string, mixed> $context */
+	private function logErrorMessage(string $message, array $context = []):void {
 		if(self::$loggerConfigured) {
-			Log::error((string)$throwable);
+			Log::error($message, $context);
 			return;
 		}
 
@@ -362,20 +400,19 @@ class Application {
 		$stderrMinLevelIndex = array_search($stderrMinLevel, LogLevel::ALL_LEVELS, true);
 		$errorLevelIndex = array_search(LogLevel::ERROR, LogLevel::ALL_LEVELS, true);
 		if($stderrMinLevelIndex === false || $stderrMinLevelIndex > $errorLevelIndex) {
-			Log::error((string)$throwable);
+			Log::error($message, $context);
 			return;
 		}
 
-		$errorLine = (string)$throwable;
-		if(!str_ends_with($errorLine, PHP_EOL)) {
-			$errorLine .= PHP_EOL;
+		if(!str_ends_with($message, PHP_EOL)) {
+			$message .= PHP_EOL;
 		}
-		file_put_contents("php://stderr", $errorLine, FILE_APPEND);
+		file_put_contents("php://stderr", $message, FILE_APPEND);
 	}
 
 	private function getStderrMinimumLogLevel():string {
 		$configuredLevel = strtoupper(
-			$this->config->getString("logger.stderr_min_level") ?: LogLevel::ERROR
+			$this->config->getString("logger.stderr_level") ?: LogLevel::ERROR
 		);
 		if(in_array($configuredLevel, LogLevel::ALL_LEVELS, true)) {
 			return $configuredLevel;
@@ -384,28 +421,116 @@ class Application {
 		return LogLevel::ERROR;
 	}
 
+	private function getMinimumLogLevel():string {
+		$configuredLevel = $this->config->getString("logger.level")
+			?: LogLevel::DEBUG;
+		$configuredLevel = strtoupper($configuredLevel);
+		if(in_array($configuredLevel, LogLevel::ALL_LEVELS, true)) {
+			return $configuredLevel;
+		}
+
+		return LogLevel::DEBUG;
+	}
+
 	/**
 	 * @return array<string, mixed>
 	 * @SuppressWarnings("PHPMD.Superglobals")
 	 */
-	private function getLogContext():array {
+	private function getLogContext(?Response $response = null):array {
 		$uri = $this->request->getUri();
-		$uriPath = $uri->getPath();
-		$uriQuery = $this->request->getQueryParams();
-		$postBody = $this->request->getParsedBody();
-
-		$context = [
-			"id" => $this->request->getServerParams()["REMOTE_ADDR"] . ":" . substr(session_id(), 0, 4),
-			"uri" => $uriPath,
-		];
-		if($uriQuery) {
-			$context["query"] = $uriQuery;
-		}
-		if($postBody) {
-			$context["post"] = $postBody;
+		$context = $this->buildLogContext(
+			$uri->getPath(),
+			$this->request->getQueryParams(),
+			$this->request->getParsedBody(),
+			$this->request->getServerParams()["REMOTE_ADDR"] ?? "",
+		);
+		if($response && $response->hasHeader("Location")) {
+			$context["location"] = $response->getHeaderLine("Location");
 		}
 
 		return $context;
+	}
+
+	/**
+	 * @param array<string, mixed> $query
+	 * @param array<string, mixed>|object|null $postBody
+	 * @return array<string, mixed>
+	 */
+	private function buildLogContext(
+		string $uriPath,
+		array $query = [],
+		array|object|null $postBody = null,
+		string $remoteAddress = "",
+	):array {
+		$postArray = is_array($postBody)
+			? $postBody
+			: [];
+
+		$context = [
+			"id" => $remoteAddress . ":" . substr(session_id(), 0, 4),
+			"uri" => $uriPath,
+		];
+		if($query) {
+			$context["query"] = $query;
+		}
+		if($postArray) {
+			$context["post"] = $postArray;
+		}
+
+		return $context;
+	}
+
+	private function getRequestedPath():string {
+		$requestUri = $this->globals["_SERVER"]["REQUEST_URI"] ?? "/";
+		$path = parse_url($requestUri, PHP_URL_PATH);
+		if(!is_string($path) || $path === "") {
+			return "/";
+		}
+
+		return urldecode($path);
+	}
+
+	private function logRedirect(RedirectUri $redirectUri, string $requestedPath):void {
+		if(!$this->config->getBool("logger.log_redirects")) {
+			return;
+		}
+
+		$context = $this->buildLogContext(
+			$requestedPath,
+			$this->globals["_GET"],
+			$this->globals["_POST"],
+			$this->globals["_SERVER"]["REMOTE_ADDR"] ?? "",
+		);
+		$context["location"] = $redirectUri->uri;
+		$this->logInfoResponse($redirectUri->code, $context);
+	}
+
+	private function shouldLogRedirectResponse(Response $response):bool {
+		$statusCode = $response->getStatusCode();
+		if($statusCode < 300 || $statusCode >= 400) {
+			return false;
+		}
+
+		return $this->config->getBool("logger.log_redirects")
+			&& $response->hasHeader("Location");
+	}
+
+	private function shouldLogRequest(Response $response):bool {
+		if(!$this->config->getBool("logger.log_all_requests")) {
+			return false;
+		}
+
+		$statusCode = $response->getStatusCode();
+		if($statusCode === 404) {
+			return false;
+		}
+
+		return $statusCode < 300 || $statusCode >= 400;
+	}
+
+	/** @param array<string, mixed> $context */
+	private function logInfoResponse(int $statusCode, array $context):void {
+		Log::info("HTTP " . $statusCode, $context);
 	}
 
 	/** @param array<string, array<string>> $headers */

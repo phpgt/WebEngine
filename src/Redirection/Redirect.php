@@ -80,11 +80,14 @@ class Redirect {
 		return glob($pattern) ?: [];
 	}
 
-	public function execute(string $uri = "/"):void {
+	public function execute(string $uri = "/"):?RedirectUri {
 		$redirect = $this->getRedirectUri($uri);
 		if($redirect && $redirect->code > 0 && $redirect->uri !== $uri) {
 			($this->redirectHandler)($redirect->uri, $redirect->code);
+			return $redirect;
 		}
+
+		return null;
 	}
 
 	public function getRedirectUri(string $oldUri):?RedirectUri {

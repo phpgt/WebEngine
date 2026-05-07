@@ -22,6 +22,7 @@ use GT\WebEngine\Dispatch\Dispatcher;
 use GT\WebEngine\Dispatch\DispatcherFactory;
 use GT\WebEngine\Init\SessionInit;
 use GT\WebEngine\Redirection\Redirect;
+use GT\WebEngine\Redirection\RedirectUri;
 use GT\WebEngine\Test\Fixture\TestLogHandler;
 use PHPUnit\Framework\MockObject\Invocation;
 use PHPUnit\Framework\MockObject\InvocationHandler;
@@ -36,7 +37,8 @@ class ApplicationTest extends TestCase {
 	public function testStart_callsRedirectExecute():void {
 		$redirect = self::createMock(Redirect::class);
 		$redirect->expects(self::once())
-			->method("execute");
+			->method("execute")
+			->willReturn(null);
 
 			$globalProtection = self::createStub(Protection::class);
 			$serverRequest = self::createStub(ServerRequest::class);
@@ -554,7 +556,7 @@ class ApplicationTest extends TestCase {
 		$stream->write("<html><body>Hello</body></html>");
 
 		$response = self::createMock(Response::class);
-		$response->expects(self::once())->method("getStatusCode")->willReturn(200);
+		$response->expects(self::atLeastOnce())->method("getStatusCode")->willReturn(200);
 		$response->expects(self::once())->method("getHeaders")->willReturn([]);
 		$response->expects(self::once())->method("getBody")->willReturn($stream);
 
@@ -621,6 +623,171 @@ class ApplicationTest extends TestCase {
 		self::assertSame("127.0.0.1:", TestLogHandler::$records[0]["context"]["id"]);
 	}
 
+	public function testStart_logsSlowRequestsAsDebugWithRequestContext():void {
+		$this->resetApplicationLoggerState();
+		TestLogHandler::$records = [];
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$config = $this->createTestConfig([
+			"logger.log_all_requests" => false,
+			"app.slow_delta" => -1,
+			"app.very_slow_delta" => -1,
+		]);
+		$request = $this->createServerRequest(
+			"/slow",
+			["page" => "1"],
+			[],
+			["REMOTE_ADDR" => "127.0.0.1"],
+		);
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($request);
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willReturn($this->createResponse(200));
+
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("NOTICE", TestLogHandler::$records[0]["level"]);
+		self::assertStringContainsString("VERY SLOW", TestLogHandler::$records[0]["message"]);
+		self::assertSame("/slow", TestLogHandler::$records[0]["context"]["uri"]);
+		self::assertSame(["page" => "1"], TestLogHandler::$records[0]["context"]["query"]);
+		self::assertSame("127.0.0.1:", TestLogHandler::$records[0]["context"]["id"]);
+	}
+
+	public function testStart_doesNotLogRedirectResponsesWhenLogRedirectsIsFalse():void {
+		$this->resetApplicationLoggerState();
+		TestLogHandler::$records = [];
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$config = $this->createTestConfig([
+			"logger.log_all_requests" => false,
+			"logger.log_redirects" => false,
+		]);
+		$request = $this->createServerRequest("/redirect-me");
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($request);
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willReturn($this->createResponse(303, headers: ["Location" => ["https://example.test/redirect-me/"]]));
+
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+
+		self::assertSame([], TestLogHandler::$records);
+	}
+
+	public function testStart_logsRedirectResponsesWhenLogRedirectsIsTrue():void {
+		$this->resetApplicationLoggerState();
+		TestLogHandler::$records = [];
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$config = $this->createTestConfig([
+			"logger.log_all_requests" => false,
+			"logger.log_redirects" => true,
+		]);
+		$request = $this->createServerRequest("/redirect-me");
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($request);
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willReturn($this->createResponse(303, headers: ["Location" => ["https://example.test/redirect-me/"]]));
+
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("INFO", TestLogHandler::$records[0]["level"]);
+		self::assertSame("HTTP 303", TestLogHandler::$records[0]["message"]);
+		self::assertSame("/redirect-me", TestLogHandler::$records[0]["context"]["uri"]);
+		self::assertSame("https://example.test/redirect-me/", TestLogHandler::$records[0]["context"]["location"]);
+	}
+
+	public function testStart_logsPreDispatchRedirectsWhenLogRedirectsIsTrue():void {
+		$this->resetApplicationLoggerState();
+		TestLogHandler::$records = [];
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$redirect = self::createMock(Redirect::class);
+		$redirect->expects(self::once())
+			->method("execute")
+			->with("/legacy")
+			->willReturn(new RedirectUri("/new-home", 301));
+
+		$sut = new Application(
+			redirect: $redirect,
+			config: $this->createTestConfig([
+				"logger.log_redirects" => true,
+			]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+			globals: [
+				"_SERVER" => [
+					"REQUEST_URI" => "/legacy",
+					"REMOTE_ADDR" => "127.0.0.1",
+				],
+				"_FILES" => [],
+				"_GET" => [],
+				"_POST" => [],
+				"_ENV" => [],
+				"_COOKIE" => [],
+			],
+		);
+
+		$sut->start();
+
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("INFO", TestLogHandler::$records[0]["level"]);
+		self::assertSame("HTTP 301", TestLogHandler::$records[0]["message"]);
+		self::assertSame("/legacy", TestLogHandler::$records[0]["context"]["uri"]);
+		self::assertSame("/new-home", TestLogHandler::$records[0]["context"]["location"]);
+	}
+
 	public function testLogError_doesNotLogClientErrors():void {
 		$this->resetApplicationLoggerState();
 		LogConfig::addHandler(new TestLogHandler());
@@ -636,6 +803,39 @@ class ApplicationTest extends TestCase {
 		$this->invokePrivateMethod($sut, "logError", new HttpNotFound());
 
 		self::assertSame([], TestLogHandler::$records);
+	}
+
+	public function testLogError_logs404WhenConfigured():void {
+		$this->resetApplicationLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$request = $this->createServerRequest(
+			"/missing-page",
+			[],
+			[],
+			["REMOTE_ADDR" => "127.0.0.1"],
+		);
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($request);
+
+		$sut = new Application(
+			config: $this->createTestConfig([
+				"logger.log_404_to_error_log" => true,
+			]),
+			requestFactory: $requestFactory,
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+		$this->setPrivateProperty($sut, "request", $request);
+
+		$this->invokePrivateMethod($sut, "logError", new HttpNotFound());
+
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("ERROR", TestLogHandler::$records[0]["level"]);
+		self::assertSame("HTTP 404", TestLogHandler::$records[0]["message"]);
+		self::assertSame("/missing-page", TestLogHandler::$records[0]["context"]["uri"]);
 	}
 
 	public function testLogError_usesConfiguredLoggerHandlers():void {
@@ -660,7 +860,7 @@ class ApplicationTest extends TestCase {
 	public function testGetStderrMinimumLogLevel_fallsBackToErrorForInvalidConfig():void {
 		$sut = new Application(
 			config: $this->createTestConfig([
-				"logger.stderr_min_level" => "banana",
+				"logger.stderr_level" => "banana",
 			]),
 			requestFactory: $this->createRequestFactory(),
 			dispatcherFactory: self::createStub(DispatcherFactory::class),
@@ -672,12 +872,27 @@ class ApplicationTest extends TestCase {
 		self::assertSame("ERROR", $level);
 	}
 
+	public function testGetMinimumLogLevel_fallsBackToDebugForInvalidConfig():void {
+		$sut = new Application(
+			config: $this->createTestConfig([
+				"logger.level" => "banana",
+			]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$level = $this->invokePrivateMethod($sut, "getMinimumLogLevel");
+
+		self::assertSame("DEBUG", $level);
+	}
+
 	public function testConfigureLoggerStreams_registersSplitStdoutAndStderrHandlers():void {
 		$this->resetApplicationLoggerState();
 
 		new Application(
 			config: $this->createTestConfig([
-				"logger.stderr_min_level" => "WARNING",
+				"logger.stderr_level" => "WARNING",
 			]),
 			requestFactory: $this->createRequestFactory(),
 			dispatcherFactory: self::createStub(DispatcherFactory::class),
@@ -692,6 +907,122 @@ class ApplicationTest extends TestCase {
 		self::assertSame(["DEBUG", "WARNING"], $minLevels);
 		self::assertSame(["NOTICE", "EMERGENCY"], $maxLevels);
 		self::assertTrue($this->getStaticProperty(Application::class, "loggerConfigured"));
+	}
+
+	public function testConfigureLoggerStreams_respectsConfiguredMinimumLogLevel_caseInsensitive():void {
+		$this->resetApplicationLoggerState();
+
+		new Application(
+			config: $this->createTestConfig([
+				"logger.level" => "warning",
+				"logger.stderr_level" => "ERROR",
+			]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$minLevels = $this->getStaticProperty(LogConfig::class, "handlerMinLevels");
+		$maxLevels = $this->getStaticProperty(LogConfig::class, "handlerMaxLevels");
+		$defaultHandlerLevel = $this->getStaticProperty(LogConfig::class, "defaultHandlerLevel");
+
+		self::assertSame(["WARNING", "ERROR"], $minLevels);
+		self::assertSame(["WARNING", "EMERGENCY"], $maxLevels);
+		self::assertSame("WARNING", $defaultHandlerLevel);
+	}
+
+	public function testStart_doesNotLogInfoBelowConfiguredMinimumLogLevel():void {
+		$this->resetApplicationLoggerState();
+
+		new Application(
+			config: $this->createTestConfig([
+				"logger.level" => "warning",
+			]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+		$this->setStaticProperty(LogConfig::class, "handlers", []);
+		$this->setStaticProperty(LogConfig::class, "handlerMinLevels", []);
+		$this->setStaticProperty(LogConfig::class, "handlerMaxLevels", []);
+		LogConfig::addHandler(new TestLogHandler());
+
+		$config = $this->createTestConfig([
+			"logger.level" => "warning",
+			"logger.log_all_requests" => true,
+		]);
+		$request = $this->createServerRequest("/asset");
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($request);
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willReturn($this->createResponse(200));
+
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+
+		self::assertSame([], TestLogHandler::$records);
+	}
+
+	public function testStart_doesNotLogNoticeBelowConfiguredMinimumLogLevel():void {
+		$this->resetApplicationLoggerState();
+
+		new Application(
+			config: $this->createTestConfig([
+				"logger.level" => "warning",
+			]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+		$this->setStaticProperty(LogConfig::class, "handlers", []);
+		$this->setStaticProperty(LogConfig::class, "handlerMinLevels", []);
+		$this->setStaticProperty(LogConfig::class, "handlerMaxLevels", []);
+		LogConfig::addHandler(new TestLogHandler());
+
+		$config = $this->createTestConfig([
+			"logger.level" => "warning",
+			"logger.log_all_requests" => false,
+			"app.slow_delta" => -1,
+			"app.very_slow_delta" => -1,
+		]);
+		$request = $this->createServerRequest("/slow");
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($request);
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willReturn($this->createResponse(200));
+
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+
+		self::assertSame([], TestLogHandler::$records);
 	}
 
 	private function createTestConfig(array $mockedValues):Config {
@@ -758,13 +1089,23 @@ class ApplicationTest extends TestCase {
 		return $request;
 	}
 
-	private function createResponse(int $statusCode = 200, string $body = ""):Response {
+	private function createResponse(int $statusCode = 200, string $body = "", array $headers = []):Response {
 		$response = self::createStub(Response::class);
 		$stream = new Stream();
 		$stream->write($body);
 		$response->method("getStatusCode")->willReturn($statusCode);
-		$response->method("getHeaders")->willReturn([]);
+		$response->method("getHeaders")->willReturn($headers);
 		$response->method("getBody")->willReturn($stream);
+		$response->method("hasHeader")
+			->willReturnCallback(fn(string $name):bool => array_key_exists($name, $headers));
+		$response->method("getHeaderLine")
+			->willReturnCallback(function(string $name) use ($headers):string {
+				if(!isset($headers[$name])) {
+					return "";
+				}
+
+				return implode(";", $headers[$name]);
+			});
 		return $response;
 	}
 
@@ -778,6 +1119,7 @@ class ApplicationTest extends TestCase {
 		$this->setStaticProperty(LogConfig::class, "handlers", []);
 		$this->setStaticProperty(LogConfig::class, "handlerMinLevels", []);
 		$this->setStaticProperty(LogConfig::class, "handlerMaxLevels", []);
+		$this->setStaticProperty(LogConfig::class, "defaultHandlerLevel", "DEBUG");
 		TestLogHandler::$records = [];
 	}
 
@@ -788,6 +1130,11 @@ class ApplicationTest extends TestCase {
 	private function setStaticProperty(string $className, string $propertyName, mixed $value):void {
 		$property = new \ReflectionProperty($className, $propertyName);
 		$property->setValue(null, $value);
+	}
+
+	private function setPrivateProperty(object $object, string $propertyName, mixed $value):void {
+		$property = new \ReflectionProperty($object, $propertyName);
+		$property->setValue($object, $value);
 	}
 
 	private function getStaticProperty(string $className, string $propertyName):mixed {

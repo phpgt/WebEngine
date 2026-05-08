@@ -69,11 +69,15 @@ if(is_file($_SERVER["DOCUMENT_ROOT"] . $uri)) {
  * An optional setup.php file can be included in the project root, which will
  * simply be executed directly here. This is useful for configuring the PHP
  * environment across the project, but shouldn't be necessary for most projects.
+ *
+ * The file is required inside a static function to prevent leaking variable
+ * scope between go.php and setup.php.
  */
-// TODO: Investigate why requiring the composer autoloader emits a newline character, so we don't have to clear the output buffer in the go script.
-ob_clean();
 if(file_exists("setup.php")) {
-	require("setup.php");
+	ob_start();
+	(static function():void {
+		require("setup.php");
+	})();
 }
 
 /**
@@ -86,5 +90,7 @@ $app = new Application($config);
 $app->start();
 
 if(file_exists("teardown.php")) {
-	require("teardown.php");
+	(static function():void {
+		require("teardown.php");
+	})();
 }

@@ -70,8 +70,8 @@ class Application {
 		?Protection $globalProtection = null,
 	) {
 		$this->config = $config ?? $this->loadConfig();
-		$this->redirect = $redirect ?? new Redirect();
 		$this->configureLoggerStreams();
+		$this->redirect = $this->createRedirect($redirect);
 		$application = $this;
 		$this->timer = $timer ?? new Timer(
 			$this->config->getFloat("app.slow_delta"),
@@ -158,37 +158,61 @@ class Application {
 			$response = $this->dispatcher->generateResponse();
 		}
 		catch(Throwable $throwable) {
-			if ($errorScript = $this->config->getString('app.error_script')) {
-				$this->restoreGlobals();
-				require($errorScript);
+			$response = $this->handleThrowable($throwable);
+			if(!$response) {
 				return;
-			}
-
-			$this->logError($throwable);
-			$errorStatus = 500;
-
-			if($throwable instanceof ResponseStatusException) {
-				$errorStatus = $throwable->getHttpCode();
-			}
-
-			$this->dispatcher = $this->dispatcherFactory->create(
-				$this->config,
-				$this->request,
-				$this->globals,
-				$this->finish(...),
-				$errorStatus,
-				$this->dispatcher->getSessionInit(),
-			);
-
-			try {
-				$response = $this->dispatcher->generateErrorResponse($throwable);
-			}
-			catch(Throwable $innerThrowable) {
-				$response = $this->dispatcher->generateBasicErrorResponse($throwable, $innerThrowable);
 			}
 		}
 
 		$this->finish($response);
+	}
+
+	private function createRedirect(?Redirect $redirect = null):Redirect {
+		try {
+			return $redirect ?? new Redirect();
+		}
+		catch(Throwable $throwable) {
+			$this->logErrorMessage(
+				"Redirect configuration error: " . $throwable->getMessage()
+			);
+			throw $throwable;
+		}
+	}
+
+	private function handleThrowable(Throwable $throwable):?Response {
+		if ($errorScript = $this->config->getString('app.error_script')) {
+			$this->restoreGlobals();
+			require($errorScript);
+			return null;
+		}
+
+		$this->logError($throwable);
+		$errorStatus = $throwable instanceof ResponseStatusException
+			? $throwable->getHttpCode()
+			: 500;
+
+		$this->dispatcher = $this->dispatcherFactory->create(
+			$this->config,
+			$this->request,
+			$this->globals,
+			$this->finish(...),
+			$errorStatus,
+			$this->dispatcher->getSessionInit(),
+		);
+
+		try {
+			return $this->dispatcher->generateErrorResponse($throwable);
+		}
+		catch(Throwable $innerThrowable) {
+			$this->logErrorMessage(
+				"Failed to render framework error response: " . (string)$innerThrowable,
+				[
+					"original_error" => get_class($throwable),
+					"uri" => $this->request->getUri()->getPath(),
+				],
+			);
+			return $this->dispatcher->generateBasicErrorResponse($throwable, $innerThrowable);
+		}
 	}
 
 	private function finish(
@@ -360,6 +384,13 @@ class Application {
 			$this->finish($response);
 		}
 		catch(Throwable $innerThrowable) {
+			$this->logErrorMessage(
+				"Failed to render shutdown error response: " . (string)$innerThrowable,
+				[
+					"original_error" => get_class($throwable),
+					"uri" => $this->request->getUri()->getPath(),
+				],
+			);
 			$response = $this->dispatcher->generateBasicErrorResponse($innerThrowable, $throwable);
 		}
 		$this->outputHeaders(

@@ -1,11 +1,15 @@
 <?php
 namespace GT\WebEngine\Test\Logic;
 
+require_once __DIR__ . "/../Fixture/TestLogHandler.php";
+
 use GT\WebEngine\Logic\HTMLDocumentProcessor;
 use GT\Dom\Element;
 use GT\Dom\HTMLDocument;
+use GT\Logger\LogConfig;
 use GT\Routing\Assembly;
 use GT\Routing\Path\DynamicPath;
+use GT\WebEngine\Test\Fixture\TestLogHandler;
 use PHPUnit\Framework\TestCase;
 
 class HTMLDocumentProcessorTest extends TestCase {
@@ -20,9 +24,11 @@ class HTMLDocumentProcessorTest extends TestCase {
 		$this->partialDir = $this->tmpDir . "/partials";
 		mkdir($this->componentDir, recursive: true);
 		mkdir($this->partialDir, recursive: true);
+		$this->resetLoggerState();
 	}
 
 	protected function tearDown():void {
+		$this->resetLoggerState();
 		$this->deleteDir($this->tmpDir);
 		parent::tearDown();
 	}
@@ -46,6 +52,7 @@ class HTMLDocumentProcessorTest extends TestCase {
 	}
 
 	public function testProcessPartialContent_expandsComponentsAndPartialsAndRegistersOnlyLogicBackedComponents():void {
+		LogConfig::addHandler(new TestLogHandler());
 		file_put_contents(
 			$this->componentDir . "/site-card.html",
 			"<article><form method='post'><button>Save</button></form></article>",
@@ -80,6 +87,10 @@ class HTMLDocumentProcessorTest extends TestCase {
 		self::assertSame("section", strtolower($document->body->firstElementChild->tagName));
 		self::assertStringContainsString("<main>Page</main>", (string)$document);
 		self::assertStringContainsString("<aside>No logic</aside>", (string)$document);
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("DEBUG", TestLogHandler::$records[0]["level"]);
+		self::assertSame("Component detected without matching logic file", TestLogHandler::$records[0]["message"]);
+		self::assertSame("no-logic", TestLogHandler::$records[0]["context"]["component"]);
 	}
 
 	public function testProcessPartialContent_ignoresMissingDirectories():void {
@@ -115,5 +126,18 @@ class HTMLDocumentProcessorTest extends TestCase {
 		}
 
 		rmdir($dir);
+	}
+
+	private function resetLoggerState():void {
+		TestLogHandler::$records = [];
+		$this->setStaticProperty(LogConfig::class, "handlers", []);
+		$this->setStaticProperty(LogConfig::class, "handlerMinLevels", []);
+		$this->setStaticProperty(LogConfig::class, "handlerMaxLevels", []);
+		$this->setStaticProperty(LogConfig::class, "defaultHandlerLevel", "DEBUG");
+	}
+
+	private function setStaticProperty(string $className, string $propertyName, mixed $value):void {
+		$property = new \ReflectionProperty($className, $propertyName);
+		$property->setValue(null, $value);
 	}
 }

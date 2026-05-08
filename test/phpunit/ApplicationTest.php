@@ -399,6 +399,10 @@ class ApplicationTest extends TestCase {
 	}
 
 	public function testStart_fallsBackToBasicErrorResponseWhenErrorPageRenderingFails():void {
+		$this->resetApplicationLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
 		$config = $this->createTestConfig(["app.error_script" => ""]);
 		$requestFactory = self::createStub(RequestFactory::class);
 		$requestFactory->method("createServerRequestFromGlobalState")
@@ -441,6 +445,50 @@ class ApplicationTest extends TestCase {
 		);
 
 		$sut->start();
+
+		self::assertCount(2, TestLogHandler::$records);
+		self::assertSame("ERROR", TestLogHandler::$records[0]["level"]);
+		self::assertStringContainsString("page failed", TestLogHandler::$records[0]["message"]);
+		self::assertSame("ERROR", TestLogHandler::$records[1]["level"]);
+		self::assertStringContainsString("Failed to render framework error response", TestLogHandler::$records[1]["message"]);
+		self::assertSame("Exception", TestLogHandler::$records[1]["context"]["original_error"]);
+		self::assertSame("/broken-error", TestLogHandler::$records[1]["context"]["uri"]);
+	}
+
+	public function testConstructor_logsRedirectConfigurationErrors():void {
+		$this->resetApplicationLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$cwd = getcwd();
+		$tmpDir = sys_get_temp_dir() . "/webengine-redirect-" . uniqid();
+		mkdir($tmpDir);
+		file_put_contents($tmpDir . "/redirect.ini", "/from=/to");
+		file_put_contents($tmpDir . "/redirect.csv", "/from,/to\n");
+		chdir($tmpDir);
+
+		try {
+			new Application(
+				config: $this->createTestConfig([]),
+				requestFactory: $this->createRequestFactory(),
+				dispatcherFactory: self::createStub(DispatcherFactory::class),
+				globalProtection: self::createStub(Protection::class),
+			);
+			self::fail("Expected invalid redirect configuration to throw.");
+		}
+		catch(\GT\WebEngine\Redirection\RedirectException $exception) {
+			self::assertSame("Multiple redirect files in project root", $exception->getMessage());
+		}
+		finally {
+			chdir($cwd);
+			unlink($tmpDir . "/redirect.ini");
+			unlink($tmpDir . "/redirect.csv");
+			rmdir($tmpDir);
+		}
+
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("ERROR", TestLogHandler::$records[0]["level"]);
+		self::assertStringContainsString("Redirect configuration error", TestLogHandler::$records[0]["message"]);
 	}
 
 	public function testStart_restoresGlobalsBeforeExecutingErrorScript():void {
@@ -1028,7 +1076,7 @@ class ApplicationTest extends TestCase {
 	private function createTestConfig(array $mockedValues):Config {
 		$config = self::createStub(Config::class);
 
-		$configFile = "config.default.ini";
+		$configFile = dirname(__DIR__, 2) . "/config.default.ini";
 		$configContents = parse_ini_file($configFile, true);
 
 		$map = [];

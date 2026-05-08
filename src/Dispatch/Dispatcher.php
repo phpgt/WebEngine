@@ -28,6 +28,7 @@ use GT\Http\Stream;
 use GT\Input\Input;
 use GT\Input\InputData\InputData;
 use GT\Json\Schema\JSONDocument;
+use GT\Logger\Log;
 use GT\Routing\Assembly;
 use GT\Routing\BaseRouter;
 use GT\Routing\Path\DynamicPath;
@@ -259,6 +260,10 @@ class Dispatcher {
 		}
 
 		if(!$this->viewAssembly->containsDistinctFile()) {
+			Log::warning(
+				"Error page template not found for HTTP " . $errorStatusCode,
+				$this->getLogContext(),
+			);
 			throw new ErrorPageNotFoundException(code: $errorStatusCode);
 		}
 
@@ -482,6 +487,10 @@ class Dispatcher {
 			$tokenStore->verify($inputData);
 		}
 		catch(CsrfException $exception) {
+			Log::warning(
+				"CSRF verification failed: " . $exception->getMessage(),
+				$this->getLogContext(),
+			);
 			throw $this->createCsrfForbiddenException($exception->getMessage());
 		}
 	}
@@ -538,6 +547,19 @@ class Dispatcher {
 				return StatusCode::FORBIDDEN;
 			}
 		};
+	}
+
+	/** @return array<string, mixed> */
+	private function getLogContext():array {
+		$context = [
+			"uri" => $this->request->getUri()->getPath(),
+		];
+		$remoteAddress = $this->globals["_SERVER"]["REMOTE_ADDR"] ?? "";
+		if($remoteAddress !== "") {
+			$context["id"] = $remoteAddress . ":" . substr(session_id(), 0, 4);
+		}
+
+		return $context;
 	}
 
 	public function getSessionInit():?SessionInit {

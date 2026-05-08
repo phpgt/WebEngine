@@ -6,6 +6,7 @@ use GT\DomTemplate\ComponentExpander;
 use GT\DomTemplate\PartialContent;
 use GT\DomTemplate\PartialContentDirectoryNotFoundException;
 use GT\DomTemplate\PartialExpander;
+use GT\Logger\Log;
 use GT\Routing\Assembly;
 use GT\Routing\Path\DynamicPath;
 use GT\WebEngine\View\HeaderFooterPartialConflictException;
@@ -61,7 +62,13 @@ class HTMLDocumentProcessor extends ViewModelProcessor {
 				$filePath .= ".php";
 
 				if(!is_file($filePath)) {
-// TODO: Log that a component has been detected but there's no HTML file to load.
+					Log::debug(
+						"Component detected without matching logic file",
+						[
+							"component" => strtolower($componentElement->tagName),
+							"logic_file" => $filePath,
+						],
+					);
 					continue;
 				}
 

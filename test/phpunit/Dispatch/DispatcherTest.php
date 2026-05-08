@@ -24,6 +24,7 @@ use GT\Http\StatusCode;
 use GT\Http\Stream;
 use GT\Http\Uri;
 use GT\Input\Input;
+use GT\Logger\LogConfig;
 use GT\Routing\Assembly;
 use GT\Routing\BaseRouter;
 use GT\Routing\Path\DynamicPath;
@@ -40,6 +41,7 @@ use GT\WebEngine\Logic\LogicAssemblyComponentList;
 use GT\WebEngine\Logic\LogicExecutor;
 use GT\WebEngine\Logic\LogicStreamHandler;
 use GT\WebEngine\Logic\ViewModelProcessor;
+use GT\WebEngine\Test\Fixture\TestLogHandler;
 use GT\WebEngine\View\HTMLView;
 use GT\WebEngine\View\ViewStreamer;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -48,6 +50,11 @@ use PHPUnit\Framework\TestCase;
 
 #[AllowMockObjectsWithoutExpectations]
 class DispatcherTest extends TestCase {
+	protected function tearDown():void {
+		$this->resetLoggerState();
+		parent::tearDown();
+	}
+
 	public function testGenerateResponse_returnsPreparedRedirectResponse():void {
 		$appAutoloader = $this->createMock(AppAutoloader::class);
 		$appAutoloader->expects(self::once())
@@ -361,12 +368,23 @@ class DispatcherTest extends TestCase {
 	}
 
 	public function testGenerateErrorResponse_throwsWhenNoErrorViewExists():void {
+		$this->resetLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
 		$sut = $this->createDispatcher();
 		$throwable = $this->createResponseStatusException(418);
 
-		$this->expectException(ErrorPageNotFoundException::class);
-		$this->expectExceptionCode(418);
-		$sut->generateErrorResponse($throwable);
+		try {
+			$sut->generateErrorResponse($throwable);
+			self::fail("Expected missing error view to throw.");
+		}
+		catch(ErrorPageNotFoundException $exception) {
+			self::assertSame(418, $exception->getCode());
+		}
+
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("WARNING", TestLogHandler::$records[0]["level"]);
+		self::assertSame("Error page template not found for HTTP 418", TestLogHandler::$records[0]["message"]);
+		self::assertSame("/page/", TestLogHandler::$records[0]["context"]["uri"]);
 	}
 
 	public function testGenerateErrorResponse_usesThrowableStatusAndReturnsResponse():void {
@@ -556,6 +574,8 @@ class DispatcherTest extends TestCase {
 	}
 
 	public function testGenerateResponse_throwsForbiddenOnInvalidCsrfToken():void {
+		$this->resetLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
 		$logicExecutor = $this->createMock(LogicExecutor::class);
 		$logicExecutor->expects(self::never())
 			->method("invoke");
@@ -581,6 +601,11 @@ class DispatcherTest extends TestCase {
 			self::assertSame(StatusCode::FORBIDDEN, $exception->getCode());
 			self::assertStringContainsString("CSRF", $exception->getMessage());
 		}
+
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("WARNING", TestLogHandler::$records[0]["level"]);
+		self::assertStringContainsString("CSRF verification failed", TestLogHandler::$records[0]["message"]);
+		self::assertSame("/page/", TestLogHandler::$records[0]["context"]["uri"]);
 	}
 
 	private function createDispatcher(
@@ -884,6 +909,19 @@ class DispatcherTest extends TestCase {
 	private function setExceptionProperty(\Exception $exception, string $name, mixed $value):void {
 		$reflection = new \ReflectionProperty(\Exception::class, $name);
 		$reflection->setValue($exception, $value);
+	}
+
+	private function resetLoggerState():void {
+		TestLogHandler::$records = [];
+		$this->setStaticProperty(LogConfig::class, "handlers", []);
+		$this->setStaticProperty(LogConfig::class, "handlerMinLevels", []);
+		$this->setStaticProperty(LogConfig::class, "handlerMaxLevels", []);
+		$this->setStaticProperty(LogConfig::class, "defaultHandlerLevel", "DEBUG");
+	}
+
+	private function setStaticProperty(string $className, string $propertyName, mixed $value):void {
+		$reflection = new \ReflectionProperty($className, $propertyName);
+		$reflection->setValue(null, $value);
 	}
 
 	private function emptyGenerator():\Generator {

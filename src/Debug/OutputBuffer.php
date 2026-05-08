@@ -31,6 +31,7 @@ class OutputBuffer {
 	}
 
 	public function start():void {
+		$this->cleanBuffer();
 		($this->obStartHandler)();
 	}
 

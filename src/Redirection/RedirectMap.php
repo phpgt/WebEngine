@@ -2,12 +2,12 @@
 namespace GT\WebEngine\Redirection;
 
 class RedirectMap {
-	/** @var array<int, array<string, string>> */
+	/** @var array<int, array<string, array{uri:string, source:string}>> */
 	private array $literal = [];
-	/** @var array<int, array<int, array{pattern:string, replacement:string}>> */
+	/** @var array<int, array<int, array{pattern:string, replacement:string, source:string}>> */
 	private array $regex = [];
 
-	public function addRule(int $code, string $old, string $new):void {
+	public function addRule(int $code, string $old, string $new, string $source = ""):void {
 		if($old === '' || $new === '') {
 			return;
 		}
@@ -15,10 +15,14 @@ class RedirectMap {
 			$this->regex[$code][] = [
 				'pattern' => substr($old, 1),
 				'replacement' => $new,
+				'source' => $source,
 			];
 		}
 		else {
-			$this->literal[$code][$old] = $new;
+			$this->literal[$code][$old] = [
+				'uri' => $new,
+				'source' => $source,
+			];
 		}
 	}
 
@@ -38,9 +42,9 @@ class RedirectMap {
 			return null;
 		}
 		foreach($this->literal as $code => $pairs) {
-			$newUri = $pairs[$oldUri] ?? null;
-			if($newUri !== null) {
-				return new RedirectUri($newUri, (int)$code);
+			$match = $pairs[$oldUri] ?? null;
+			if($match !== null) {
+				return new RedirectUri($match["uri"], (int)$code, $match["source"]);
 			}
 		}
 		return null;
@@ -61,7 +65,7 @@ class RedirectMap {
 				if($matchResult === 1) {
 					$newUri = preg_replace("~$pattern~", $replacement, $oldUri, 1);
 					if(is_string($newUri) && $newUri !== $oldUri) {
-						return new RedirectUri($newUri, (int)$code);
+						return new RedirectUri($newUri, (int)$code, $rule["source"]);
 					}
 				}
 			}

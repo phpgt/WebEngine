@@ -15,7 +15,9 @@ class IniRedirectLoader implements RedirectLoader {
 		}
 
 		$currentCode = StatusCodeValidator::DEFAULT_CODE; // default when no sections
+		$lineNumber = 0;
 		while(($line = fgets($fileHandle)) !== false) {
+			$lineNumber++;
 			$line = trim($line);
 			if($this->isSkippableIniLine($line)) {
 				continue;
@@ -30,11 +32,18 @@ class IniRedirectLoader implements RedirectLoader {
 
 			if($keyValue = $this->splitIniKeyValue($line)) {
 				[$old, $new] = $keyValue;
-				$map->addRule($currentCode, $old, $new);
+				$map->addRule($currentCode, $old, $new, $this->formatSource($file, $lineNumber));
 			}
 		}
 
 		fclose($fileHandle);
+	}
+
+	private function formatSource(string $file, int $lineNumber):string {
+		$cwd = getcwd() ?: "";
+		$file = str_replace($cwd, "", $file);
+		$file = trim($file, "/");
+		return "$file:$lineNumber";
 	}
 
 	private function isSkippableIniLine(string $line):bool {

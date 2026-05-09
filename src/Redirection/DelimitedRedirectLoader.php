@@ -16,7 +16,9 @@ readonly class DelimitedRedirectLoader implements RedirectLoader {
 			return;
 		}
 
+		$lineNumber = 0;
 		while(($row = fgetcsv($fileHandle, 0, $this->delimiter, escape: '')) !== false) {
+			$lineNumber++;
 			if(count($row) < 2) {
 				continue;
 			}
@@ -25,8 +27,15 @@ readonly class DelimitedRedirectLoader implements RedirectLoader {
 			$old = trim((string)$row[0]);
 			$new = trim((string)$row[1]);
 			$code = isset($row[2]) ? $statusCodeValidator->validate($row[2]) : StatusCodeValidator::DEFAULT_CODE;
-			$map->addRule($code, $old, $new);
+			$map->addRule($code, $old, $new, $this->formatSource($file, $lineNumber));
 		}
 		fclose($fileHandle);
+	}
+
+	private function formatSource(string $file, int $lineNumber):string {
+		$cwd = getcwd() ?: "";
+		$file = str_replace($cwd, "", $file);
+		$file = trim($file, "/");
+		return "$file:$lineNumber";
 	}
 }

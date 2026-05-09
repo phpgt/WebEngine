@@ -60,6 +60,7 @@ class RedirectTest extends TestCase {
 		$redirectUri = $sut->getRedirectUri("/old-path");
 		self::assertSame("/new-path", $redirectUri->uri);
 		self::assertSame(307, $redirectUri->code);
+		self::assertSame("redirect.ini:1", $redirectUri->source);
 	}
 
 	public function testGetRedirectUri_iniSections():void {
@@ -102,12 +103,15 @@ class RedirectTest extends TestCase {
 		$r1 = $sut->getRedirectUri("/one");
 		self::assertSame("/moved", $r1->uri);
 		self::assertSame(301, $r1->code);
+		self::assertSame("redirect.csv:1", $r1->source);
 		$r2 = $sut->getRedirectUri("/two");
 		self::assertSame("/temp", $r2->uri);
 		self::assertSame(302, $r2->code);
+		self::assertSame("redirect.csv:2", $r2->source);
 		$r3 = $sut->getRedirectUri("/three");
 		self::assertSame("/see-other", $r3->uri);
 		self::assertSame(303, $r3->code);
+		self::assertSame("redirect.csv:3", $r3->source);
 	}
 
 	public function testGetRedirectUri_tsvNoCode():void {
@@ -151,6 +155,17 @@ class RedirectTest extends TestCase {
 		self::assertTrue($called);
 		self::assertSame("/there", $calledUri);
 		self::assertSame(307, $calledCode);
+	}
+
+	public function testExecute_returnsRedirectSourceOnMatch():void {
+		file_put_contents("$this->tmpDir/redirect.tsv", "/go\t/there\t308\n");
+		$sut = new Redirect(redirectHandler: static function():void {});
+
+		$redirectUri = $sut->execute("/go");
+
+		self::assertSame("/there", $redirectUri?->uri);
+		self::assertSame(308, $redirectUri?->code);
+		self::assertSame("redirect.tsv:1", $redirectUri?->source);
 	}
 
 	public function testExecute_noMatch_doesNotCallHandler():void {

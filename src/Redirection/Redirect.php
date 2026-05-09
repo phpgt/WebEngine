@@ -3,6 +3,7 @@ namespace GT\WebEngine\Redirection;
 
 use Closure;
 use GT\WebEngine\Redirection\RedirectMap;
+use Gt\Http\Response;
 
 /**
  * Redirection: file-driven HTTP redirects for WebEngine
@@ -33,9 +34,14 @@ class Redirect {
 		}
 
 		$this->redirectFile = $matches[0] ?? null;
-		$this->redirectHandler = $redirectHandler ??
-			fn(string $uri, int $code)
-			=> header("Location: $uri", true, $code);
+		$this->redirectHandler = $redirectHandler
+			? fn(string $uri, int $code, string $source) => $redirectHandler($uri, $code)
+			: function(string $uri, int $code, string $source):void {
+				header("Location: $uri", true, $code);
+				if($source !== "") {
+					header(Response::DEBUG_LOCATION_HEADER . ": $source", true);
+				}
+			};
 
 		$this->map = new RedirectMap();
 		if($this->redirectFile) {
@@ -83,7 +89,7 @@ class Redirect {
 	public function execute(string $uri = "/"):?RedirectUri {
 		$redirect = $this->getRedirectUri($uri);
 		if($redirect && $redirect->code > 0 && $redirect->uri !== $uri) {
-			($this->redirectHandler)($redirect->uri, $redirect->code);
+			($this->redirectHandler)($redirect->uri, $redirect->code, $redirect->source);
 			return $redirect;
 		}
 

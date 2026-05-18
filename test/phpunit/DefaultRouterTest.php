@@ -11,6 +11,7 @@ use Gt\Http\Stream;
 use Gt\Http\Uri;
 use GT\WebEngine\Logic\HTMLDocumentProcessor;
 use GT\Routing\RouterConfig;
+use GT\WebEngine\AmbiguousPathException;
 use GT\WebEngine\DefaultRouter;
 use Gt\ServiceContainer\Container;
 use GT\WebEngine\View\HeaderFooterPartialConflictException;
@@ -115,6 +116,33 @@ class DefaultRouterTest extends TestCase {
 			"Header/footer view files cannot be combined with partial views."
 		);
 		$processor->processPartialContent($viewModel, $sut->getViewAssembly());
+	}
+
+	public function testRoute_pageRequest_withDirectAndIndexView_throwsAmbiguousPathException():void {
+		mkdir($this->tmpDir . "/page/contact", recursive: true);
+		file_put_contents($this->tmpDir . "/page/contact.html", "<main>contact</main>");
+		file_put_contents($this->tmpDir . "/page/contact/index.html", "<main>contact index</main>");
+
+		chdir($this->tmpDir);
+
+		$request = self::createMock(Request::class);
+		$request->method("getMethod")->willReturn("GET");
+		$request->method("getHeaderLine")
+			->with("accept")
+			->willReturn("text/html");
+		$request->method("getUri")->willReturn(new Uri("https://example.test/contact"));
+
+		$sut = new DefaultRouter(new RouterConfig(307, "text/html"));
+		$container = new Container();
+		$container->set($request);
+		$sut->setContainer($container);
+
+		$this->expectException(AmbiguousPathException::class);
+		$this->expectExceptionMessage(
+			"Ambiguous route for '/contact': both 'page/contact.html' and "
+			. "'page/contact/index.html' match."
+		);
+		$sut->route($request);
 	}
 
 	private function removeDirectory(string $dir):void {

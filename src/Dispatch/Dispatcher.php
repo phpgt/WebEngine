@@ -485,14 +485,14 @@ class Dispatcher {
 	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
 
 	private function recordLogicExecution(string $functionReference):void {
-		$referenceWithoutAttributes = explode("#", $functionReference, 2)[0];
-		$separatorPosition = strrpos($referenceWithoutAttributes, "::");
+		$refWithoutAttributes = explode("#", $functionReference, 2)[0];
+		$separatorPosition = strrpos($refWithoutAttributes, "::");
 		if($separatorPosition === false) {
 			return;
 		}
 
-		$file = substr($referenceWithoutAttributes, 0, $separatorPosition);
-		$function = substr($referenceWithoutAttributes, $separatorPosition + 2);
+		$file = substr($refWithoutAttributes, 0, $separatorPosition);
+		$function = substr($refWithoutAttributes, $separatorPosition + 2);
 		$function = preg_replace('/\(\)$/', '', $function);
 		if($function === null || $function === "") {
 			return;

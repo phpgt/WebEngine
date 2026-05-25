@@ -53,6 +53,32 @@ class LogicExecutorTest extends TestCase {
 		self::assertSame(["$relativePath::go()"], $invoked);
 	}
 
+	public function testLogicProjectNamespace_preservesDynamicMarkers():void {
+		self::assertSame(
+			"Example\\App\\Page\\Shop\\_Category\\_ItemPage",
+			(string)new LogicProjectNamespace(
+				"page/shop/@category/@item.php",
+				"Example\\App",
+			),
+		);
+
+		self::assertSame(
+			"Example\\App\\Page\\Shop\\_Category\\ItemPage",
+			(string)new LogicProjectNamespace(
+				"page/shop/@category/item.php",
+				"Example\\App",
+			),
+		);
+
+		self::assertSame(
+			"Example\\App\\Page\\Shop\\Category\\ItemPage",
+			(string)new LogicProjectNamespace(
+				"page/shop/category/item.php",
+				"Example\\App",
+			),
+		);
+	}
+
 	public function testInvoke_executesProjectNamespacedFunctionWhenNoClassExists():void {
 		$relativePath = $this->createLogicFile("FunctionPage.php", "<?php\n");
 		$projectNamespace = (string)(new LogicProjectNamespace($relativePath, "Example\\App"));

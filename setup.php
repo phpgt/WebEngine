@@ -14,8 +14,8 @@ if(!is_dir("vendor")) {
 	}
 	$error = "No vendor directory found - do you need to run `composer install`?";
 }
-if(is_file("build.default.json")) {
-	$error = "Please run this script from your project's root directory.";
+if(is_file("build.default.ini") || is_file("build.default.json")) {
+	$error = "Please run this script from your project's root directory - not WebEngine's directory.";
 }
 if($error) {
 	echo "$error See https://www.php.gt/webengine/setup for more information.", PHP_EOL;

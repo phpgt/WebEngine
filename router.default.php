@@ -2,6 +2,7 @@
 namespace GT\WebEngine;
 
 use Gt\Http\Request;
+use GT\WebEngine\AmbiguousPathException;
 use GT\Routing\BaseRouter;
 use GT\Routing\Method\Any;
 use GT\Routing\Path\FileMatch\BasicFileMatch;
@@ -92,6 +93,7 @@ class DefaultRouter extends BaseRouter {
 			"page",
 			"php"
 		);
+		$this->assertNoAmbiguousPath($matchingLogics, $uriPath, "page", "php");
 		usort($matchingLogics, $sortNestLevelCallback);
 		foreach($matchingLogics as $path) {
 			$this->addToLogicAssembly($path);
@@ -102,6 +104,7 @@ class DefaultRouter extends BaseRouter {
 			"page",
 			"html"
 		);
+		$this->assertNoAmbiguousPath($matchingViews, $uriPath, "page", "html");
 		usort($matchingViews, $headerFooterSort);
 		foreach($matchingViews as $path) {
 			$this->addToViewAssembly($path);
@@ -127,6 +130,12 @@ class DefaultRouter extends BaseRouter {
 			"api",
 			"php"
 		);
+		$this->assertNoAmbiguousPath(
+			$matchingLogics,
+			$request->getUri()->getPath(),
+			"api",
+			"php",
+		);
 		usort($matchingLogics, $sortNestLevelCallback);
 		foreach($matchingLogics as $path) {
 			$this->addToLogicAssembly($path);
@@ -137,8 +146,38 @@ class DefaultRouter extends BaseRouter {
 			"api",
 			"xml"
 		);
+		$this->assertNoAmbiguousPath(
+			$matchingViews,
+			$request->getUri()->getPath(),
+			"api",
+			"xml",
+		);
 		foreach($matchingViews as $path) {
 			$this->addToViewAssembly($path);
+		}
+	}
+
+	/** @param array<int, string> $matchingPaths */
+	private function assertNoAmbiguousPath(
+		array $matchingPaths,
+		string $uriPath,
+		string $baseDir,
+		string $extension,
+	):void {
+		$trimmedUriPath = trim($uriPath, "/");
+		if($trimmedUriPath === "") {
+			return;
+		}
+
+		$directPath = "$baseDir/$trimmedUriPath.$extension";
+		$indexPath = "$baseDir/$trimmedUriPath/index.$extension";
+
+		if(in_array($directPath, $matchingPaths, true)
+		&& in_array($indexPath, $matchingPaths, true)) {
+			throw new AmbiguousPathException(
+				"Ambiguous route for '$uriPath': both '$directPath' and "
+				. "'$indexPath' match."
+			);
 		}
 	}
 

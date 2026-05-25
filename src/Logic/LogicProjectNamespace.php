@@ -14,15 +14,26 @@ class LogicProjectNamespace implements Stringable {
 		$str = str_replace("/", "\\", $this->path);
 		$str = $this->namespacePrefix . "\\" . $str;
 		$str = strtok($str, ".");
-		$str = str_replace(["-", "@"], " ", $str);
 		$namespace = "";
 		foreach(explode("\\", $str) as $part) {
-			$part = ucwords($part);
 			$namespace .= "\\";
-			$namespace .= str_replace(" ", "", $part);
+			$namespace .= $this->pathPartToClassPart($part);
 		}
 		$namespace = trim($namespace, "\\");
 		$namespace .= "Page";
 		return $namespace;
+	}
+
+	private function pathPartToClassPart(string $part):string {
+		$dynamicPrefix = "";
+		while(str_starts_with($part, "@")) {
+			$dynamicPrefix .= "_";
+			$part = substr($part, 1);
+		}
+
+		$part = str_replace("-", " ", $part);
+		$part = ucwords($part);
+		$part = str_replace(" ", "", $part);
+		return $dynamicPrefix . $part;
 	}
 }

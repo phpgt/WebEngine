@@ -52,9 +52,10 @@ class OutputBufferTest extends TestCase {
 		$obGetClean = function() use (&$sequence) { return array_shift($sequence); };
 		$sut = new OutputBuffer(true, $obStart, $obGetClean);
 		$sut->start();
-		// Manually accumulate twice, then let debugOutput() call a final clean
 		$sut->cleanBuffer(); // "one"
+		$sut->start();
 		$sut->cleanBuffer(); // null -> ""
+		$sut->start();
 		$html = $sut->debugOutput(); // "two" + emit script
 		self::assertNotNull($html);
 		self::assertStringContainsString('onetwo', $html);

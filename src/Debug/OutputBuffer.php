@@ -15,6 +15,7 @@ class OutputBuffer {
 	private Closure $obStartHandler;
 	private Closure $obGetCleanHandler;
 	private string $buffer = "";
+	private bool $bufferOpen = false;
 
 	public function __construct(
 		private bool $debugToJavaScript,
@@ -33,11 +34,19 @@ class OutputBuffer {
 	public function start():void {
 		$this->cleanBuffer();
 		($this->obStartHandler)();
+		$this->bufferOpen = true;
 	}
 
 	public function cleanBuffer():void {
+		if(!$this->bufferOpen) {
+			return;
+		}
+
+		$buffer = ($this->obGetCleanHandler)();
+		$this->bufferOpen = false;
+
 		// ob_get_clean can return false; normalise to empty string.
-		$this->fillBuffer(($this->obGetCleanHandler)() ?? "");
+		$this->fillBuffer($buffer ?: "");
 	}
 
 	public function debugOutput():?string {

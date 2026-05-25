@@ -174,9 +174,7 @@ class DispatcherTest extends TestCase {
 					"name" => $name,
 					"extraArgs" => $extraArgs,
 				];
-				if(false) {
-					yield "never";
-				}
+				yield ($assembly === $componentAssembly ? "/tmp/component.php" : "/tmp/page.php") . "::$name()";
 			});
 
 		$headerManager = $this->createMock(HeaderManager::class);
@@ -210,6 +208,17 @@ class DispatcherTest extends TestCase {
 
 		self::assertSame(StatusCode::OK, $response->getStatusCode());
 		self::assertSame("applied", $response->getHeaderLine("X-Test"));
+		self::assertSame(
+			"/tmp/component:go_before;"
+			. "/tmp/component:do_save_item;"
+			. "/tmp/component:go;"
+			. "/tmp/component:go_after;"
+			. "/tmp/page:go_before;"
+			. "/tmp/page:do_save_item;"
+			. "/tmp/page:go;"
+			. "/tmp/page:go_after",
+			$response->getHeaderLine("X-Logic-Execution"),
+		);
 		self::assertSame([
 			["assembly" => "component", "name" => "go_before"],
 			["assembly" => "component", "name" => "do_save_item"],

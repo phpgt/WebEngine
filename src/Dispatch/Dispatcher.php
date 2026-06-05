@@ -54,6 +54,8 @@ use Throwable;
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 class Dispatcher {
+	private const LOGIC_EXECUTION_HEADER = "X-Logic-Execution";
+
 	private Config $config;
 	private Request $request;
 	/** @var array<string, array<string, string|array<string, string>>> */
@@ -80,6 +82,8 @@ class Dispatcher {
 	private HeaderManager $headerManager;
 	private Closure $viewInitCb;
 	private bool $redirectPrepared = false;
+	/** @var array<int, string> */
+	private array $logicExecutionOrder = [];
 
 	/**
 	 * @param array<string, array<string, string|array<string, string>>> $globals
@@ -369,9 +373,8 @@ class Dispatcher {
 			$extraArgs[$legacyElementClass] = $component;
 		}
 
-		foreach($this->logicExecutor->invoke($logicAssembly, "go_before", $extraArgs) as $file) {
-			// Force generator execution even when debug output is disabled.
-			continue;
+		foreach($this->logicExecutor->invoke($logicAssembly, "go_before", $extraArgs) as $functionReference) {
+			$this->recordLogicExecution($functionReference);
 		}
 
 // TODO: No need to have the whole Input class. Just pass a nullable string in called $doMethod, from $input->getString("do")
@@ -383,21 +386,18 @@ class Dispatcher {
 						$data->getString("do"),
 					);
 
-				foreach($this->logicExecutor->invoke($logicAssembly, $doName, $extraArgs) as $file) {
-					// Force generator execution even when debug output is disabled.
-					continue;
+				foreach($this->logicExecutor->invoke($logicAssembly, $doName, $extraArgs) as $functionReference) {
+					$this->recordLogicExecution($functionReference);
 				}
 			}
 		);
 
-		foreach($this->logicExecutor->invoke($logicAssembly, "go", $extraArgs) as $file) {
-			// Force generator execution even when debug output is disabled.
-			continue;
+		foreach($this->logicExecutor->invoke($logicAssembly, "go", $extraArgs) as $functionReference) {
+			$this->recordLogicExecution($functionReference);
 		}
 
-		foreach($this->logicExecutor->invoke($logicAssembly, "go_after", $extraArgs) as $file) {
-			// Force generator execution even when debug output is disabled.
-			continue;
+		foreach($this->logicExecutor->invoke($logicAssembly, "go_after", $extraArgs) as $functionReference) {
+			$this->recordLogicExecution($functionReference);
 		}
 	}
 
@@ -408,6 +408,7 @@ class Dispatcher {
 	public function processResponse(
 		?Throwable $errorThrowable = null,
 	):void {
+		$this->logicExecutionOrder = [];
 		$dynamicPath = $this->serviceContainer->get(DynamicPath::class);
 
 		$this->viewModelProcessor?->processDynamicPath(
@@ -460,6 +461,13 @@ class Dispatcher {
 			}
 		}
 
+		if($this->logicExecutionOrder) {
+			$this->response = $this->response->withHeader(
+				self::LOGIC_EXECUTION_HEADER,
+				implode(";", $this->logicExecutionOrder),
+			);
+		}
+
 		if($responseWithHeader = $this->headerManager->applyWithHeader(
 			$this->response->getResponseHeaders(),
 			$this->response->withHeader(...)
@@ -475,6 +483,40 @@ class Dispatcher {
 		$this->viewStreamer->stream($this->view, $this->viewModel);
 	}
 	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
+
+	private function recordLogicExecution(string $functionReference):void {
+		$refWithoutAttributes = explode("#", $functionReference, 2)[0];
+		$separatorPosition = strrpos($refWithoutAttributes, "::");
+		if($separatorPosition === false) {
+			return;
+		}
+
+		$file = substr($refWithoutAttributes, 0, $separatorPosition);
+		$function = substr($refWithoutAttributes, $separatorPosition + 2);
+		$function = preg_replace('/\(\)$/', '', $function);
+		if($function === null || $function === "") {
+			return;
+		}
+
+		$this->logicExecutionOrder[] = sprintf(
+			"%s:%s",
+			$this->normaliseLogicExecutionFile($file),
+			$function,
+		);
+	}
+
+	private function normaliseLogicExecutionFile(string $file):string {
+		$cwd = getcwd();
+		if($cwd && str_starts_with($file, $cwd . DIRECTORY_SEPARATOR)) {
+			$file = substr($file, strlen($cwd) + 1);
+		}
+
+		if(str_ends_with($file, ".php")) {
+			$file = substr($file, 0, -4);
+		}
+
+		return $file;
+	}
 
 	private function verifyCsrfRequest(string $method, InputData $inputData):void {
 		if($method !== "POST" || $this->isIgnoredCsrfPath()) {

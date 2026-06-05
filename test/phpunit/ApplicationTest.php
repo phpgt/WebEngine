@@ -40,29 +40,29 @@ class ApplicationTest extends TestCase {
 			->method("execute")
 			->willReturn(null);
 
-			$globalProtection = self::createStub(Protection::class);
-			$serverRequest = self::createStub(ServerRequest::class);
-			$serverRequest->method("getUri")
-				->willReturn(self::createStub(Uri::class));
-			$serverRequest->method("getHeaderLine")
-				->willReturnCallback(
-					fn(string $name):string => strtolower($name) === "accept" ? "*/*" : ""
-				);
+		$globalProtection = self::createStub(Protection::class);
+		$serverRequest = self::createStub(ServerRequest::class);
+		$serverRequest->method("getUri")
+			->willReturn(self::createStub(Uri::class));
+		$serverRequest->method("getHeaderLine")
+			->willReturnCallback(
+				fn(string $name):string => strtolower($name) === "accept" ? "*/*" : ""
+			);
 		$serverRequest->method("getMethod")
 			->willReturn("GET");
-			$requestFactory = self::createStub(RequestFactory::class);
-			$requestFactory->method("createServerRequestFromGlobalState")
-				->willReturn($serverRequest);
-			$dispatcher = self::createStub(Dispatcher::class);
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($serverRequest);
+		$dispatcher = self::createStub(Dispatcher::class);
 
-			$response = self::createStub(Response::class);
+		$response = self::createStub(Response::class);
 		$response->method('getStatusCode')->willReturn(200);
 		$response->method('getHeaders')->willReturn(['Content-Type' => ['text/html']]);
 		$response->method('getBody')->willReturn(new \GT\Http\Stream());
 		$dispatcher->method('generateResponse')->willReturn($response);
 
-			$dispatcherFactory = self::createStub(DispatcherFactory::class);
-			$dispatcherFactory->method('create')->willReturn($dispatcher);
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method('create')->willReturn($dispatcher);
 
 		// Avoid warnings by ensuring server params contain REMOTE_ADDR
 		$serverRequest->method('getServerParams')->willReturn(['REMOTE_ADDR' => '127.0.0.1']);
@@ -85,23 +85,23 @@ class ApplicationTest extends TestCase {
 		$timer->expects(self::once())
 			->method("logDelta");
 
-			$dispatcher = self::createStub(Dispatcher::class);
-			$response = self::createStub(Response::class);
+		$dispatcher = self::createStub(Dispatcher::class);
+		$response = self::createStub(Response::class);
 		$response->method('getStatusCode')->willReturn(200);
 		$response->method('getHeaders')->willReturn(['Content-Type' => ['text/html']]);
 		$response->method('getBody')->willReturn(new \GT\Http\Stream());
 		$dispatcher->method('generateResponse')->willReturn($response);
-			$dispatcherFactory = self::createStub(DispatcherFactory::class);
-			$dispatcherFactory->method('create')->willReturn($dispatcher);
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method('create')->willReturn($dispatcher);
 
-			$requestFactory = self::createStub(RequestFactory::class);
-			$serverRequest = self::createStub(ServerRequest::class);
-			$serverRequest->method('getServerParams')->willReturn(['REMOTE_ADDR' => '127.0.0.1']);
-				$serverRequest->method('getUri')->willReturn(self::createStub(Uri::class));
-			$serverRequest->method('getHeaderLine')
-				->willReturnCallback(
-					fn(string $name):string => strtolower($name) === "accept" ? "*/*" : ""
-				);
+		$requestFactory = self::createStub(RequestFactory::class);
+		$serverRequest = self::createStub(ServerRequest::class);
+		$serverRequest->method('getServerParams')->willReturn(['REMOTE_ADDR' => '127.0.0.1']);
+		$serverRequest->method('getUri')->willReturn(self::createStub(Uri::class));
+		$serverRequest->method('getHeaderLine')
+			->willReturnCallback(
+				fn(string $name):string => strtolower($name) === "accept" ? "*/*" : ""
+			);
 		$serverRequest->method('getMethod')->willReturn('GET');
 		$requestFactory->method('createServerRequestFromGlobalState')->willReturn($serverRequest);
 
@@ -250,7 +250,7 @@ class ApplicationTest extends TestCase {
 		$output = ob_get_clean();
 		ob_end_clean();
 
-			self::assertStringContainsString("exception message is testing", $output);
+		self::assertStringContainsString("exception message is testing", $output);
 	}
 
 	public function testStart_protectsGlobalsUsingConfiguredWhitelists():void {
@@ -363,7 +363,7 @@ class ApplicationTest extends TestCase {
 				Closure $finishCallback,
 				?int $errorStatus = null,
 				?SessionInit $passedSessionInit = null,
-			)use($config, $request, $sessionInit, &$createCalls, $firstDispatcher, $secondDispatcher) {
+			) use ($config, $request, $sessionInit, &$createCalls, $firstDispatcher, $secondDispatcher) {
 				$createCalls[] = [
 					"config" => $passedConfig,
 					"request" => $passedRequest,
@@ -1080,22 +1080,22 @@ class ApplicationTest extends TestCase {
 		$configContents = parse_ini_file($configFile, true);
 
 		$map = [];
-		foreach ($configContents as $section => $kvp) {
-			foreach ($kvp as $key => $value) {
+		foreach($configContents as $section => $kvp) {
+			foreach($kvp as $key => $value) {
 				$map["$section.$key"] = $value;
 			}
 		}
 
 		$map = array_merge($map, $mockedValues);
 
-		$config->method(self::anything())->willReturnCallback(function ($key) use ($map) {
+		$config->method(self::anything())->willReturnCallback(function($key) use ($map) {
 			$type = null;
 			$bt = debug_backtrace();
 			if(isset($bt[1]) && ($bt[1]["args"][0] ?? null) instanceof Invocation) {
 				$type = strtolower(substr($bt[1]["args"][0]->methodName(), 3));
 			}
 
-			return match($type) {
+			return match ($type) {
 				"bool" => (bool)$map[$key],
 				"int" => (int)$map[$key],
 				"float" => (float)$map[$key],

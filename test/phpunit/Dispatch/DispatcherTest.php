@@ -300,6 +300,50 @@ class DispatcherTest extends TestCase {
 		$sut->processResponse();
 	}
 
+	public function testGenerateResponse_stopsProcessingAfterRedirectFromLogic():void {
+		$processor = $this->createMock(ViewModelProcessor::class);
+		$processor->method("processDynamicPath");
+		$processor->method("processPartialContent")
+			->willReturn(new LogicAssemblyComponentList());
+
+		$viewStreamer = $this->createMock(ViewStreamer::class);
+		$viewStreamer->expects(self::never())
+			->method("stream");
+
+		$invocations = [];
+		$response = null;
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name)use(&$invocations, &$response):\Generator {
+				$invocations[] = [$assembly->current(), $name];
+				if($assembly->current() === "/tmp/page.php" && $name === "go") {
+					$response->redirect("./?new-state");
+				}
+				if(false) {
+					yield "";
+				}
+			});
+
+		$sut = $this->createDispatcher(
+			viewAssembly: $this->createAssembly("/tmp/page.html"),
+			logicAssembly: $this->createAssembly("/tmp/page.php"),
+			viewModelProcessor: $processor,
+			logicExecutor: $logicExecutor,
+			viewStreamer: $viewStreamer,
+		);
+		$response = $this->getPrivateProperty($sut, "response");
+		self::assertInstanceOf(Response::class, $response);
+
+		$generatedResponse = $sut->generateResponse();
+
+		self::assertSame(StatusCode::SEE_OTHER, $generatedResponse->getStatusCode());
+		self::assertSame("./?new-state", $generatedResponse->getHeaderLine("Location"));
+		self::assertSame([
+			["/tmp/page.php", "go_before"],
+			["/tmp/page.php", "go"],
+		], $invocations);
+	}
+
 	public function testProcessResponse_swallowsThrowablesDuringErrorModeAndBindsTrace():void {
 		$viewModel = new HTMLDocument(
 			'<!doctype html><body>'

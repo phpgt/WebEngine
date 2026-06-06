@@ -82,7 +82,7 @@ class Dispatcher {
 	private HeaderManager $headerManager;
 	private Closure $viewInitCb;
 	private bool $redirectPrepared = false;
-	private bool $interruptResponseFlow = false;
+	private bool $interruptResponse = false;
 	/** @var array<int, string> */
 	private array $logicExecutionOrder = [];
 
@@ -343,7 +343,7 @@ class Dispatcher {
 		$response = new Response(null, null, $this->request);
 		$response->setExitCallback(function() {
 			($this->finishCallback)($this->response);
-			if($this->interruptResponseFlow && $this->isRedirectPrepared()) {
+			if($this->interruptResponse && $this->isRedirectPrepared()) {
 				throw new ResponseInterrupt();
 			}
 		});
@@ -413,7 +413,8 @@ class Dispatcher {
 		?Throwable $errorThrowable = null,
 	):void {
 		$this->logicExecutionOrder = [];
-		$this->interruptResponseFlow = true;
+		$this->interruptResponse = true;
+		$csrfToken = null;
 
 		try {
 			$dynamicPath = $this->serviceContainer->get(DynamicPath::class);
@@ -428,10 +429,15 @@ class Dispatcher {
 				$this->viewAssembly,
 			);
 
-			$this->verifyCsrfRequest(
-				$this->request->getMethod(),
-				$this->input->getAll(Input::DATA_BODY),
-			);
+// If there's an error, we don't need to verify the token, otherwise error
+// redirects could get stuck in a state where it's impossible to refresh the
+// page due to the token already being used.
+			if(!$errorThrowable) {
+				$csrfToken = $this->verifyCsrfRequest(
+					$this->request->getMethod(),
+					$this->input->getAll(Input::DATA_BODY),
+				);
+			}
 			($this->viewInitCb)();
 			if($errorThrowable) {
 				$this->bindErrorDetails($errorThrowable);
@@ -488,12 +494,14 @@ class Dispatcher {
 			$this->protectHtmlDocumentFromCsrf();
 
 			$this->viewStreamer->stream($this->view, $this->viewModel);
+			$this->consumeCsrfToken($csrfToken);
 		}
 		catch(ResponseInterrupt) {
+			$this->consumeCsrfToken($csrfToken);
 			return;
 		}
 		finally {
-			$this->interruptResponseFlow = false;
+			$this->interruptResponse = false;
 		}
 	}
 	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
@@ -532,15 +540,26 @@ class Dispatcher {
 		return $file;
 	}
 
-	private function verifyCsrfRequest(string $method, InputData $inputData):void {
+	private function verifyCsrfRequest(string $method, InputData $inputData):?string {
 		if($method !== "POST" || $this->isIgnoredCsrfPath()) {
-			return;
+			return null;
 		}
 
 		$tokenStore = $this->createCsrfTokenStore();
 
 		try {
-			$tokenStore->verify($inputData);
+			$postData = $inputData->asArray();
+			if(empty($postData)) {
+				return null;
+			}
+
+			if(!isset($postData[HTMLDocumentProtector::TOKEN_NAME])) {
+				$tokenStore->verify($inputData);
+			}
+
+			$token = $postData[HTMLDocumentProtector::TOKEN_NAME];
+			$tokenStore->verifyToken($token);
+			return $token;
 		}
 		catch(CsrfException $exception) {
 			Log::warning(
@@ -549,6 +568,14 @@ class Dispatcher {
 			);
 			throw $this->createCsrfForbiddenException($exception->getMessage());
 		}
+	}
+
+	private function consumeCsrfToken(?string $token):void {
+		if(!$token) {
+			return;
+		}
+
+		$this->createCsrfTokenStore()->consumeToken($token);
 	}
 
 	private function protectHtmlDocumentFromCsrf():void {

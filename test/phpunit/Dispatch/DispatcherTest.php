@@ -474,6 +474,39 @@ class DispatcherTest extends TestCase {
 		self::assertStringContainsString("teapot", (string)$viewModel);
 	}
 
+	public function testGenerateErrorResponse_doesNotVerifyCsrfTokenAgainForPostRequest():void {
+		$token = "CSRF_spent-token";
+		$sessionState = [
+			"tokenList" => [$token => time()],
+		];
+		$viewModel = new HTMLDocument('<!doctype html><body><h1 data-bind:text></h1></body>');
+		$processor = $this->createMock(ViewModelProcessor::class);
+		$processor->method("processDynamicPath");
+		$processor->method("processPartialContent")
+			->willReturn(new LogicAssemblyComponentList());
+		$viewModelInit = $this->createViewModelInit($processor, true);
+
+		$viewStreamer = $this->createMock(ViewStreamer::class);
+		$viewStreamer->expects(self::once())
+			->method("stream");
+
+		$sut = $this->createDispatcher(
+			request: $this->createRequest("/page/", "POST"),
+			globals: $this->createGlobals(post: ["csrf-token" => $token]),
+			viewModel: $viewModel,
+			viewAssembly: $this->createAssembly("/tmp/error.html"),
+			logicAssembly: new Assembly(),
+			viewModelInit: $viewModelInit,
+			viewStreamer: $viewStreamer,
+			sessionInit: $this->createSessionInitWithState($sessionState),
+		);
+
+		$response = $sut->generateErrorResponse(new Exception("post failed"));
+
+		self::assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
+		self::assertStringContainsString("post failed", (string)$viewModel);
+	}
+
 	public function testGenerateBasicErrorResponse_forNotFoundIncludesHelpfulDevelopmentDetail():void {
 		$sut = $this->createDispatcher(production: false);
 		$this->setResponseStatus($sut, 404);
@@ -624,6 +657,43 @@ class DispatcherTest extends TestCase {
 
 		self::assertSame(StatusCode::OK, $response->getStatusCode());
 		self::assertIsInt($sessionState["tokenList"][$token]);
+	}
+
+	public function testGenerateResponse_doesNotConsumeCsrfTokenWhenLogicThrows():void {
+		$token = "CSRF_valid-token";
+		$sessionState = [
+			"tokenList" => [$token => null],
+		];
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name):\Generator {
+				if($name === "go") {
+					throw new Exception("post failed");
+				}
+
+				if(false) {
+					yield "";
+				}
+			});
+
+		$sut = $this->createDispatcher(
+			request: $this->createRequest("/page/", "POST"),
+			globals: $this->createGlobals(post: ["csrf-token" => $token]),
+			viewAssembly: $this->createAssembly("/tmp/page.html"),
+			logicAssembly: $this->createAssembly("/tmp/page.php"),
+			logicExecutor: $logicExecutor,
+			sessionInit: $this->createSessionInitWithState($sessionState),
+		);
+
+		try {
+			$sut->generateResponse();
+			self::fail("Expected page logic to throw.");
+		}
+		catch(Exception $exception) {
+			self::assertSame("post failed", $exception->getMessage());
+		}
+
+		self::assertNull($sessionState["tokenList"][$token]);
 	}
 
 	public function testGenerateResponse_throwsForbiddenOnInvalidCsrfToken():void {

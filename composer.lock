@@ -893,16 +893,16 @@
         },
         {
             "name": "phpgt/database",
-            "version": "v1.7.0",
+            "version": "v1.8.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Database.git",
-                "reference": "d5a939e91ce3d5c78b77d9e9b3e1a54b13948db9"
+                "reference": "82e14aa1103372e273dbb45ffeaf45e21ef790b5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Database/zipball/d5a939e91ce3d5c78b77d9e9b3e1a54b13948db9",
-                "reference": "d5a939e91ce3d5c78b77d9e9b3e1a54b13948db9",
+                "url": "https://api.github.com/repos/phpgt/Database/zipball/82e14aa1103372e273dbb45ffeaf45e21ef790b5",
+                "reference": "82e14aa1103372e273dbb45ffeaf45e21ef790b5",
                 "shasum": ""
             },
             "require": {
@@ -918,7 +918,7 @@
                 "phpmd/phpmd": "^2.13",
                 "phpstan/phpstan": "^v1.10",
                 "phpunit/phpunit": "^10.1",
-                "squizlabs/php_codesniffer": "^3.7"
+                "squizlabs/php_codesniffer": "^3.7 || ^4.0"
             },
             "bin": [
                 "bin/migrate"
@@ -926,6 +926,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "GT\\Database\\": "./src",
                     "Gt\\Database\\": "./src"
                 }
             },
@@ -950,7 +951,7 @@
             "description": "Database API organisation.",
             "support": {
                 "issues": "https://github.com/phpgt/Database/issues",
-                "source": "https://github.com/phpgt/Database/tree/v1.7.0"
+                "source": "https://github.com/phpgt/Database/tree/v1.8.0"
             },
             "funding": [
                 {
@@ -958,7 +959,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-04-07T22:13:10+00:00"
+            "time": "2026-06-10T10:27:56+00:00"
         },
         {
             "name": "phpgt/dataobject",
@@ -1930,20 +1931,20 @@
         },
         {
             "name": "phpgt/sqlbuilder",
-            "version": "v1.0.1",
+            "version": "v1.1.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/PhpGt/SqlBuilder.git",
-                "reference": "ac60cad74bb1ac2d8d667e142a56fd6c9d23291a"
+                "url": "https://github.com/phpgt/SqlBuilder.git",
+                "reference": "557289307cc188f708586d1d4e59b0bf77a3d608"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PhpGt/SqlBuilder/zipball/ac60cad74bb1ac2d8d667e142a56fd6c9d23291a",
-                "reference": "ac60cad74bb1ac2d8d667e142a56fd6c9d23291a",
+                "url": "https://api.github.com/repos/phpgt/SqlBuilder/zipball/557289307cc188f708586d1d4e59b0bf77a3d608",
+                "reference": "557289307cc188f708586d1d4e59b0bf77a3d608",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.0"
+                "php": ">=8.4"
             },
             "require-dev": {
                 "phpmd/phpmd": "^2.13",
@@ -1954,22 +1955,23 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "GT\\SqlBuilder\\": "./src",
                     "Gt\\SqlBuilder\\": "./src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
             "description": "Object oriented representation of SQL queries.",
             "support": {
-                "issues": "https://github.com/PhpGt/SqlBuilder/issues",
-                "source": "https://github.com/PhpGt/SqlBuilder/tree/v1.0.1"
+                "issues": "https://github.com/phpgt/SqlBuilder/issues",
+                "source": "https://github.com/phpgt/SqlBuilder/tree/v1.1.0"
             },
             "funding": [
                 {
-                    "url": "https://github.com/sponsors/PhpGt",
+                    "url": "https://github.com/sponsors/phpgt",
                     "type": "github"
                 }
             ],
-            "time": "2023-09-17T12:33:25+00:00"
+            "time": "2026-05-06T17:09:03+00:00"
         },
         {
             "name": "phpgt/sync",
@@ -2031,16 +2033,16 @@
         },
         {
             "name": "phpgt/typesafegetter",
-            "version": "v1.3.3",
+            "version": "v1.3.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/TypeSafeGetter.git",
-                "reference": "a0d339103828791989cbb81f760d252f3c2f8b8c"
+                "reference": "729261c04b76febaa21a921a3719f625abe9b55e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/TypeSafeGetter/zipball/a0d339103828791989cbb81f760d252f3c2f8b8c",
-                "reference": "a0d339103828791989cbb81f760d252f3c2f8b8c",
+                "url": "https://api.github.com/repos/phpgt/TypeSafeGetter/zipball/729261c04b76febaa21a921a3719f625abe9b55e",
+                "reference": "729261c04b76febaa21a921a3719f625abe9b55e",
                 "shasum": ""
             },
             "require": {
@@ -2055,6 +2057,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "GT\\TypeSafeGetter\\": "./src",
                     "Gt\\TypeSafeGetter\\": "./src"
                 }
             },
@@ -2071,7 +2074,7 @@
             "description": "An interface for objects that expose type-safe getter methods.",
             "support": {
                 "issues": "https://github.com/phpgt/TypeSafeGetter/issues",
-                "source": "https://github.com/phpgt/TypeSafeGetter/tree/v1.3.3"
+                "source": "https://github.com/phpgt/TypeSafeGetter/tree/v1.3.4"
             },
             "funding": [
                 {
@@ -2079,7 +2082,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-03-10T22:28:01+00:00"
+            "time": "2026-05-04T15:53:13+00:00"
         },
         {
             "name": "phpgt/ulid",

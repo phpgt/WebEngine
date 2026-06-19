@@ -193,9 +193,17 @@ class Dispatcher {
 			$this->config->getString("session.name"),
 			$this->config->getString("session.handler"),
 			$this->config->getString("session.path"),
-			$this->config->getBool("session.use_trans_sid") ?? false,
-			$this->config->getBool("session.use_cookies") ?? false,
-			$this->globals["_COOKIE"],
+			$this->config->getBool("session.use_trans_sid"),
+			$this->config->getBool("session.use_cookies"),
+			cookieLifetime: $this->config->getInt("session.cookie_lifetime"),
+			cookiePath: $this->config->getString("session.cookie_path"),
+			cookieDomain: $this->config->getString("session.cookie_domain"),
+			cookieSecure: $this->config->getBool("session.cookie_secure"),
+			cookieHttpOnly: $this->config->getBool("session.cookie_httponly"),
+			cookieSameSite: $this->config->getString("session.cookie_samesite"),
+			useOnlyCookies: $this->config->getBool("session.use_only_cookies"),
+			useStrictMode: $this->config->getBool("session.use_strict_mode"),
+			currentCookieArray: $this->globals["_COOKIE"],
 		);
 		$this->sessionInit = $sessionInit;
 		$this->serviceContainer->set($sessionInit->getSession());

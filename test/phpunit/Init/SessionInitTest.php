@@ -7,6 +7,7 @@ use GT\Session\SessionSetup;
 use GT\WebEngine\Init\SessionInit;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\TestCase;
+use SessionHandlerInterface;
 
 class SessionInitTest extends TestCase {
 	private string $tmpDir;
@@ -54,5 +55,39 @@ class SessionInitTest extends TestCase {
 
 		$session = $sut->getSession();
 		self::assertSame($idString, $session->getId());
+	}
+
+	public function testConstruct_passesCookieOptionsToSession():void {
+		CapturingSession::$capturedConfig = [];
+
+		$sut = new SessionInit(
+			name: "GT",
+			handler: FileHandler::class,
+			savePath: $this->tmpDir,
+			useTransSid: false,
+			useCookies: true,
+			cookieSecure: false,
+			cookieSameSite: "Strict",
+			currentCookieArray: [],
+			sessionClass: CapturingSession::class,
+		);
+
+		self::assertInstanceOf(CapturingSession::class, $sut->getSession());
+		self::assertFalse(CapturingSession::$capturedConfig["cookie_secure"]);
+		self::assertSame("Strict", CapturingSession::$capturedConfig["cookie_samesite"]);
+	}
+}
+
+class CapturingSession extends Session {
+	/** @var array<string, mixed> */
+	public static array $capturedConfig = [];
+
+	/** @param array<string, mixed> $config */
+	public function __construct(
+		SessionHandlerInterface $sessionHandler,
+		iterable $config = [],
+		?string $id = null,
+	) {
+		self::$capturedConfig = is_array($config) ? $config : iterator_to_array($config);
 	}
 }

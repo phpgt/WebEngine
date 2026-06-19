@@ -848,16 +848,16 @@
         },
         {
             "name": "phpgt/daemon",
-            "version": "v1.1.5",
+            "version": "v1.1.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Daemon.git",
-                "reference": "413e16b54de6e1fd5c2b646b485f88a86dfedd9a"
+                "reference": "cc932f51523988df8d27c05ee1122b2922806a13"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Daemon/zipball/413e16b54de6e1fd5c2b646b485f88a86dfedd9a",
-                "reference": "413e16b54de6e1fd5c2b646b485f88a86dfedd9a",
+                "url": "https://api.github.com/repos/phpgt/Daemon/zipball/cc932f51523988df8d27c05ee1122b2922806a13",
+                "reference": "cc932f51523988df8d27c05ee1122b2922806a13",
                 "shasum": ""
             },
             "require": {
@@ -873,6 +873,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "GT\\Daemon\\": "./src",
                     "Gt\\Daemon\\": "./src"
                 }
             },
@@ -880,15 +881,15 @@
             "description": "Background script execution with cross-platform compatible streaming.",
             "support": {
                 "issues": "https://github.com/phpgt/Daemon/issues",
-                "source": "https://github.com/phpgt/Daemon/tree/v1.1.5"
+                "source": "https://github.com/phpgt/Daemon/tree/v1.1.6"
             },
             "funding": [
                 {
-                    "url": "https://github.com/sponsors/PhpGt",
+                    "url": "https://github.com/sponsors/phpgt",
                     "type": "github"
                 }
             ],
-            "time": "2026-03-11T14:11:10+00:00"
+            "time": "2026-06-04T07:48:06+00:00"
         },
         {
             "name": "phpgt/database",
@@ -1117,16 +1118,16 @@
         },
         {
             "name": "phpgt/domtemplate",
-            "version": "v3.6.2",
+            "version": "v3.6.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/DomTemplate.git",
-                "reference": "f743201d003469606246082dd11be3902d2abb6c"
+                "reference": "f3293411a263266884ef351063cf4285feba5089"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/DomTemplate/zipball/f743201d003469606246082dd11be3902d2abb6c",
-                "reference": "f743201d003469606246082dd11be3902d2abb6c",
+                "url": "https://api.github.com/repos/phpgt/DomTemplate/zipball/f3293411a263266884ef351063cf4285feba5089",
+                "reference": "f3293411a263266884ef351063cf4285feba5089",
                 "shasum": ""
             },
             "require": {
@@ -1154,7 +1155,7 @@
             "description": "Bind dynamic data to reusable HTML components.",
             "support": {
                 "issues": "https://github.com/phpgt/DomTemplate/issues",
-                "source": "https://github.com/phpgt/DomTemplate/tree/v3.6.2"
+                "source": "https://github.com/phpgt/DomTemplate/tree/v3.6.3"
             },
             "funding": [
                 {
@@ -1162,7 +1163,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-05-19T14:06:17+00:00"
+            "time": "2026-05-29T10:20:53+00:00"
         },
         {
             "name": "phpgt/domvalidation",
@@ -2987,11 +2988,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.1.51",
+            "version": "2.2.2",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/dc3b523c45e714c70de2ac5113b958223b55dc59",
-                "reference": "dc3b523c45e714c70de2ac5113b958223b55dc59",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/e5cc34d491a90e79c216d824f60fe21fd4d93bd6",
+                "reference": "e5cc34d491a90e79c216d824f60fe21fd4d93bd6",
                 "shasum": ""
             },
             "require": {
@@ -3013,6 +3014,17 @@
             "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ondřej Mirtes"
+                },
+                {
+                    "name": "Markus Staab"
+                },
+                {
+                    "name": "Vincent Langlet"
+                }
             ],
             "description": "PHPStan - PHP Static Analysis Tool",
             "keywords": [
@@ -3036,7 +3048,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-04-21T18:22:01+00:00"
+            "time": "2026-06-05T09:00:01+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",

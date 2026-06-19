@@ -82,6 +82,7 @@ class Dispatcher {
 	private HeaderManager $headerManager;
 	private Closure $viewInitCb;
 	private bool $redirectPrepared = false;
+	private bool $interruptResponse = false;
 	/** @var array<int, string> */
 	private array $logicExecutionOrder = [];
 
@@ -342,6 +343,9 @@ class Dispatcher {
 		$response = new Response(null, null, $this->request);
 		$response->setExitCallback(function() {
 			($this->finishCallback)($this->response);
+			if($this->interruptResponse && $this->isRedirectPrepared()) {
+				throw new ResponseInterrupt();
+			}
 		});
 		return $response;
 	}
@@ -409,37 +413,59 @@ class Dispatcher {
 		?Throwable $errorThrowable = null,
 	):void {
 		$this->logicExecutionOrder = [];
-		$dynamicPath = $this->serviceContainer->get(DynamicPath::class);
+		$this->interruptResponse = true;
+		$csrfToken = null;
 
-		$this->viewModelProcessor?->processDynamicPath(
-			$this->viewModel,
-			$dynamicPath,
-		);
+		try {
+			$dynamicPath = $this->serviceContainer->get(DynamicPath::class);
 
-		$componentList = $this->viewModelProcessor?->processPartialContent(
-			$this->viewModel,
-			$this->viewAssembly,
-		);
+			$this->viewModelProcessor?->processDynamicPath(
+				$this->viewModel,
+				$dynamicPath,
+			);
 
-		$this->verifyCsrfRequest(
-			$this->request->getMethod(),
-			$this->input->getAll(Input::DATA_BODY),
-		);
-		($this->viewInitCb)();
-		if($errorThrowable) {
-			$this->bindErrorDetails($errorThrowable);
-		}
+			$componentList = $this->viewModelProcessor?->processPartialContent(
+				$this->viewModel,
+				$this->viewAssembly,
+			);
 
-		foreach($componentList ?? [] as $componentLogic) {
-			$assembly = $componentLogic->assembly;
-			$componentElement = $componentLogic->component;
-			$this->serviceContainer->set($componentElement);
+// If there's an error, we don't need to verify the token, otherwise error
+// redirects could get stuck in a state where it's impossible to refresh the
+// page due to the token already being used.
+			if(!$errorThrowable) {
+				$csrfToken = $this->verifyCsrfRequest(
+					$this->request->getMethod(),
+					$this->input->getAll(Input::DATA_BODY),
+				);
+			}
+			($this->viewInitCb)();
+			if($errorThrowable) {
+				$this->bindErrorDetails($errorThrowable);
+			}
+
+			foreach($componentList ?? [] as $componentLogic) {
+				$assembly = $componentLogic->assembly;
+				$componentElement = $componentLogic->component;
+				$this->serviceContainer->set($componentElement);
+
+				try {
+					$this->handleLogicExecution(
+						$assembly,
+						$this->input,
+						$componentElement,
+					);
+				}
+				catch(Throwable $throwable) {
+					if(!$errorThrowable) {
+						throw $throwable;
+					}
+				}
+			}
 
 			try {
 				$this->handleLogicExecution(
-					$assembly,
+					$this->logicAssembly,
 					$this->input,
-					$componentElement,
 				);
 			}
 			catch(Throwable $throwable) {
@@ -447,40 +473,36 @@ class Dispatcher {
 					throw $throwable;
 				}
 			}
-		}
 
-		try {
-			$this->handleLogicExecution(
-				$this->logicAssembly,
-				$this->input,
-			);
-		}
-		catch(Throwable $throwable) {
-			if(!$errorThrowable) {
-				throw $throwable;
+			if($this->logicExecutionOrder) {
+				$this->response = $this->response->withHeader(
+					self::LOGIC_EXECUTION_HEADER,
+					implode(";", $this->logicExecutionOrder),
+				);
 			}
+
+			if($responseWithHeader = $this->headerManager->applyWithHeader(
+				$this->response->getResponseHeaders(),
+				$this->response->withHeader(...)
+			)) {
+				$this->response = $responseWithHeader;
+			}
+
+			$documentBinder = $this->serviceContainer->get(Binder::class);
+			assert($documentBinder instanceof DocumentBinder);
+			$documentBinder->cleanupDocument();
+			$this->protectHtmlDocumentFromCsrf();
+
+			$this->viewStreamer->stream($this->view, $this->viewModel);
+			$this->consumeCsrfToken($csrfToken);
 		}
-
-		if($this->logicExecutionOrder) {
-			$this->response = $this->response->withHeader(
-				self::LOGIC_EXECUTION_HEADER,
-				implode(";", $this->logicExecutionOrder),
-			);
+		catch(ResponseInterrupt) {
+			$this->consumeCsrfToken($csrfToken);
+			return;
 		}
-
-		if($responseWithHeader = $this->headerManager->applyWithHeader(
-			$this->response->getResponseHeaders(),
-			$this->response->withHeader(...)
-		)) {
-			$this->response = $responseWithHeader;
+		finally {
+			$this->interruptResponse = false;
 		}
-
-		$documentBinder = $this->serviceContainer->get(Binder::class);
-		assert($documentBinder instanceof DocumentBinder);
-		$documentBinder->cleanupDocument();
-		$this->protectHtmlDocumentFromCsrf();
-
-		$this->viewStreamer->stream($this->view, $this->viewModel);
 	}
 	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
 
@@ -518,15 +540,26 @@ class Dispatcher {
 		return $file;
 	}
 
-	private function verifyCsrfRequest(string $method, InputData $inputData):void {
+	private function verifyCsrfRequest(string $method, InputData $inputData):?string {
 		if($method !== "POST" || $this->isIgnoredCsrfPath()) {
-			return;
+			return null;
 		}
 
 		$tokenStore = $this->createCsrfTokenStore();
 
 		try {
-			$tokenStore->verify($inputData);
+			$postData = $inputData->asArray();
+			if(empty($postData)) {
+				return null;
+			}
+
+			if(!isset($postData[HTMLDocumentProtector::TOKEN_NAME])) {
+				$tokenStore->verify($inputData);
+			}
+
+			$token = $postData[HTMLDocumentProtector::TOKEN_NAME];
+			$tokenStore->verifyToken($token);
+			return $token;
 		}
 		catch(CsrfException $exception) {
 			Log::warning(
@@ -535,6 +568,14 @@ class Dispatcher {
 			);
 			throw $this->createCsrfForbiddenException($exception->getMessage());
 		}
+	}
+
+	private function consumeCsrfToken(?string $token):void {
+		if(!$token) {
+			return;
+		}
+
+		$this->createCsrfTokenStore()->consumeToken($token);
 	}
 
 	private function protectHtmlDocumentFromCsrf():void {

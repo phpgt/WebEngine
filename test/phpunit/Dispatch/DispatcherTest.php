@@ -242,6 +242,70 @@ class DispatcherTest extends TestCase {
 		self::assertSame([], $invocations[4]["extraArgs"]);
 	}
 
+	public function testGenerateResponse_componentFormDoActionDoesNotRunPageDoAction():void {
+		$html = <<<HTML
+		<!doctype html>
+		<body>
+			<form method="post"><button name="do" value="save-item">Save</button></form>
+		<widget-one>
+			<form method="post">
+				<input type="hidden" name="__component" value="widget-one">
+				<button name="do" value="save-item">Save</button>
+			</form>
+		</widget-one>
+		</body>
+		HTML;
+
+		$viewModel = new HTMLDocument($html);
+		$component = $viewModel->querySelector("widget-one");
+		self::assertInstanceOf(Element::class, $component);
+
+		$componentAssembly = $this->createAssembly("/tmp/component.php");
+		$componentList = new LogicAssemblyComponentList();
+		$componentList->addAssemblyComponent($componentAssembly, $component);
+
+		$processor = $this->createMock(ViewModelProcessor::class);
+		$processor->method("processDynamicPath");
+		$processor->method("processPartialContent")
+			->willReturn($componentList);
+
+		$invocations = [];
+		$logicAssembly = $this->createAssembly("/tmp/page.php");
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name)use(&$invocations, $componentAssembly):\Generator {
+				$invocations[] = [
+					"assembly" => $assembly === $componentAssembly ? "component" : "page",
+					"name" => $name,
+				];
+				yield ($assembly === $componentAssembly ? "/tmp/component.php" : "/tmp/page.php") . "::$name()";
+			});
+
+		$sut = $this->createDispatcher(
+			input: new Input([], [
+				"__component" => "widget-one",
+				"do" => "save-item",
+			]),
+			viewModel: $viewModel,
+			logicAssembly: $logicAssembly,
+			viewModelInit: $this->createViewModelInit($processor, true),
+			logicExecutor: $logicExecutor,
+		);
+
+		$response = $sut->generateResponse();
+
+		self::assertSame(StatusCode::OK, $response->getStatusCode());
+		self::assertSame([
+			["assembly" => "component", "name" => "go_before"],
+			["assembly" => "component", "name" => "do_save_item"],
+			["assembly" => "component", "name" => "go"],
+			["assembly" => "component", "name" => "go_after"],
+			["assembly" => "page", "name" => "go_before"],
+			["assembly" => "page", "name" => "go"],
+			["assembly" => "page", "name" => "go_after"],
+		], $invocations);
+	}
+
 	public function testProcessResponse_rethrowsComponentThrowableOutsideErrorMode():void {
 		$viewModel = new HTMLDocument('<!doctype html><body><widget-one data-element="widget-one"></widget-one></body>');
 		$component = $viewModel->querySelector("widget-one");

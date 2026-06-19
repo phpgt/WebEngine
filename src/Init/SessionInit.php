@@ -9,6 +9,8 @@ class SessionInit {
 
 	/**
 	 * @param array<string, string> $currentCookieArray
+	 * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
+	 * @SuppressWarnings("PHPMD.ExcessiveParameterList")
 	 * @SuppressWarnings("PHPMD.Superglobals")
 	 */
 	public function __construct(

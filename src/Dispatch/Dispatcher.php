@@ -55,6 +55,7 @@ use Throwable;
  */
 class Dispatcher {
 	private const LOGIC_EXECUTION_HEADER = "X-Logic-Execution";
+	private const COMPONENT_INPUT_NAME = "__component";
 
 	private Config $config;
 	private Request $request;
@@ -389,20 +390,13 @@ class Dispatcher {
 			$this->recordLogicExecution($functionReference);
 		}
 
-// TODO: No need to have the whole Input class. Just pass a nullable string in called $doMethod, from $input->getString("do")
-		$input->when("do")->call(
-			function(InputData $data)use($logicAssembly, $extraArgs) {
-				$doName = "do_" . str_replace(
-						"-",
-						"_",
-						$data->getString("do"),
-					);
+		if($doAction = $this->getDoActionForLogic($input, $component)) {
+			$doName = "do_" . str_replace("-", "_", $doAction);
 
-				foreach($this->logicExecutor->invoke($logicAssembly, $doName, $extraArgs) as $functionReference) {
-					$this->recordLogicExecution($functionReference);
-				}
+			foreach($this->logicExecutor->invoke($logicAssembly, $doName, $extraArgs) as $functionReference) {
+				$this->recordLogicExecution($functionReference);
 			}
-		);
+		}
 
 		foreach($this->logicExecutor->invoke($logicAssembly, "go", $extraArgs) as $functionReference) {
 			$this->recordLogicExecution($functionReference);
@@ -411,6 +405,28 @@ class Dispatcher {
 		foreach($this->logicExecutor->invoke($logicAssembly, "go_after", $extraArgs) as $functionReference) {
 			$this->recordLogicExecution($functionReference);
 		}
+	}
+
+	private function getDoActionForLogic(Input $input, ?Element $component):?string {
+		$doAction = $input->getString("do");
+		if($doAction === null || $doAction === "") {
+			return null;
+		}
+
+		$submittedComponent = $input->getString(self::COMPONENT_INPUT_NAME);
+		if($submittedComponent === null || $submittedComponent === "") {
+			return $doAction;
+		}
+
+		if(!$component) {
+			return null;
+		}
+
+		if(strtolower($component->tagName) !== strtolower($submittedComponent)) {
+			return null;
+		}
+
+		return $doAction;
 	}
 
 	/**

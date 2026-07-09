@@ -16,6 +16,7 @@ use GT\WebEngine\DefaultRouter;
 use Gt\ServiceContainer\Container;
 use GT\WebEngine\View\HeaderFooterPartialConflictException;
 use GT\WebEngine\View\HTMLView;
+use GT\WebEngine\View\JSONView;
 use PHPUnit\Framework\TestCase;
 
 require_once dirname(__DIR__, 2) . "/router.default.php";
@@ -143,6 +144,30 @@ class DefaultRouterTest extends TestCase {
 			. "'page/contact/index.html' match."
 		);
 		$sut->route($request);
+	}
+
+	public function testRoute_apiRequest_withLogicOnly_usesJsonView():void {
+		mkdir($this->tmpDir . "/api", recursive: true);
+		file_put_contents($this->tmpDir . "/api/hello.php", "<?php\nfunction go():void {}\n");
+
+		chdir($this->tmpDir);
+
+		$request = self::createMock(Request::class);
+		$request->method("getMethod")->willReturn("GET");
+		$request->method("getHeaderLine")
+			->with("accept")
+			->willReturn("application/json");
+		$request->method("getUri")->willReturn(new Uri("https://example.test/hello"));
+
+		$sut = new DefaultRouter(new RouterConfig(307, "text/html"));
+		$container = new Container();
+		$container->set($request);
+		$sut->setContainer($container);
+		$sut->route($request);
+
+		self::assertSame(JSONView::class, $sut->getViewClass());
+		self::assertSame(["api/hello.php"], iterator_to_array($sut->getLogicAssembly()));
+		self::assertSame([], iterator_to_array($sut->getViewAssembly()));
 	}
 
 	private function removeDirectory(string $dir):void {

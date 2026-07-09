@@ -239,6 +239,7 @@ class Dispatcher {
 		);
 		$this->viewStreamer = $viewStreamer ?? new ViewStreamer();
 		$this->headerManager = $headerManager ?? new HeaderManager();
+		$this->setupJsonDocumentErrorCallback();
 	}
 	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
 
@@ -314,6 +315,9 @@ class Dispatcher {
 				}
 			}
 		}
+		if(!$errorMessage) {
+			$errorMessage = StatusCode::REASON_PHRASE[$errorStatusCode] ?? "Error";
+		}
 
 		if($errorStatusCode >= 500 && !$this->config->getBool("app.production")) {
 			$detail .= implode(":", [
@@ -330,6 +334,24 @@ class Dispatcher {
 					$detail .= "$key:\t$value\n";
 				}
 			}
+		}
+
+		if($this->view instanceof JSONView || $this->viewModel instanceof JSONDocument) {
+			$error = [
+				"error" => $errorMessage,
+				"status" => $errorStatusCode,
+				"type" => $errorType,
+			];
+			if($detail !== "") {
+				$error["detail"] = $detail;
+			}
+
+			$body = new Stream();
+			$body->write((json_encode($error) ?: "{}") . "\n");
+			$response = new Response(null, null, $this->request);
+			$response = $response->withHeader("Content-Type", "application/json");
+			$response = $response->withBody($body);
+			return $response->withStatus($errorStatusCode);
 		}
 
 		// TODO: Load this HTML from a file in the root of WebEngine!
@@ -357,6 +379,34 @@ class Dispatcher {
 			}
 		});
 		return $response;
+	}
+
+	private function setupJsonDocumentErrorCallback():void {
+		if(!($this->view instanceof JSONView) || !($this->viewModel instanceof JSONDocument)) {
+			return;
+		}
+
+		$this->viewModel->setErrorCallback(function(
+			string $message,
+			int $statusCode,
+		):void {
+			if(!$this->response->getStatusCode()) {
+				$this->response = $this->response->withStatus($statusCode);
+			}
+			if(!$this->response->hasHeader("Content-Type")) {
+				$this->response = $this->response->withHeader(
+					"Content-Type",
+					"application/json",
+				);
+			}
+
+			$this->viewStreamer->stream($this->view, $this->viewModel);
+			($this->finishCallback)($this->response);
+
+			if($this->interruptResponse) {
+				throw new ResponseInterrupt();
+			}
+		});
 	}
 
 	private function handleLogicExecution(
@@ -512,10 +562,18 @@ class Dispatcher {
 				$this->response = $responseWithHeader;
 			}
 
-			$documentBinder = $this->serviceContainer->get(Binder::class);
-			assert($documentBinder instanceof DocumentBinder);
-			$documentBinder->cleanupDocument();
-			$this->protectHtmlDocumentFromCsrf();
+			if($this->viewModel instanceof HTMLDocument) {
+				$documentBinder = $this->serviceContainer->get(Binder::class);
+				assert($documentBinder instanceof DocumentBinder);
+				$documentBinder->cleanupDocument();
+				$this->protectHtmlDocumentFromCsrf();
+			}
+			elseif($this->view instanceof JSONView && !$this->response->hasHeader("Content-Type")) {
+				$this->response = $this->response->withHeader(
+					"Content-Type",
+					"application/json",
+				);
+			}
 
 			$this->viewStreamer->stream($this->view, $this->viewModel);
 			$this->consumeCsrfToken($csrfToken);
@@ -565,6 +623,10 @@ class Dispatcher {
 	}
 
 	private function verifyCsrfRequest(string $method, InputData $inputData):?string {
+		if(!($this->viewModel instanceof HTMLDocument)) {
+			return null;
+		}
+
 		if($method !== "POST" || $this->isIgnoredCsrfPath()) {
 			return null;
 		}

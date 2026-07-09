@@ -24,6 +24,7 @@ use GT\Http\StatusCode;
 use GT\Http\Stream;
 use GT\Http\Uri;
 use GT\Input\Input;
+use GT\Json\Schema\JSONDocument;
 use GT\Logger\LogConfig;
 use GT\Routing\Assembly;
 use GT\Routing\BaseRouter;
@@ -43,6 +44,8 @@ use GT\WebEngine\Logic\LogicStreamHandler;
 use GT\WebEngine\Logic\ViewModelProcessor;
 use GT\WebEngine\Test\Fixture\TestLogHandler;
 use GT\WebEngine\View\HTMLView;
+use GT\WebEngine\View\JSONView;
+use GT\WebEngine\View\NullView;
 use GT\WebEngine\View\ViewStreamer;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -138,6 +141,95 @@ class DispatcherTest extends TestCase {
 
 		self::assertSame(StatusCode::OK, $response->getStatusCode());
 		self::assertSame($this->getPrivateProperty($sut, "sessionInit"), $sut->getSessionInit());
+	}
+
+	public function testGenerateResponse_streamsJsonDocumentMutatedByPostLogic():void {
+		$stream = new Stream();
+		$view = new JSONView($stream);
+		$viewModel = new JSONDocument();
+		$logicAssembly = $this->createAssembly("/tmp/api.php");
+
+		$viewModelInit = $this->createMock(ViewModelInit::class);
+		$viewModelInit->expects(self::once())
+			->method("getViewModelProcessor")
+			->willReturn(null);
+		$viewModelInit->expects(self::never())
+			->method("initHTMLDocument");
+
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name)use($logicAssembly, $viewModel):\Generator {
+				self::assertSame($logicAssembly, $assembly);
+				if($name !== "go") {
+					return;
+				}
+
+				$viewModel->set("hello", "Greg");
+				yield "/tmp/api.php::go()";
+			});
+
+		$sut = $this->createDispatcher(
+			request: $this->createRequest("/hello", "POST"),
+			view: $view,
+			viewModel: $viewModel,
+			logicAssembly: $logicAssembly,
+			viewModelInit: $viewModelInit,
+			logicExecutor: $logicExecutor,
+			viewStreamer: new ViewStreamer(),
+		);
+
+		$response = $sut->generateResponse();
+
+		self::assertSame(StatusCode::OK, $response->getStatusCode());
+		self::assertSame("application/json", $response->getHeaderLine("Content-Type"));
+		self::assertSame("{\"hello\":\"Greg\"}\n", (string)$stream);
+		self::assertSame("/tmp/api:go", $response->getHeaderLine("X-Logic-Execution"));
+	}
+
+	public function testGenerateResponse_jsonDocumentErrorFinishesResponseAndInterruptsLogic():void {
+		$stream = new Stream();
+		$view = new JSONView($stream);
+		$viewModel = new JSONDocument();
+		$logicAssembly = $this->createAssembly("/tmp/api.php");
+		$finishedResponse = null;
+
+		$viewModelInit = $this->createMock(ViewModelInit::class);
+		$viewModelInit->method("getViewModelProcessor")
+			->willReturn(null);
+
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name)use($logicAssembly, $viewModel):\Generator {
+				self::assertSame($logicAssembly, $assembly);
+				if($name !== "go") {
+					return;
+				}
+
+				$viewModel->error("missing parameter: name", StatusCode::UNPROCESSABLE_ENTITY);
+				$viewModel->set("hello", "Greg");
+				yield "/tmp/api.php::go()";
+			});
+
+		$sut = $this->createDispatcher(
+			request: $this->createRequest("/hello", "POST"),
+			view: $view,
+			viewModel: $viewModel,
+			logicAssembly: $logicAssembly,
+			viewModelInit: $viewModelInit,
+			logicExecutor: $logicExecutor,
+			viewStreamer: new ViewStreamer(),
+			finishCallback: function(Response $response)use(&$finishedResponse):void {
+				$finishedResponse = $response;
+			},
+		);
+
+		$response = $sut->generateResponse();
+
+		self::assertSame(StatusCode::UNPROCESSABLE_ENTITY, $response->getStatusCode());
+		self::assertSame("application/json", $response->getHeaderLine("Content-Type"));
+		self::assertSame("{\"error\":\"missing parameter: name\"}\n", (string)$stream);
+		self::assertSame($response, $finishedResponse);
+		self::assertSame("", $response->getHeaderLine("X-Logic-Execution"));
 	}
 
 	public function testGenerateResponse_executesComponentAndPageLogicAndAppliesHeaders():void {
@@ -638,6 +730,51 @@ class DispatcherTest extends TestCase {
 		self::assertStringNotContainsString("#0", $body);
 	}
 
+	public function testGenerateBasicErrorResponse_forJsonViewReturnsJson():void {
+		$sut = $this->createDispatcher(
+			production: true,
+			view: new JSONView(new Stream()),
+			viewModel: new JSONDocument(),
+		);
+		$this->setResponseStatus($sut, 500);
+
+		$response = $sut->generateBasicErrorResponse(
+			new Exception("missing parameter: name"),
+			new Exception("inner"),
+		);
+
+		self::assertSame(500, $response->getStatusCode());
+		self::assertSame("application/json", $response->getHeaderLine("Content-Type"));
+		self::assertSame(
+			[
+				"error" => "missing parameter: name",
+				"status" => 500,
+				"type" => Exception::class,
+			],
+			json_decode((string)$response->getBody(), true),
+		);
+		self::assertStringEndsWith("\n", (string)$response->getBody());
+	}
+
+	public function testGenerateBasicErrorResponse_forJsonViewUsesStatusTextWhenThrowableMessageIsEmpty():void {
+		$sut = $this->createDispatcher(
+			production: true,
+			view: new JSONView(new Stream()),
+			viewModel: new JSONDocument(),
+		);
+		$this->setResponseStatus($sut, 500);
+
+		$response = $sut->generateBasicErrorResponse(
+			new Exception(),
+			new Exception("inner"),
+		);
+
+		self::assertSame(
+			"Internal Server Error",
+			json_decode((string)$response->getBody(), true)["error"],
+		);
+	}
+
 	public function testGenerateBasicErrorResponse_defaultsToThrowableHttpCodeWhenResponseStatusUnset():void {
 		$sut = $this->createDispatcher(production: false);
 
@@ -801,8 +938,8 @@ class DispatcherTest extends TestCase {
 		?Request $request = null,
 		?array $globals = null,
 		?Input $input = null,
-		?HTMLView $view = null,
-		?HTMLDocument $viewModel = null,
+		NullView|JSONView|HTMLView|null $view = null,
+		HTMLDocument|JSONDocument|null $viewModel = null,
 		?Assembly $viewAssembly = null,
 		?Assembly $logicAssembly = null,
 		?ViewModelProcessor $viewModelProcessor = null,
@@ -811,6 +948,7 @@ class DispatcherTest extends TestCase {
 		?ViewStreamer $viewStreamer = null,
 		?HeaderManager $headerManager = null,
 		?SessionInit $sessionInit = null,
+		?\Closure $finishCallback = null,
 	):Dispatcher {
 		$config ??= $this->createConfig($production);
 		$request ??= $this->createRequest("/page/");
@@ -863,8 +1001,10 @@ class DispatcherTest extends TestCase {
 		$logicExecutor ??= $this->createMock(LogicExecutor::class);
 		$logicExecutor->method("invoke")
 			->willReturnCallback(fn():\Generator => $this->emptyGenerator());
-		$viewStreamer ??= $this->createMock(ViewStreamer::class);
-		$viewStreamer->method("stream");
+		if(!$viewStreamer) {
+			$viewStreamer = $this->createMock(ViewStreamer::class);
+			$viewStreamer->method("stream");
+		}
 		$headerManager ??= $this->createMock(HeaderManager::class);
 		$headerManager->method("applyWithHeader")->willReturn(null);
 
@@ -872,7 +1012,7 @@ class DispatcherTest extends TestCase {
 			$config,
 			$request,
 			$globals,
-			static fn() => null,
+			$finishCallback ?? static fn() => null,
 			null,
 			$appAutoloader,
 			$logicStreamHandler,

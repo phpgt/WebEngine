@@ -2,7 +2,9 @@
 namespace GT\WebEngine\Test\View;
 
 use GT\Dom\HTMLDocument;
+use GT\Json\Schema\JSONDocument;
 use GT\WebEngine\View\HTMLView;
+use GT\WebEngine\View\JSONView;
 use GT\WebEngine\View\ViewStreamer;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
@@ -11,6 +13,21 @@ class ViewStreamerTest extends TestCase {
 	public function testStream_delegatesToViewStreamMethod():void {
 		$document = new HTMLDocument("<main>Streamed</main>");
 		$view = $this->getMockBuilder(HTMLView::class)
+			->setConstructorArgs([$this->newRecordingStream()])
+			->onlyMethods(["stream"])
+			->getMock();
+		$view->expects(self::once())
+			->method("stream")
+			->with($document);
+
+		$sut = new ViewStreamer();
+		$sut->stream($view, $document);
+	}
+
+	public function testStream_delegatesJsonDocumentToViewStreamMethod():void {
+		$document = new JSONDocument();
+		$document->set("hello", "Greg");
+		$view = $this->getMockBuilder(JSONView::class)
 			->setConstructorArgs([$this->newRecordingStream()])
 			->onlyMethods(["stream"])
 			->getMock();

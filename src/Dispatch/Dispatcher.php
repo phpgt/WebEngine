@@ -291,7 +291,6 @@ class Dispatcher {
 		Throwable $actualThrowable,
 		Throwable $innerThrowable,
 	):Response {
-// TODO: Handle innerThrowable for if there's an error thrown in WebEngine itself.
 		$errorStatusCode = $this->getBasicErrorStatusCode($actualThrowable);
 		$errorType = get_class($actualThrowable);
 		$errorMessage = $this->getBasicErrorMessage(
@@ -300,6 +299,7 @@ class Dispatcher {
 		);
 		$detail = $this->getBasicErrorDetail(
 			$actualThrowable,
+			$innerThrowable,
 			$errorStatusCode,
 		);
 
@@ -349,11 +349,15 @@ class Dispatcher {
 
 	private function getBasicErrorDetail(
 		Throwable $throwable,
+		Throwable $innerThrowable,
 		int $errorStatusCode,
 	):string {
 		$detail = $this->getBasicNotFoundErrorDetail($throwable, $errorStatusCode);
 		if($errorStatusCode >= 500 && !$this->config->getBool("app.production")) {
 			$detail .= $this->getBasicDebugErrorDetail($throwable);
+		}
+		if(!$this->config->getBool("app.production")) {
+			$detail .= $this->getBasicInnerThrowableDetail($innerThrowable);
 		}
 
 		return $detail;
@@ -391,6 +395,18 @@ class Dispatcher {
 		}
 
 		return $detail;
+	}
+
+	private function getBasicInnerThrowableDetail(Throwable $throwable):string {
+		return "\n\nFailed to render framework error response: "
+			. get_class($throwable)
+			. ": "
+			. $throwable->getMessage()
+			. "\n"
+			. $throwable->getFile()
+			. ":"
+			. $throwable->getLine()
+			. "\n";
 	}
 
 	private function createBasicJsonErrorResponse(

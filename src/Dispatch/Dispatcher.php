@@ -292,68 +292,136 @@ class Dispatcher {
 		Throwable $innerThrowable,
 	):Response {
 // TODO: Handle innerThrowable for if there's an error thrown in WebEngine itself.
-		$errorStatusCode = $this->response->getStatusCode();
-		if(!$errorStatusCode) {
-			$errorStatusCode = $actualThrowable instanceof ResponseStatusException
-				? $actualThrowable->getHttpCode()
-				: StatusCode::INTERNAL_SERVER_ERROR;
-		}
+		$errorStatusCode = $this->getBasicErrorStatusCode($actualThrowable);
 		$errorType = get_class($actualThrowable);
-//		var_dump($errorType);die();
-		$errorMessage = $actualThrowable->getMessage();
-		$detail = "";
-
-		$errorPageDir = $this->config->getString("app.error_page_dir");
-
-		if(!$errorMessage) {
-			if($actualThrowable instanceof HttpNotFound) {
-				$errorMessage = "The server could not find the requested resource.";
-
-				if(!$this->config->getBool("app.production")) {
-					$detail .= " Additionally, there was no error page found in your "
-						. "application at <strong>$errorPageDir/$errorStatusCode.html</strong>";
-				}
-			}
-		}
-		if(!$errorMessage) {
-			$errorMessage = StatusCode::REASON_PHRASE[$errorStatusCode] ?? "Error";
-		}
-
-		if($errorStatusCode >= 500 && !$this->config->getBool("app.production")) {
-			$detail .= implode(":", [
-				$actualThrowable->getFile(),
-				$actualThrowable->getLine(),
-			]) . "\n\n";
-			foreach($actualThrowable->getTrace() as $i => $t) {
-				if(isset($t["file"]) && str_ends_with($t["file"], "/vendor/phpgt/servicecontainer/src/Injector.php")) {
-					break;
-				}
-				$detail .= "#$i\n";
-
-				foreach($t as $key => $value) {
-					$detail .= "$key:\t$value\n";
-				}
-			}
-		}
+		$errorMessage = $this->getBasicErrorMessage(
+			$actualThrowable,
+			$errorStatusCode,
+		);
+		$detail = $this->getBasicErrorDetail(
+			$actualThrowable,
+			$errorStatusCode,
+		);
 
 		if($this->view instanceof JSONView || $this->viewModel instanceof JSONDocument) {
-			$error = [
-				"error" => $errorMessage,
-				"status" => $errorStatusCode,
-				"type" => $errorType,
-			];
-			if($detail !== "") {
-				$error["detail"] = $detail;
-			}
-
-			$body = new Stream();
-			$body->write((json_encode($error) ?: "{}") . "\n");
-			$response = new Response(null, null, $this->request);
-			$response = $response->withHeader("Content-Type", "application/json");
-			$response = $response->withBody($body);
-			return $response->withStatus($errorStatusCode);
+			return $this->createBasicJsonErrorResponse(
+				$errorStatusCode,
+				$errorType,
+				$errorMessage,
+				$detail,
+			);
 		}
 
+		return $this->createBasicHtmlErrorResponse(
+			$errorStatusCode,
+			$errorType,
+			$errorMessage,
+			$detail,
+		);
+	}
+
+	private function getBasicErrorStatusCode(Throwable $throwable):int {
+		$errorStatusCode = $this->response->getStatusCode();
+		if($errorStatusCode) {
+			return $errorStatusCode;
+		}
+
+		return $throwable instanceof ResponseStatusException
+			? $throwable->getHttpCode()
+			: StatusCode::INTERNAL_SERVER_ERROR;
+	}
+
+	private function getBasicErrorMessage(
+		Throwable $throwable,
+		int $errorStatusCode,
+	):string {
+		$errorMessage = $throwable->getMessage();
+		if($errorMessage) {
+			return $errorMessage;
+		}
+
+		if($throwable instanceof HttpNotFound) {
+			return "The server could not find the requested resource.";
+		}
+
+		return StatusCode::REASON_PHRASE[$errorStatusCode] ?? "Error";
+	}
+
+	private function getBasicErrorDetail(
+		Throwable $throwable,
+		int $errorStatusCode,
+	):string {
+		$detail = $this->getBasicNotFoundErrorDetail($throwable, $errorStatusCode);
+		if($errorStatusCode >= 500 && !$this->config->getBool("app.production")) {
+			$detail .= $this->getBasicDebugErrorDetail($throwable);
+		}
+
+		return $detail;
+	}
+
+	private function getBasicNotFoundErrorDetail(
+		Throwable $throwable,
+		int $errorStatusCode,
+	):string {
+		if(!($throwable instanceof HttpNotFound)
+		|| $throwable->getMessage()
+		|| $this->config->getBool("app.production")) {
+			return "";
+		}
+
+		$errorPageDir = $this->config->getString("app.error_page_dir");
+		return " Additionally, there was no error page found in your "
+			. "application at <strong>$errorPageDir/$errorStatusCode.html</strong>";
+	}
+
+	private function getBasicDebugErrorDetail(Throwable $throwable):string {
+		$detail = implode(":", [
+			$throwable->getFile(),
+			$throwable->getLine(),
+		]) . "\n\n";
+		foreach($throwable->getTrace() as $i => $t) {
+			if(isset($t["file"]) && str_ends_with($t["file"], "/vendor/phpgt/servicecontainer/src/Injector.php")) {
+				break;
+			}
+			$detail .= "#$i\n";
+
+			foreach($t as $key => $value) {
+				$detail .= "$key:\t$value\n";
+			}
+		}
+
+		return $detail;
+	}
+
+	private function createBasicJsonErrorResponse(
+		int $errorStatusCode,
+		string $errorType,
+		string $errorMessage,
+		string $detail,
+	):Response {
+		$error = [
+			"error" => $errorMessage,
+			"status" => $errorStatusCode,
+			"type" => $errorType,
+		];
+		if($detail !== "") {
+			$error["detail"] = $detail;
+		}
+
+		$body = new Stream();
+		$body->write((json_encode($error) ?: "{}") . "\n");
+		$response = new Response(null, null, $this->request);
+		$response = $response->withHeader("Content-Type", "application/json");
+		$response = $response->withBody($body);
+		return $response->withStatus($errorStatusCode);
+	}
+
+	private function createBasicHtmlErrorResponse(
+		int $errorStatusCode,
+		string $errorType,
+		string $errorMessage,
+		string $detail,
+	):Response {
 		// TODO: Load this HTML from a file in the root of WebEngine!
 		$html = <<<HTML
 		<!doctype html>
@@ -548,32 +616,8 @@ class Dispatcher {
 				}
 			}
 
-			if($this->logicExecutionOrder) {
-				$this->response = $this->response->withHeader(
-					self::LOGIC_EXECUTION_HEADER,
-					implode(";", $this->logicExecutionOrder),
-				);
-			}
-
-			if($responseWithHeader = $this->headerManager->applyWithHeader(
-				$this->response->getResponseHeaders(),
-				$this->response->withHeader(...)
-			)) {
-				$this->response = $responseWithHeader;
-			}
-
-			if($this->viewModel instanceof HTMLDocument) {
-				$documentBinder = $this->serviceContainer->get(Binder::class);
-				assert($documentBinder instanceof DocumentBinder);
-				$documentBinder->cleanupDocument();
-				$this->protectHtmlDocumentFromCsrf();
-			}
-			elseif($this->view instanceof JSONView && !$this->response->hasHeader("Content-Type")) {
-				$this->response = $this->response->withHeader(
-					"Content-Type",
-					"application/json",
-				);
-			}
+			$this->applyResponseHeaders();
+			$this->prepareViewModelForStreaming();
 
 			$this->viewStreamer->stream($this->view, $this->viewModel);
 			$this->consumeCsrfToken($csrfToken);
@@ -587,6 +631,39 @@ class Dispatcher {
 		}
 	}
 	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
+
+	private function applyResponseHeaders():void {
+		if($this->logicExecutionOrder) {
+			$this->response = $this->response->withHeader(
+				self::LOGIC_EXECUTION_HEADER,
+				implode(";", $this->logicExecutionOrder),
+			);
+		}
+
+		if($responseWithHeader = $this->headerManager->applyWithHeader(
+			$this->response->getResponseHeaders(),
+			$this->response->withHeader(...)
+		)) {
+			$this->response = $responseWithHeader;
+		}
+	}
+
+	private function prepareViewModelForStreaming():void {
+		if($this->viewModel instanceof HTMLDocument) {
+			$documentBinder = $this->serviceContainer->get(Binder::class);
+			assert($documentBinder instanceof DocumentBinder);
+			$documentBinder->cleanupDocument();
+			$this->protectHtmlDocumentFromCsrf();
+			return;
+		}
+
+		if($this->view instanceof JSONView && !$this->response->hasHeader("Content-Type")) {
+			$this->response = $this->response->withHeader(
+				"Content-Type",
+				"application/json",
+			);
+		}
+	}
 
 	private function recordLogicExecution(string $functionReference):void {
 		$refWithoutAttributes = explode("#", $functionReference, 2)[0];

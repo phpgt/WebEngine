@@ -704,7 +704,10 @@ class DispatcherTest extends TestCase {
 			],
 		]);
 
-		$response = $sut->generateBasicErrorResponse($throwable, new Exception("inner"));
+		$response = $sut->generateBasicErrorResponse(
+			$throwable,
+			new Exception("template exploded"),
+		);
 		$body = (string)$response->getBody();
 
 		self::assertSame(500, $response->getStatusCode());
@@ -712,6 +715,8 @@ class DispatcherTest extends TestCase {
 		self::assertStringContainsString("#0", $body);
 		self::assertStringContainsString("file:\t/tmp/app/Before.php", $body);
 		self::assertStringNotContainsString("After.php", $body);
+		self::assertStringContainsString("Failed to render framework error response", $body);
+		self::assertStringContainsString("template exploded", $body);
 	}
 
 	public function testGenerateBasicErrorResponse_inProductionOmitsDebugDetail():void {
@@ -728,6 +733,7 @@ class DispatcherTest extends TestCase {
 		self::assertStringContainsString("boom", $body);
 		self::assertStringNotContainsString(__FILE__, $body);
 		self::assertStringNotContainsString("#0", $body);
+		self::assertStringNotContainsString("inner", $body);
 	}
 
 	public function testGenerateBasicErrorResponse_forJsonViewReturnsJson():void {

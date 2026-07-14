@@ -239,6 +239,7 @@ class Dispatcher {
 		);
 		$this->viewStreamer = $viewStreamer ?? new ViewStreamer();
 		$this->headerManager = $headerManager ?? new HeaderManager();
+		$this->setupJsonDocumentErrorCallback();
 	}
 	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
 
@@ -290,48 +291,153 @@ class Dispatcher {
 		Throwable $actualThrowable,
 		Throwable $innerThrowable,
 	):Response {
-// TODO: Handle innerThrowable for if there's an error thrown in WebEngine itself.
-		$errorStatusCode = $this->response->getStatusCode();
-		if(!$errorStatusCode) {
-			$errorStatusCode = $actualThrowable instanceof ResponseStatusException
-				? $actualThrowable->getHttpCode()
-				: StatusCode::INTERNAL_SERVER_ERROR;
-		}
+		$errorStatusCode = $this->getBasicErrorStatusCode($actualThrowable);
 		$errorType = get_class($actualThrowable);
-//		var_dump($errorType);die();
-		$errorMessage = $actualThrowable->getMessage();
-		$detail = "";
+		$errorMessage = $this->getBasicErrorMessage(
+			$actualThrowable,
+			$errorStatusCode,
+		);
+		$detail = $this->getBasicErrorDetail(
+			$actualThrowable,
+			$innerThrowable,
+			$errorStatusCode,
+		);
+
+		if($this->view instanceof JSONView || $this->viewModel instanceof JSONDocument) {
+			return $this->createBasicJsonErrorResponse(
+				$errorStatusCode,
+				$errorType,
+				$errorMessage,
+				$detail,
+			);
+		}
+
+		return $this->createBasicHtmlErrorResponse(
+			$errorStatusCode,
+			$errorType,
+			$errorMessage,
+			$detail,
+		);
+	}
+
+	private function getBasicErrorStatusCode(Throwable $throwable):int {
+		$errorStatusCode = $this->response->getStatusCode();
+		if($errorStatusCode) {
+			return $errorStatusCode;
+		}
+
+		return $throwable instanceof ResponseStatusException
+			? $throwable->getHttpCode()
+			: StatusCode::INTERNAL_SERVER_ERROR;
+	}
+
+	private function getBasicErrorMessage(
+		Throwable $throwable,
+		int $errorStatusCode,
+	):string {
+		$errorMessage = $throwable->getMessage();
+		if($errorMessage) {
+			return $errorMessage;
+		}
+
+		if($throwable instanceof HttpNotFound) {
+			return "The server could not find the requested resource.";
+		}
+
+		return StatusCode::REASON_PHRASE[$errorStatusCode] ?? "Error";
+	}
+
+	private function getBasicErrorDetail(
+		Throwable $throwable,
+		Throwable $innerThrowable,
+		int $errorStatusCode,
+	):string {
+		$detail = $this->getBasicNotFoundErrorDetail($throwable, $errorStatusCode);
+		if($errorStatusCode >= 500 && !$this->config->getBool("app.production")) {
+			$detail .= $this->getBasicDebugErrorDetail($throwable);
+		}
+		if(!$this->config->getBool("app.production")) {
+			$detail .= $this->getBasicInnerThrowableDetail($innerThrowable);
+		}
+
+		return $detail;
+	}
+
+	private function getBasicNotFoundErrorDetail(
+		Throwable $throwable,
+		int $errorStatusCode,
+	):string {
+		if(!($throwable instanceof HttpNotFound)
+		|| $throwable->getMessage()
+		|| $this->config->getBool("app.production")) {
+			return "";
+		}
 
 		$errorPageDir = $this->config->getString("app.error_page_dir");
+		return " Additionally, there was no error page found in your "
+			. "application at <strong>$errorPageDir/$errorStatusCode.html</strong>";
+	}
 
-		if(!$errorMessage) {
-			if($actualThrowable instanceof HttpNotFound) {
-				$errorMessage = "The server could not find the requested resource.";
+	private function getBasicDebugErrorDetail(Throwable $throwable):string {
+		$detail = implode(":", [
+			$throwable->getFile(),
+			$throwable->getLine(),
+		]) . "\n\n";
+		foreach($throwable->getTrace() as $i => $t) {
+			if(isset($t["file"]) && str_ends_with($t["file"], "/vendor/phpgt/servicecontainer/src/Injector.php")) {
+				break;
+			}
+			$detail .= "#$i\n";
 
-				if(!$this->config->getBool("app.production")) {
-					$detail .= " Additionally, there was no error page found in your "
-						. "application at <strong>$errorPageDir/$errorStatusCode.html</strong>";
-				}
+			foreach($t as $key => $value) {
+				$detail .= "$key:\t$value\n";
 			}
 		}
 
-		if($errorStatusCode >= 500 && !$this->config->getBool("app.production")) {
-			$detail .= implode(":", [
-				$actualThrowable->getFile(),
-				$actualThrowable->getLine(),
-			]) . "\n\n";
-			foreach($actualThrowable->getTrace() as $i => $t) {
-				if(isset($t["file"]) && str_ends_with($t["file"], "/vendor/phpgt/servicecontainer/src/Injector.php")) {
-					break;
-				}
-				$detail .= "#$i\n";
+		return $detail;
+	}
 
-				foreach($t as $key => $value) {
-					$detail .= "$key:\t$value\n";
-				}
-			}
+	private function getBasicInnerThrowableDetail(Throwable $throwable):string {
+		return "\n\nFailed to render framework error response: "
+			. get_class($throwable)
+			. ": "
+			. $throwable->getMessage()
+			. "\n"
+			. $throwable->getFile()
+			. ":"
+			. $throwable->getLine()
+			. "\n";
+	}
+
+	private function createBasicJsonErrorResponse(
+		int $errorStatusCode,
+		string $errorType,
+		string $errorMessage,
+		string $detail,
+	):Response {
+		$error = [
+			"error" => $errorMessage,
+			"status" => $errorStatusCode,
+			"type" => $errorType,
+		];
+		if($detail !== "") {
+			$error["detail"] = $detail;
 		}
 
+		$body = new Stream();
+		$body->write((json_encode($error) ?: "{}") . "\n");
+		$response = new Response(null, null, $this->request);
+		$response = $response->withHeader("Content-Type", "application/json");
+		$response = $response->withBody($body);
+		return $response->withStatus($errorStatusCode);
+	}
+
+	private function createBasicHtmlErrorResponse(
+		int $errorStatusCode,
+		string $errorType,
+		string $errorMessage,
+		string $detail,
+	):Response {
 		// TODO: Load this HTML from a file in the root of WebEngine!
 		$html = <<<HTML
 		<!doctype html>
@@ -357,6 +463,34 @@ class Dispatcher {
 			}
 		});
 		return $response;
+	}
+
+	private function setupJsonDocumentErrorCallback():void {
+		if(!($this->view instanceof JSONView) || !($this->viewModel instanceof JSONDocument)) {
+			return;
+		}
+
+		$this->viewModel->setErrorCallback(function(
+			string $message,
+			int $statusCode,
+		):void {
+			if(!$this->response->getStatusCode()) {
+				$this->response = $this->response->withStatus($statusCode);
+			}
+			if(!$this->response->hasHeader("Content-Type")) {
+				$this->response = $this->response->withHeader(
+					"Content-Type",
+					"application/json",
+				);
+			}
+
+			$this->viewStreamer->stream($this->view, $this->viewModel);
+			($this->finishCallback)($this->response);
+
+			if($this->interruptResponse) {
+				throw new ResponseInterrupt();
+			}
+		});
 	}
 
 	private function handleLogicExecution(
@@ -498,24 +632,8 @@ class Dispatcher {
 				}
 			}
 
-			if($this->logicExecutionOrder) {
-				$this->response = $this->response->withHeader(
-					self::LOGIC_EXECUTION_HEADER,
-					implode(";", $this->logicExecutionOrder),
-				);
-			}
-
-			if($responseWithHeader = $this->headerManager->applyWithHeader(
-				$this->response->getResponseHeaders(),
-				$this->response->withHeader(...)
-			)) {
-				$this->response = $responseWithHeader;
-			}
-
-			$documentBinder = $this->serviceContainer->get(Binder::class);
-			assert($documentBinder instanceof DocumentBinder);
-			$documentBinder->cleanupDocument();
-			$this->protectHtmlDocumentFromCsrf();
+			$this->applyResponseHeaders();
+			$this->prepareViewModelForStreaming();
 
 			$this->viewStreamer->stream($this->view, $this->viewModel);
 			$this->consumeCsrfToken($csrfToken);
@@ -529,6 +647,39 @@ class Dispatcher {
 		}
 	}
 	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
+
+	private function applyResponseHeaders():void {
+		if($this->logicExecutionOrder) {
+			$this->response = $this->response->withHeader(
+				self::LOGIC_EXECUTION_HEADER,
+				implode(";", $this->logicExecutionOrder),
+			);
+		}
+
+		if($responseWithHeader = $this->headerManager->applyWithHeader(
+			$this->response->getResponseHeaders(),
+			$this->response->withHeader(...)
+		)) {
+			$this->response = $responseWithHeader;
+		}
+	}
+
+	private function prepareViewModelForStreaming():void {
+		if($this->viewModel instanceof HTMLDocument) {
+			$documentBinder = $this->serviceContainer->get(Binder::class);
+			assert($documentBinder instanceof DocumentBinder);
+			$documentBinder->cleanupDocument();
+			$this->protectHtmlDocumentFromCsrf();
+			return;
+		}
+
+		if($this->view instanceof JSONView && !$this->response->hasHeader("Content-Type")) {
+			$this->response = $this->response->withHeader(
+				"Content-Type",
+				"application/json",
+			);
+		}
+	}
 
 	private function recordLogicExecution(string $functionReference):void {
 		$refWithoutAttributes = explode("#", $functionReference, 2)[0];
@@ -565,6 +716,10 @@ class Dispatcher {
 	}
 
 	private function verifyCsrfRequest(string $method, InputData $inputData):?string {
+		if(!($this->viewModel instanceof HTMLDocument)) {
+			return null;
+		}
+
 		if($method !== "POST" || $this->isIgnoredCsrfPath()) {
 			return null;
 		}

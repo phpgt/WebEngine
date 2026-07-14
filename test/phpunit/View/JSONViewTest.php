@@ -1,44 +1,12 @@
 <?php
 namespace GT\WebEngine\Test\View;
 
-use GT\Dom\HTMLDocument;
 use GT\Json\Schema\JSONDocument;
-use GT\WebEngine\View\HTMLView;
 use GT\WebEngine\View\JSONView;
-use GT\WebEngine\View\ViewStreamer;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
 
-class ViewStreamerTest extends TestCase {
-	public function testStream_delegatesToViewStreamMethod():void {
-		$document = new HTMLDocument("<main>Streamed</main>");
-		$view = $this->getMockBuilder(HTMLView::class)
-			->setConstructorArgs([$this->newRecordingStream()])
-			->onlyMethods(["stream"])
-			->getMock();
-		$view->expects(self::once())
-			->method("stream")
-			->with($document);
-
-		$sut = new ViewStreamer();
-		$sut->stream($view, $document);
-	}
-
-	public function testStream_delegatesJsonDocumentToViewStreamMethod():void {
-		$document = new JSONDocument();
-		$document->set("hello", "Greg");
-		$view = $this->getMockBuilder(JSONView::class)
-			->setConstructorArgs([$this->newRecordingStream()])
-			->onlyMethods(["stream"])
-			->getMock();
-		$view->expects(self::once())
-			->method("stream")
-			->with($document);
-
-		$sut = new ViewStreamer();
-		$sut->stream($view, $document);
-	}
-
+class JSONViewTest extends TestCase {
 	private function newRecordingStream():StreamInterface {
 		return new class implements StreamInterface {
 			public string $buffer = "";
@@ -58,5 +26,22 @@ class ViewStreamerTest extends TestCase {
 			public function getContents():string { return $this->buffer; }
 			public function getMetadata($key = null) { return null; }
 		};
+	}
+
+	public function testCreateViewModel_returnsJsonDocument():void {
+		$sut = new JSONView($this->newRecordingStream());
+
+		self::assertInstanceOf(JSONDocument::class, $sut->createViewModel());
+	}
+
+	public function testStream_appendsTrailingNewline():void {
+		$stream = $this->newRecordingStream();
+		$sut = new JSONView($stream);
+		$doc = new JSONDocument();
+		$doc->set("hello", "Greg");
+
+		$sut->stream($doc);
+
+		self::assertSame("{\"hello\":\"Greg\"}\n", (string)$stream);
 	}
 }

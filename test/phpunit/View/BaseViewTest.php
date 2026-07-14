@@ -1,6 +1,7 @@
 <?php
 namespace GT\WebEngine\Test\View;
 
+use GT\Json\Schema\JSONDocument;
 use GT\WebEngine\View\BaseView;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
@@ -48,6 +49,15 @@ class BaseViewTest extends TestCase {
 		$doc = new \GT\Dom\HTMLDocument("<p>obj-str</p>");
 		$sut->stream($doc);
 		self::assertSame((string)$doc, (string)$stream);
+	}
+
+	public function testStream_writesJsonDocumentToOutput():void {
+		$stream = $this->newRecordingStream();
+		$sut = $this->newTestableView($stream);
+		$doc = new JSONDocument();
+		$doc->set("hello", "Greg");
+		$sut->stream($doc);
+		self::assertSame('{"hello":"Greg"}', (string)$stream);
 	}
 
 	public function testAddViewFile_appendsInOrder():void {

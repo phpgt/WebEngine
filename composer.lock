@@ -849,16 +849,16 @@
         },
         {
             "name": "phpgt/daemon",
-            "version": "v1.1.6",
+            "version": "v1.1.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Daemon.git",
-                "reference": "cc932f51523988df8d27c05ee1122b2922806a13"
+                "reference": "b537b1c713e481ec6a97d70143e559829f3c7f4c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Daemon/zipball/cc932f51523988df8d27c05ee1122b2922806a13",
-                "reference": "cc932f51523988df8d27c05ee1122b2922806a13",
+                "url": "https://api.github.com/repos/phpgt/Daemon/zipball/b537b1c713e481ec6a97d70143e559829f3c7f4c",
+                "reference": "b537b1c713e481ec6a97d70143e559829f3c7f4c",
                 "shasum": ""
             },
             "require": {
@@ -882,7 +882,7 @@
             "description": "Background script execution with cross-platform compatible streaming.",
             "support": {
                 "issues": "https://github.com/phpgt/Daemon/issues",
-                "source": "https://github.com/phpgt/Daemon/tree/v1.1.6"
+                "source": "https://github.com/phpgt/Daemon/tree/v1.1.7"
             },
             "funding": [
                 {
@@ -890,7 +890,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-06-04T07:48:06+00:00"
+            "time": "2026-07-10T09:53:00+00:00"
         },
         {
             "name": "phpgt/database",

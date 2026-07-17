@@ -274,6 +274,10 @@ class Dispatcher {
 			$errorStatusCode = $throwable->getHttpCode();
 		}
 
+		if($errorStatusCode === StatusCode::NOT_MODIFIED) {
+			return $this->response->withStatus(StatusCode::NOT_MODIFIED);
+		}
+
 		if(!$this->viewAssembly->containsDistinctFile()) {
 			Log::warning(
 				"Error page template not found for HTTP " . $errorStatusCode,

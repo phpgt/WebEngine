@@ -1,8 +1,6 @@
 <?php
 namespace GT\WebEngine\Test;
 
-require_once __DIR__ . "/Fixture/TestLogHandler.php";
-
 use Closure;
 use Exception;
 use GT\Config\Config;
@@ -10,7 +8,9 @@ use GT\Config\ConfigFactory;
 use GT\Http\RequestFactory;
 use GT\Http\Response;
 use GT\Http\ResponseStatusException\ClientError\HttpNotFound;
+use GT\Http\ResponseStatusException\Redirection\HttpNotModified;
 use GT\Http\ServerRequest;
+use GT\Http\StatusCode;
 use GT\Http\Stream;
 use GT\Http\Uri;
 use GT\Logger\LogConfig;
@@ -398,6 +398,40 @@ class ApplicationTest extends TestCase {
 		self::assertSame($sessionInit, $createCalls[1]["sessionInit"]);
 	}
 
+	public function testStart_returnsNotModifiedWithoutErrorDispatcher():void {
+		$this->resetApplicationLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$config = $this->createTestConfig(["app.error_script" => ""]);
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($this->createServerRequest("/live"));
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willThrowException(new HttpNotModified());
+		$dispatcher->expects(self::never())
+			->method("generateErrorResponse");
+
+		$dispatcherFactory = self::createMock(DispatcherFactory::class);
+		$dispatcherFactory->expects(self::once())
+			->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+
+		self::assertCount(0, TestLogHandler::$records);
+	}
+
 	public function testStart_fallsBackToBasicErrorResponseWhenErrorPageRenderingFails():void {
 		$this->resetApplicationLoggerState();
 		LogConfig::addHandler(new TestLogHandler());
@@ -671,6 +705,123 @@ class ApplicationTest extends TestCase {
 		self::assertSame("127.0.0.1:", TestLogHandler::$records[0]["context"]["id"]);
 	}
 
+	public function testStart_filtersCsrfTokenFromLoggedPostContext():void {
+		$this->resetApplicationLoggerState();
+		TestLogHandler::$records = [];
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$config = $this->createTestConfig([
+			"logger.log_all_requests" => true,
+		]);
+		$request = $this->createServerRequest(
+			"/send",
+			post: [
+				"message" => "Hello",
+				"csrf-token" => "CSRF_secret",
+				"do" => "send",
+			],
+		);
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($request);
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willReturn($this->createResponse(204));
+
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+
+		self::assertSame([
+			"message" => "Hello",
+			"do" => "send",
+		], TestLogHandler::$records[0]["context"]["post"]);
+	}
+
+	public function testStart_doesNotLogNotModifiedByDefault():void {
+		$this->resetApplicationLoggerState();
+		TestLogHandler::$records = [];
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$config = $this->createTestConfig([
+			"logger.log_all_requests" => true,
+			"logger.log_not_modified" => false,
+		]);
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($this->createServerRequest("/live"));
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willReturn($this->createResponse(StatusCode::NOT_MODIFIED));
+
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+
+		self::assertSame([], TestLogHandler::$records);
+	}
+
+	public function testStart_logsNotModifiedWhenConfigured():void {
+		$this->resetApplicationLoggerState();
+		TestLogHandler::$records = [];
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$config = $this->createTestConfig([
+			"logger.log_all_requests" => true,
+			"logger.log_not_modified" => true,
+		]);
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($this->createServerRequest("/live"));
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willReturn($this->createResponse(StatusCode::NOT_MODIFIED));
+
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("HTTP 304", TestLogHandler::$records[0]["message"]);
+		self::assertSame("/live", TestLogHandler::$records[0]["context"]["uri"]);
+	}
+
 	public function testStart_logsSlowRequestsAsDebugWithRequestContext():void {
 		$this->resetApplicationLoggerState();
 		TestLogHandler::$records = [];
@@ -792,6 +943,56 @@ class ApplicationTest extends TestCase {
 		self::assertSame("HTTP 303", TestLogHandler::$records[0]["message"]);
 		self::assertSame("/redirect-me", TestLogHandler::$records[0]["context"]["uri"]);
 		self::assertSame("https://example.test/redirect-me/", TestLogHandler::$records[0]["context"]["location"]);
+	}
+
+	public function testStart_logsRedirectResponsesWhenLogAllRequestsIsTrue():void {
+		$this->resetApplicationLoggerState();
+		TestLogHandler::$records = [];
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$config = $this->createTestConfig([
+			"logger.log_all_requests" => true,
+			"logger.log_redirects" => false,
+		]);
+		$request = $this->createServerRequest(
+			"/message",
+			post: [
+				"message" => "Hello from Flux",
+				"csrf-token" => "CSRF_secret",
+				"do" => "send",
+			],
+		);
+		$requestFactory = self::createStub(RequestFactory::class);
+		$requestFactory->method("createServerRequestFromGlobalState")
+			->willReturn($request);
+
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())
+			->method("generateResponse")
+			->willReturn($this->createResponse(303, headers: ["Location" => ["https://example.test/message/"]]));
+
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method("create")
+			->willReturn($dispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $requestFactory,
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$sut->start();
+
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("HTTP 303", TestLogHandler::$records[0]["message"]);
+		self::assertSame("/message", TestLogHandler::$records[0]["context"]["uri"]);
+		self::assertSame([
+			"message" => "Hello from Flux",
+			"do" => "send",
+		], TestLogHandler::$records[0]["context"]["post"]);
+		self::assertSame("https://example.test/message/", TestLogHandler::$records[0]["context"]["location"]);
 	}
 
 	public function testStart_logsPreDispatchRedirectsWhenLogRedirectsIsTrue():void {

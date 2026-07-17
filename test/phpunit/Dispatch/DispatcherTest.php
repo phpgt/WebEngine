@@ -18,6 +18,7 @@ use GT\DomTemplate\TableBinder;
 use GT\Http\Request;
 use GT\Http\Response;
 use GT\Http\ResponseStatusException\ClientError\HttpNotFound;
+use GT\Http\ResponseStatusException\Redirection\HttpNotModified;
 use GT\Http\ResponseStatusException\ResponseStatusException;
 use GT\Http\ServerInfo;
 use GT\Http\StatusCode;
@@ -594,6 +595,17 @@ class DispatcherTest extends TestCase {
 		self::assertSame("WARNING", TestLogHandler::$records[0]["level"]);
 		self::assertSame("Error page template not found for HTTP 418", TestLogHandler::$records[0]["message"]);
 		self::assertSame("/page/", TestLogHandler::$records[0]["context"]["uri"]);
+	}
+
+	public function testGenerateErrorResponse_returnsNotModifiedWithoutErrorView():void {
+		$this->resetLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$sut = $this->createDispatcher();
+
+		$response = $sut->generateErrorResponse(new HttpNotModified());
+
+		self::assertSame(StatusCode::NOT_MODIFIED, $response->getStatusCode());
+		self::assertCount(0, TestLogHandler::$records);
 	}
 
 	public function testGenerateErrorResponse_usesThrowableStatusAndReturnsResponse():void {

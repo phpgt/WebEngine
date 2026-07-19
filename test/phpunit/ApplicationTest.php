@@ -3,6 +3,7 @@ namespace GT\WebEngine\Test;
 
 use Closure;
 use Exception;
+use GT\Csrf\HTMLDocumentProtector;
 use GT\Config\Config;
 use GT\Config\ConfigFactory;
 use GT\Http\RequestFactory;
@@ -32,6 +33,14 @@ class ApplicationTest extends TestCase {
 	protected function tearDown():void {
 		$this->resetApplicationLoggerState();
 		parent::tearDown();
+	}
+
+	public function testDefaultConfig_usesHtmlRoutingAndDoesNotLogNotModifiedResponses():void {
+		$configFile = dirname(__DIR__, 2) . "/config.default.ini";
+		$config = parse_ini_file($configFile, true, INI_SCANNER_RAW);
+
+		self::assertSame("text/html", $config["router"]["default_content_type"]);
+		self::assertSame("false", $config["logger"]["log_not_modified"]);
 	}
 
 	public function testStart_callsRedirectExecute():void {
@@ -432,12 +441,175 @@ class ApplicationTest extends TestCase {
 		self::assertCount(0, TestLogHandler::$records);
 	}
 
-	public function testStart_fallsBackToBasicErrorResponseWhenErrorPageRenderingFails():void {
+	public function testHandleThrowable_returnsNotModifiedResponseWithoutLoggingError():void {
+		$this->resetApplicationLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$request = $this->createServerRequest("/cached");
+		$sut = new Application(
+			config: $this->createTestConfig(["app.error_script" => ""]),
+			requestFactory: $this->createRequestFactory($request),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+		$this->setPrivateProperty($sut, "request", $request);
+
+		$response = $this->invokePrivateMethod($sut, "handleThrowable", new HttpNotModified());
+
+		self::assertInstanceOf(Response::class, $response);
+		self::assertSame(StatusCode::NOT_MODIFIED, $response->getStatusCode());
+		self::assertSame([], TestLogHandler::$records);
+	}
+
+	public function testHandleThrowable_runsErrorScriptWithRestoredGlobalsAndReturnsNull():void {
+		$php = <<<'PHP'
+		<?php
+		echo $_POST["message"] . "|" . $GLOBALS["POST"]["message"];
+		PHP;
+
+		$tmpFile = tempnam(sys_get_temp_dir(), "webengine-test-");
+		file_put_contents($tmpFile, $php);
+
+		$sut = new Application(
+			config: $this->createTestConfig([
+				"app.error_script" => $tmpFile,
+			]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+			globals: [
+				"_SERVER" => [],
+				"_FILES" => [],
+				"_GET" => [],
+				"_POST" => ["message" => "restored"],
+				"_ENV" => [],
+				"_COOKIE" => [],
+			],
+		);
+
+		$_POST = ["message" => "wrong"];
+		$GLOBALS["POST"] = ["message" => "wrong"];
+
+		ob_start();
+		$response = $this->invokePrivateMethod($sut, "handleThrowable", new Exception("boom"));
+		$output = ob_get_clean();
+		unlink($tmpFile);
+
+		self::assertNull($response);
+		self::assertSame("restored|restored", $output);
+	}
+
+	public function testHandleThrowable_rebuildsDispatcherAndReturnsGeneratedErrorResponse():void {
 		$this->resetApplicationLoggerState();
 		LogConfig::addHandler(new TestLogHandler());
 		$this->setApplicationLoggerConfigured(true);
 
 		$config = $this->createTestConfig(["app.error_script" => ""]);
+		$request = $this->createServerRequest("/broken");
+		$sessionInit = self::createStub(SessionInit::class);
+		$throwable = new Exception("page failed");
+		$errorResponse = $this->createResponse(500, "<body>error</body>");
+
+		$firstDispatcher = self::createMock(Dispatcher::class);
+		$firstDispatcher->expects(self::once())
+			->method("getSessionInit")
+			->willReturn($sessionInit);
+
+		$secondDispatcher = self::createMock(Dispatcher::class);
+		$secondDispatcher->expects(self::once())
+			->method("generateErrorResponse")
+			->with(self::identicalTo($throwable))
+			->willReturn($errorResponse);
+
+		$dispatcherFactory = self::createMock(DispatcherFactory::class);
+		$dispatcherFactory->expects(self::once())
+			->method("create")
+			->with(
+				self::identicalTo($config),
+				self::identicalTo($request),
+				self::isArray(),
+				self::isInstanceOf(Closure::class),
+				500,
+				self::identicalTo($sessionInit),
+			)
+			->willReturn($secondDispatcher);
+
+		$sut = new Application(
+			config: $config,
+			requestFactory: $this->createRequestFactory($request),
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+		$this->setPrivateProperty($sut, "request", $request);
+		$this->setPrivateProperty($sut, "dispatcher", $firstDispatcher);
+
+		$response = $this->invokePrivateMethod($sut, "handleThrowable", $throwable);
+
+		self::assertSame($errorResponse, $response);
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertStringContainsString("page failed", TestLogHandler::$records[0]["message"]);
+	}
+
+	public function testHandleThrowable_fallsBackToBasicErrorResponseWhenErrorResponseFails():void {
+		$this->resetApplicationLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$request = $this->createServerRequest("/broken-error");
+		$throwable = new Exception("page failed");
+		$innerThrowable = new Exception("error page failed");
+		$fallbackResponse = $this->createResponse(500, "<body>fallback</body>");
+
+		$firstDispatcher = self::createMock(Dispatcher::class);
+		$firstDispatcher->expects(self::once())
+			->method("getSessionInit")
+			->willReturn(null);
+
+		$secondDispatcher = self::createMock(Dispatcher::class);
+		$secondDispatcher->expects(self::once())
+			->method("generateErrorResponse")
+			->with(self::identicalTo($throwable))
+			->willThrowException($innerThrowable);
+		$secondDispatcher->expects(self::once())
+			->method("generateBasicErrorResponse")
+			->with(
+				self::identicalTo($throwable),
+				self::identicalTo($innerThrowable),
+			)
+			->willReturn($fallbackResponse);
+
+		$dispatcherFactory = self::createStub(DispatcherFactory::class);
+		$dispatcherFactory->method("create")
+			->willReturn($secondDispatcher);
+
+		$sut = new Application(
+			config: $this->createTestConfig(["app.error_script" => ""]),
+			requestFactory: $this->createRequestFactory($request),
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+		);
+		$this->setPrivateProperty($sut, "request", $request);
+		$this->setPrivateProperty($sut, "dispatcher", $firstDispatcher);
+
+		$response = $this->invokePrivateMethod($sut, "handleThrowable", $throwable);
+
+		self::assertSame($fallbackResponse, $response);
+		self::assertCount(2, TestLogHandler::$records);
+		self::assertStringContainsString("Failed to render framework error response", TestLogHandler::$records[1]["message"]);
+		self::assertSame("Exception", TestLogHandler::$records[1]["context"]["original_error"]);
+		self::assertSame("/broken-error", TestLogHandler::$records[1]["context"]["uri"]);
+	}
+
+	public function testStart_fallsBackToBasicErrorResponseWhenErrorPageRenderingFails():void {
+		$this->resetApplicationLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$config = $this->createTestConfig([
+			"app.error_script" => "",
+			"logger.log_all_requests" => false,
+		]);
 		$requestFactory = self::createStub(RequestFactory::class);
 		$requestFactory->method("createServerRequestFromGlobalState")
 			->willReturn($this->createServerRequest("/broken-error"));
@@ -478,7 +650,9 @@ class ApplicationTest extends TestCase {
 			globalProtection: self::createStub(Protection::class),
 		);
 
+		ob_start();
 		$sut->start();
+		ob_get_clean();
 
 		self::assertCount(2, TestLogHandler::$records);
 		self::assertSame("ERROR", TestLogHandler::$records[0]["level"]);
@@ -567,9 +741,13 @@ class ApplicationTest extends TestCase {
 			globals: $globals,
 		);
 
+		$initialOutputBufferLevel = ob_get_level();
 		ob_start();
 		$sut->start();
-		$output = ob_get_clean();
+		$output = "";
+		while(ob_get_level() > $initialOutputBufferLevel) {
+			$output = ob_get_clean() . $output;
+		}
 
 		self::assertSame("query|server|query", $output);
 	}
@@ -657,6 +835,51 @@ class ApplicationTest extends TestCase {
 		$output = ob_get_clean();
 
 		self::assertSame("<html><body>Hello<script>debug()</script></body></html>", $output);
+	}
+
+	public function testBuildLogContext_omitsObjectParsedBodyAndKeepsQueryContext():void {
+		$sut = new Application(
+			config: $this->createTestConfig([]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$context = $this->invokePrivateMethod(
+			$sut,
+			"buildLogContext",
+			"/api",
+			["page" => "2"],
+			(object)["token" => "should-not-be-logged"],
+			"10.0.0.5",
+		);
+
+		self::assertSame("10.0.0.5:", $context["id"]);
+		self::assertSame("/api", $context["uri"]);
+		self::assertSame(["page" => "2"], $context["query"]);
+		self::assertArrayNotHasKey("post", $context);
+	}
+
+	public function testBuildLogContext_filtersConfiguredCsrfTokenNameOnly():void {
+		$sut = new Application(
+			config: $this->createTestConfig([]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$context = $this->invokePrivateMethod(
+			$sut,
+			"buildLogContext",
+			"/send",
+			[],
+			[
+				HTMLDocumentProtector::TOKEN_NAME => "CSRF_secret",
+				"token" => "business-token",
+			],
+		);
+
+		self::assertSame(["token" => "business-token"], $context["post"]);
 	}
 
 	public function testStart_logsAllRequestsWithRequestContext():void {
@@ -1035,6 +1258,105 @@ class ApplicationTest extends TestCase {
 		self::assertSame("HTTP 301", TestLogHandler::$records[0]["message"]);
 		self::assertSame("/legacy", TestLogHandler::$records[0]["context"]["uri"]);
 		self::assertSame("/new-home", TestLogHandler::$records[0]["context"]["location"]);
+	}
+
+	public function testStart_matchesPreDispatchRedirectsUsingDecodedPathWithoutQuery():void {
+		$this->resetApplicationLoggerState();
+		TestLogHandler::$records = [];
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$redirect = self::createMock(Redirect::class);
+		$redirect->expects(self::once())
+			->method("execute")
+			->with("/old page")
+			->willReturn(new RedirectUri("/new-page", 302));
+
+		$dispatcherFactory = self::createMock(DispatcherFactory::class);
+		$dispatcherFactory->expects(self::never())
+			->method("create");
+
+		$sut = new Application(
+			redirect: $redirect,
+			config: $this->createTestConfig([
+				"logger.log_redirects" => true,
+			]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: $dispatcherFactory,
+			globalProtection: self::createStub(Protection::class),
+			globals: [
+				"_SERVER" => [
+					"REQUEST_URI" => "/old%20page?ignored=1",
+					"REMOTE_ADDR" => "127.0.0.1",
+				],
+				"_FILES" => [],
+				"_GET" => ["ignored" => "1"],
+				"_POST" => [HTMLDocumentProtector::TOKEN_NAME => "CSRF_secret"],
+				"_ENV" => [],
+				"_COOKIE" => [],
+			],
+		);
+
+		$sut->start();
+
+		self::assertCount(1, TestLogHandler::$records);
+		self::assertSame("/old page", TestLogHandler::$records[0]["context"]["uri"]);
+		self::assertSame(["ignored" => "1"], TestLogHandler::$records[0]["context"]["query"]);
+		self::assertArrayNotHasKey("post", TestLogHandler::$records[0]["context"]);
+		self::assertSame("/new-page", TestLogHandler::$records[0]["context"]["location"]);
+	}
+
+	public function testGetRequestedPath_defaultsToSlashWhenRequestUriHasNoPath():void {
+		$sut = new Application(
+			config: $this->createTestConfig([]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+			globals: [
+				"_SERVER" => ["REQUEST_URI" => "?only=query"],
+				"_FILES" => [],
+				"_GET" => [],
+				"_POST" => [],
+				"_ENV" => [],
+				"_COOKIE" => [],
+			],
+		);
+
+		self::assertSame("/", $this->invokePrivateMethod($sut, "getRequestedPath"));
+	}
+
+	public function testLogRedirect_doesNothingWhenRedirectLoggingDisabled():void {
+		$this->resetApplicationLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+
+		$sut = new Application(
+			config: $this->createTestConfig([
+				"logger.log_redirects" => false,
+			]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$this->invokePrivateMethod($sut, "logRedirect", new RedirectUri("/new", 302), "/old");
+
+		self::assertSame([], TestLogHandler::$records);
+	}
+
+	public function testShouldLogRequest_doesNotLogNotFoundEvenWhenAllRequestsEnabled():void {
+		$sut = new Application(
+			config: $this->createTestConfig([
+				"logger.log_all_requests" => true,
+			]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$shouldLog = $this->invokePrivateMethod($sut, "shouldLogRequest", $this->createResponse(404));
+
+		self::assertFalse($shouldLog);
 	}
 
 	public function testLogError_doesNotLogClientErrors():void {

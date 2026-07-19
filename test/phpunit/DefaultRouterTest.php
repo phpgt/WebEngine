@@ -146,6 +146,32 @@ class DefaultRouterTest extends TestCase {
 		$sut->route($request);
 	}
 
+	public function testRoute_errorStatusUsesErrorPageInsteadOfRequestPath():void {
+		mkdir($this->tmpDir . "/page/_error", recursive: true);
+		file_put_contents($this->tmpDir . "/page/_error/404.html", "<main>not found</main>");
+		file_put_contents($this->tmpDir . "/page/_error/404.php", "<?php\nfunction go():void {}\n");
+		file_put_contents($this->tmpDir . "/page/missing.html", "<main>wrong page</main>");
+
+		chdir($this->tmpDir);
+
+		$request = self::createMock(Request::class);
+		$request->method("getMethod")->willReturn("GET");
+		$request->method("getHeaderLine")
+			->with("accept")
+			->willReturn("text/html");
+		$request->method("getUri")->willReturn(new Uri("https://example.test/missing"));
+
+		$sut = new DefaultRouter(new RouterConfig(307, "text/html"), errorStatus: 404);
+		$container = new Container();
+		$container->set($request);
+		$sut->setContainer($container);
+		$sut->route($request);
+
+		self::assertSame(HTMLView::class, $sut->getViewClass());
+		self::assertSame(["page/_error/404.php"], iterator_to_array($sut->getLogicAssembly()));
+		self::assertSame(["page/_error/404.html"], iterator_to_array($sut->getViewAssembly()));
+	}
+
 	public function testRoute_apiRequest_withLogicOnly_usesJsonView():void {
 		mkdir($this->tmpDir . "/api", recursive: true);
 		file_put_contents($this->tmpDir . "/api/hello.php", "<?php\nfunction go():void {}\n");
@@ -168,6 +194,81 @@ class DefaultRouterTest extends TestCase {
 		self::assertSame(JSONView::class, $sut->getViewClass());
 		self::assertSame(["api/hello.php"], iterator_to_array($sut->getLogicAssembly()));
 		self::assertSame([], iterator_to_array($sut->getViewAssembly()));
+	}
+
+	public function testRoute_apiRequest_withXmlView_addsViewAssembly():void {
+		mkdir($this->tmpDir . "/api/report", recursive: true);
+		file_put_contents($this->tmpDir . "/api/report/index.php", "<?php\nfunction go():void {}\n");
+		file_put_contents($this->tmpDir . "/api/report/index.xml", "<report />");
+
+		chdir($this->tmpDir);
+
+		$request = self::createMock(Request::class);
+		$request->method("getMethod")->willReturn("GET");
+		$request->method("getHeaderLine")
+			->with("accept")
+			->willReturn("application/xml");
+		$request->method("getUri")->willReturn(new Uri("https://example.test/report"));
+
+		$sut = new DefaultRouter(new RouterConfig(307, "text/html"));
+		$container = new Container();
+		$container->set($request);
+		$sut->setContainer($container);
+		$sut->route($request);
+
+		self::assertSame(JSONView::class, $sut->getViewClass());
+		self::assertSame(["api/report/index.php"], iterator_to_array($sut->getLogicAssembly()));
+		self::assertSame(["api/report/index.xml"], iterator_to_array($sut->getViewAssembly()));
+	}
+
+	public function testRoute_apiRequest_withDirectAndIndexLogic_throwsAmbiguousPathException():void {
+		mkdir($this->tmpDir . "/api/users", recursive: true);
+		file_put_contents($this->tmpDir . "/api/users.php", "<?php\nfunction go():void {}\n");
+		file_put_contents($this->tmpDir . "/api/users/index.php", "<?php\nfunction go():void {}\n");
+
+		chdir($this->tmpDir);
+
+		$request = self::createMock(Request::class);
+		$request->method("getMethod")->willReturn("GET");
+		$request->method("getHeaderLine")
+			->with("accept")
+			->willReturn("application/json");
+		$request->method("getUri")->willReturn(new Uri("https://example.test/users"));
+
+		$sut = new DefaultRouter(new RouterConfig(307, "text/html"));
+		$container = new Container();
+		$container->set($request);
+		$sut->setContainer($container);
+
+		$this->expectException(AmbiguousPathException::class);
+		$this->expectExceptionMessage(
+			"Ambiguous route for '/users': both 'api/users.php' and "
+			. "'api/users/index.php' match."
+		);
+		$sut->route($request);
+	}
+
+	public function testRoute_pageRequest_ignoresDynamicFilesWhenConcreteFileExists():void {
+		mkdir($this->tmpDir . "/page/article", recursive: true);
+		file_put_contents($this->tmpDir . "/page/article/read.html", "<main>article</main>");
+		file_put_contents($this->tmpDir . "/page/article/@slug.html", "<main>dynamic article</main>");
+
+		chdir($this->tmpDir);
+
+		$request = self::createMock(Request::class);
+		$request->method("getMethod")->willReturn("GET");
+		$request->method("getHeaderLine")
+			->with("accept")
+			->willReturn("text/html");
+		$request->method("getUri")->willReturn(new Uri("https://example.test/article/read"));
+
+		$sut = new DefaultRouter(new RouterConfig(307, "text/html"));
+		$container = new Container();
+		$container->set($request);
+		$sut->setContainer($container);
+		$sut->route($request);
+
+		self::assertSame(["page/article/read.html"], iterator_to_array($sut->getViewAssembly()));
 	}
 
 	private function removeDirectory(string $dir):void {

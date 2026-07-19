@@ -24,6 +24,8 @@ use GT\Http\Request;
 use GT\Http\RequestFactory;
 use GT\Http\Response;
 use GT\Http\Stream;
+use GT\Http\StatusCode;
+use GT\Csrf\HTMLDocumentProtector;
 use GT\ProtectedGlobal\Protection;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -186,10 +188,15 @@ class Application {
 			return null;
 		}
 
-		$this->logError($throwable);
 		$errorStatus = $throwable instanceof ResponseStatusException
 			? $throwable->getHttpCode()
 			: 500;
+
+		if($errorStatus === StatusCode::NOT_MODIFIED) {
+			return new Response(StatusCode::NOT_MODIFIED, request: $this->request);
+		}
+
+		$this->logError($throwable);
 
 		$this->dispatcher = $this->dispatcherFactory->create(
 			$this->config,
@@ -494,7 +501,7 @@ class Application {
 		string $remoteAddress = "",
 	):array {
 		$postArray = is_array($postBody)
-			? $postBody
+			? $this->filterLoggedPostBody($postBody)
 			: [];
 
 		$context = [
@@ -555,8 +562,20 @@ class Application {
 		if($statusCode === 404) {
 			return false;
 		}
+		if($statusCode === StatusCode::NOT_MODIFIED) {
+			return $this->config->getBool("logger.log_not_modified");
+		}
 
-		return $statusCode < 300 || $statusCode >= 400;
+		return true;
+	}
+
+	/**
+	 * @param array<string, mixed> $postBody
+	 * @return array<string, mixed>
+	 */
+	private function filterLoggedPostBody(array $postBody):array {
+		unset($postBody[HTMLDocumentProtector::TOKEN_NAME]);
+		return $postBody;
 	}
 
 	/** @param array<string, mixed> $context */

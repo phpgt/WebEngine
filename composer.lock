@@ -618,16 +618,16 @@
         },
         {
             "name": "phpgt/cron",
-            "version": "v1.2.0",
+            "version": "v1.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Cron.git",
-                "reference": "15ec73221d852685b51320c69acc64e00bba9dda"
+                "reference": "4effe3f9a3f94a944703949c50e5e463506d35e8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Cron/zipball/15ec73221d852685b51320c69acc64e00bba9dda",
-                "reference": "15ec73221d852685b51320c69acc64e00bba9dda",
+                "url": "https://api.github.com/repos/phpgt/Cron/zipball/4effe3f9a3f94a944703949c50e5e463506d35e8",
+                "reference": "4effe3f9a3f94a944703949c50e5e463506d35e8",
                 "shasum": ""
             },
             "require": {
@@ -657,7 +657,7 @@
             "description": "Run scripts or static functions at regular intervals.",
             "support": {
                 "issues": "https://github.com/phpgt/Cron/issues",
-                "source": "https://github.com/phpgt/Cron/tree/v1.2.0"
+                "source": "https://github.com/phpgt/Cron/tree/v1.2.1"
             },
             "funding": [
                 {
@@ -665,7 +665,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-06-25T21:46:17+00:00"
+            "time": "2026-07-15T13:27:26+00:00"
         },
         {
             "name": "phpgt/csrf",
@@ -1347,16 +1347,16 @@
         },
         {
             "name": "phpgt/http",
-            "version": "v1.3.8",
+            "version": "v1.3.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Http.git",
-                "reference": "5e12783b8a339340fd886217a805ae70bbf82b23"
+                "reference": "eca66ac787bae767d2ff0363c5b243f809619ec4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Http/zipball/5e12783b8a339340fd886217a805ae70bbf82b23",
-                "reference": "5e12783b8a339340fd886217a805ae70bbf82b23",
+                "url": "https://api.github.com/repos/phpgt/Http/zipball/eca66ac787bae767d2ff0363c5b243f809619ec4",
+                "reference": "eca66ac787bae767d2ff0363c5b243f809619ec4",
                 "shasum": ""
             },
             "require": {
@@ -1388,6 +1388,7 @@
             },
             "autoload": {
                 "psr-4": {
+                    "GT\\Http\\": "./src",
                     "Gt\\Http\\": "./src"
                 }
             },
@@ -1398,7 +1399,7 @@
             "description": "PSR-7 HTTP message implementation.",
             "support": {
                 "issues": "https://github.com/phpgt/Http/issues",
-                "source": "https://github.com/phpgt/Http/tree/v1.3.8"
+                "source": "https://github.com/phpgt/Http/tree/v1.3.9"
             },
             "funding": [
                 {
@@ -1406,7 +1407,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-03-19T18:22:33+00:00"
+            "time": "2026-04-24T12:58:50+00:00"
         },
         {
             "name": "phpgt/input",
@@ -1464,16 +1465,16 @@
         },
         {
             "name": "phpgt/json",
-            "version": "v2.3.0",
+            "version": "v2.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Json.git",
-                "reference": "d35835d4fb273a6e83106ceed79f45534c07d674"
+                "reference": "6e39d18f884315916a2b5b0ef1ed9a2ceac1a8e7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Json/zipball/d35835d4fb273a6e83106ceed79f45534c07d674",
-                "reference": "d35835d4fb273a6e83106ceed79f45534c07d674",
+                "url": "https://api.github.com/repos/phpgt/Json/zipball/6e39d18f884315916a2b5b0ef1ed9a2ceac1a8e7",
+                "reference": "6e39d18f884315916a2b5b0ef1ed9a2ceac1a8e7",
                 "shasum": ""
             },
             "require": {
@@ -1508,7 +1509,7 @@
             "description": " Structured, type-safe, immutable JSON objects.",
             "support": {
                 "issues": "https://github.com/phpgt/Json/issues",
-                "source": "https://github.com/phpgt/Json/tree/v2.3.0"
+                "source": "https://github.com/phpgt/Json/tree/v2.3.1"
             },
             "funding": [
                 {
@@ -1516,7 +1517,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-07-09T17:54:44+00:00"
+            "time": "2026-07-15T09:27:37+00:00"
         },
         {
             "name": "phpgt/logger",
@@ -1718,16 +1719,16 @@
         },
         {
             "name": "phpgt/routing",
-            "version": "v1.1.8",
+            "version": "v1.1.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Routing.git",
-                "reference": "86158ac0ef0b5a85b8c460608cd68e96f7a1fd87"
+                "reference": "13c2bd7eee7443a620b9b40dfe7247f146a8341e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Routing/zipball/86158ac0ef0b5a85b8c460608cd68e96f7a1fd87",
-                "reference": "86158ac0ef0b5a85b8c460608cd68e96f7a1fd87",
+                "url": "https://api.github.com/repos/phpgt/Routing/zipball/13c2bd7eee7443a620b9b40dfe7247f146a8341e",
+                "reference": "13c2bd7eee7443a620b9b40dfe7247f146a8341e",
                 "shasum": ""
             },
             "require": {
@@ -1778,7 +1779,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpgt/Routing/issues",
-                "source": "https://github.com/phpgt/Routing/tree/v1.1.8"
+                "source": "https://github.com/phpgt/Routing/tree/v1.1.9"
             },
             "funding": [
                 {
@@ -1786,7 +1787,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-07-09T17:02:53+00:00"
+            "time": "2026-07-10T09:53:14+00:00"
         },
         {
             "name": "phpgt/server",
@@ -1886,16 +1887,16 @@
         },
         {
             "name": "phpgt/session",
-            "version": "v1.2.5",
+            "version": "v1.2.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Session.git",
-                "reference": "c9a50b491c53737dea9503ea297832138b89bfd5"
+                "reference": "56ceb00a580d6e008a3e78cdc0c443fe15876513"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Session/zipball/c9a50b491c53737dea9503ea297832138b89bfd5",
-                "reference": "c9a50b491c53737dea9503ea297832138b89bfd5",
+                "url": "https://api.github.com/repos/phpgt/Session/zipball/56ceb00a580d6e008a3e78cdc0c443fe15876513",
+                "reference": "56ceb00a580d6e008a3e78cdc0c443fe15876513",
                 "shasum": ""
             },
             "require": {
@@ -1908,9 +1909,13 @@
                 "phpunit/phpunit": "^10.1",
                 "squizlabs/php_codesniffer": "^3.7"
             },
+            "suggest": {
+                "ext-redis": "Required to use GT\\Session\\RedisHandler."
+            },
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "GT\\Session\\": "./src",
                     "Gt\\Session\\": "./src"
                 }
             },
@@ -1921,7 +1926,7 @@
             "description": "Encapsulated user sessions.",
             "support": {
                 "issues": "https://github.com/phpgt/Session/issues",
-                "source": "https://github.com/phpgt/Session/tree/v1.2.5"
+                "source": "https://github.com/phpgt/Session/tree/v1.2.6"
             },
             "funding": [
                 {
@@ -1929,7 +1934,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-10-31T16:04:32+00:00"
+            "time": "2026-07-15T05:35:25+00:00"
         },
         {
             "name": "phpgt/sqlbuilder",

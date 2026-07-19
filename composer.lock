@@ -618,16 +618,16 @@
         },
         {
             "name": "phpgt/cron",
-            "version": "v1.2.1",
+            "version": "v1.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpgt/Cron.git",
-                "reference": "4effe3f9a3f94a944703949c50e5e463506d35e8"
+                "reference": "cb868f879994c401d31ab1d896b33d2900a6b961"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpgt/Cron/zipball/4effe3f9a3f94a944703949c50e5e463506d35e8",
-                "reference": "4effe3f9a3f94a944703949c50e5e463506d35e8",
+                "url": "https://api.github.com/repos/phpgt/Cron/zipball/cb868f879994c401d31ab1d896b33d2900a6b961",
+                "reference": "cb868f879994c401d31ab1d896b33d2900a6b961",
                 "shasum": ""
             },
             "require": {
@@ -657,7 +657,7 @@
             "description": "Run scripts or static functions at regular intervals.",
             "support": {
                 "issues": "https://github.com/phpgt/Cron/issues",
-                "source": "https://github.com/phpgt/Cron/tree/v1.2.1"
+                "source": "https://github.com/phpgt/Cron/tree/v1.2.2"
             },
             "funding": [
                 {
@@ -665,7 +665,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-07-15T13:27:26+00:00"
+            "time": "2026-07-19T18:34:21+00:00"
         },
         {
             "name": "phpgt/csrf",

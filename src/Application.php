@@ -41,6 +41,8 @@ use Psr\Http\Message\ServerRequestInterface;
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 class Application {
+	private const string REDACTED_LOG_VALUE = "[redacted]";
+
 	private Redirect $redirect;
 	private Timer $timer;
 	private OutputBuffer $outputBuffer;
@@ -575,6 +577,59 @@ class Application {
 	 */
 	private function filterLoggedPostBody(array $postBody):array {
 		unset($postBody[HTMLDocumentProtector::TOKEN_NAME]);
+		return $this->redactIgnoredPostFields(
+			$postBody,
+			$this->getIgnoredPostFieldLookup(),
+		);
+	}
+
+	/** @return array<string, true> */
+	private function getIgnoredPostFieldLookup():array {
+		$configuredFields = explode(
+			",",
+			$this->config->getString("logger.ignore_post_fields") ?? "",
+		);
+
+		$lookup = [];
+		foreach($configuredFields as $field) {
+			$field = strtolower(trim($field));
+			if($field === "") {
+				continue;
+			}
+
+			$lookup[$field] = true;
+		}
+
+		return $lookup;
+	}
+
+	/**
+	 * @param array<array-key, mixed> $postBody
+	 * @param array<string, true> $ignoredFieldLookup
+	 * @return array<array-key, mixed>
+	 */
+	private function redactIgnoredPostFields(
+		array $postBody,
+		array $ignoredFieldLookup,
+	):array {
+		if(!$ignoredFieldLookup) {
+			return $postBody;
+		}
+
+		foreach($postBody as $key => $value) {
+			if(is_string($key) && isset($ignoredFieldLookup[strtolower($key)])) {
+				$postBody[$key] = self::REDACTED_LOG_VALUE;
+				continue;
+			}
+
+			if(is_array($value)) {
+				$postBody[$key] = $this->redactIgnoredPostFields(
+					$value,
+					$ignoredFieldLookup,
+				);
+			}
+		}
+
 		return $postBody;
 	}
 

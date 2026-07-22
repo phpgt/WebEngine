@@ -41,6 +41,8 @@ class ApplicationTest extends TestCase {
 
 		self::assertSame("text/html", $config["router"]["default_content_type"]);
 		self::assertSame("false", $config["logger"]["log_not_modified"]);
+		self::assertStringContainsString("password", $config["logger"]["ignore_post_fields"]);
+		self::assertStringContainsString("pass", $config["logger"]["ignore_post_fields"]);
 	}
 
 	public function testStart_callsRedirectExecute():void {
@@ -860,7 +862,7 @@ class ApplicationTest extends TestCase {
 		self::assertArrayNotHasKey("post", $context);
 	}
 
-	public function testBuildLogContext_filtersConfiguredCsrfTokenNameOnly():void {
+	public function testBuildLogContext_filtersCsrfTokenBeforeRedactingIgnoredFields():void {
 		$sut = new Application(
 			config: $this->createTestConfig([]),
 			requestFactory: $this->createRequestFactory(),
@@ -873,13 +875,75 @@ class ApplicationTest extends TestCase {
 			"buildLogContext",
 			"/send",
 			[],
+				[
+					HTMLDocumentProtector::TOKEN_NAME => "CSRF_secret",
+					"token" => "business-token",
+				],
+			);
+
+		self::assertSame(["token" => "[redacted]"], $context["post"]);
+	}
+
+	public function testBuildLogContext_redactsIgnoredPostFields():void {
+		$sut = new Application(
+			config: $this->createTestConfig([]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$context = $this->invokePrivateMethod(
+			$sut,
+			"buildLogContext",
+			"/login",
+			[],
 			[
-				HTMLDocumentProtector::TOKEN_NAME => "CSRF_secret",
-				"token" => "business-token",
+				"username" => "ada",
+				"password" => "correct horse battery staple",
+				"pass" => "secret",
 			],
 		);
 
-		self::assertSame(["token" => "business-token"], $context["post"]);
+		self::assertSame([
+			"username" => "ada",
+			"password" => "[redacted]",
+			"pass" => "[redacted]",
+		], $context["post"]);
+	}
+
+	public function testBuildLogContext_redactsConfiguredPostFieldsRecursively():void {
+		$sut = new Application(
+			config: $this->createTestConfig([
+				"logger.ignore_post_fields" => " password , secret , ",
+			]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: self::createStub(DispatcherFactory::class),
+			globalProtection: self::createStub(Protection::class),
+		);
+
+		$context = $this->invokePrivateMethod(
+			$sut,
+			"buildLogContext",
+			"/account",
+			[],
+			[
+				"user" => [
+					"name" => "Grace",
+					"password" => "hidden",
+				],
+				"SECRET" => "hidden",
+				"message" => "hello",
+			],
+		);
+
+		self::assertSame([
+			"user" => [
+				"name" => "Grace",
+				"password" => "[redacted]",
+			],
+			"SECRET" => "[redacted]",
+			"message" => "hello",
+		], $context["post"]);
 	}
 
 	public function testStart_logsAllRequestsWithRequestContext():void {
@@ -924,7 +988,7 @@ class ApplicationTest extends TestCase {
 		self::assertSame("HTTP 204", TestLogHandler::$records[0]["message"]);
 		self::assertSame("/search", TestLogHandler::$records[0]["context"]["uri"]);
 		self::assertSame(["q" => "php"], TestLogHandler::$records[0]["context"]["query"]);
-		self::assertSame(["token" => "abc"], TestLogHandler::$records[0]["context"]["post"]);
+		self::assertSame(["token" => "[redacted]"], TestLogHandler::$records[0]["context"]["post"]);
 		self::assertSame("127.0.0.1:", TestLogHandler::$records[0]["context"]["id"]);
 	}
 

@@ -93,6 +93,36 @@ class HTMLDocumentProcessorTest extends TestCase {
 		self::assertSame("no-logic", TestLogHandler::$records[0]["context"]["component"]);
 	}
 
+	public function testProcessPartialContent_expandsAndRegistersComponentsFromPartial():void {
+		file_put_contents(
+			$this->componentDir . "/site-card.html",
+			"<article><form method='post'><button>Save</button></form></article>",
+		);
+		file_put_contents($this->componentDir . "/site-card.php", "<?php\n");
+		file_put_contents(
+			$this->partialDir . "/layout.html",
+			"<!doctype html><html><body><site-card></site-card><main data-partial></main></body></html>",
+		);
+
+		$document = new HTMLDocument(
+			"<!doctype html><!-- extends = layout --><h1>Page</h1>"
+		);
+		$processor = new HTMLDocumentProcessor(
+			ltrim(substr($this->componentDir, strlen(getcwd())), "/"),
+			ltrim(substr($this->partialDir, strlen(getcwd())), "/"),
+		);
+
+		$componentList = $processor->processPartialContent($document);
+
+		self::assertCount(1, $componentList);
+		self::assertSame("site-card", strtolower($componentList[0]->component->tagName));
+		self::assertSame(
+			"site-card",
+			$document->querySelector("site-card input[name='__component']")?->getAttribute("value"),
+		);
+		self::assertStringContainsString("<h1>Page</h1>", (string)$document);
+	}
+
 	public function testProcessPartialContent_ignoresMissingDirectories():void {
 		$document = new HTMLDocument("<!doctype html><body><site-card></site-card></body>");
 		$processor = new HTMLDocumentProcessor(

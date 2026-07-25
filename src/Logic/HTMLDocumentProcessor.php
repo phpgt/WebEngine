@@ -44,19 +44,19 @@ class HTMLDocumentProcessor extends ViewModelProcessor {
 
 		$componentList = new LogicAssemblyComponentList();
 
-        try {
-            $partial = new PartialContent(implode(DIRECTORY_SEPARATOR, [
-                getcwd(),
-                $this->partialDirectory,
-            ]));
+		try {
+			$partial = new PartialContent(implode(DIRECTORY_SEPARATOR, [
+				getcwd(),
+				$this->partialDirectory,
+			]));
 
-            $partialExpander = new PartialExpander(
-                $model,
-                $partial,
-            );
-            $partialExpander->expand();
-        }
-        catch(PartialContentDirectoryNotFoundException) {}
+			$partialExpander = new PartialExpander(
+				$model,
+				$partial,
+			);
+			$partialExpander->expand();
+		}
+		catch(PartialContentDirectoryNotFoundException) {}
 
 		try {
 // TODO: Handle other model types in sub-functions.

@@ -33,22 +33,29 @@ class HTMLDocumentProcessorTest extends TestCase {
 		parent::tearDown();
 	}
 
-	public function testProcessDynamicPath_addsUriAndDirectoryClasses():void {
+	public function testProcessDynamicPath_addsUriDirectoryAndDynamicClasses():void {
 		$viewAssembly = new Assembly();
-		$viewAssembly->add("page/blog/@id/article.html");
+		$viewAssembly->add("page/shop/@shop-area/@brand/@item.html");
 		$processor = new HTMLDocumentProcessor("components", "partials");
 		$document = new HTMLDocument("<!doctype html><body></body>");
 
 		$processor->processDynamicPath(
 			$document,
-			new DynamicPath("/blog/42/article/", $viewAssembly),
+			new DynamicPath(
+				"/shop/computers/apple/macbook-pro/",
+				$viewAssembly,
+			),
 		);
 
 		$classes = iterator_to_array($document->body->classList);
-		self::assertContains("uri--blog--_id--article", $classes);
-		self::assertContains("dir--blog", $classes);
-		self::assertContains("dir--blog--_id", $classes);
-		self::assertContains("dir--blog--_id--article", $classes);
+		self::assertContains("uri--shop--_shop-area--_brand--_item", $classes);
+		self::assertContains("dir--shop", $classes);
+		self::assertContains("dir--shop--_shop-area", $classes);
+		self::assertContains("dir--shop--_shop-area--_brand", $classes);
+		self::assertContains("dir--shop--_shop-area--_brand--_item", $classes);
+		self::assertContains("_shop-area--computers", $classes);
+		self::assertContains("_brand--apple", $classes);
+		self::assertContains("_item--macbook-pro", $classes);
 	}
 
 	public function testProcessPartialContent_expandsComponentsAndPartialsAndRegistersOnlyLogicBackedComponents():void {

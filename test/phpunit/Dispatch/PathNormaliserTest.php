@@ -2,6 +2,7 @@
 namespace GT\WebEngine\Test\Dispatch;
 
 use GT\WebEngine\Dispatch\PathNormaliser;
+use GT\Http\StatusCode;
 use GT\Http\Uri;
 use PHPUnit\Framework\TestCase;
 
@@ -11,14 +12,17 @@ class PathNormaliserTest extends TestCase {
 		$uri = new Uri("https://example.test/section");
 		$called = false;
 		$redirected = null;
+		$statusCode = null;
 
-		$sut->normaliseTrailingSlash($uri, true, function(Uri $redirectUri) use (&$called, &$redirected) {
+		$sut->normaliseTrailingSlash($uri, true, function(Uri $redirectUri, int $redirectStatusCode) use (&$called, &$redirected, &$statusCode) {
 			$called = true;
 			$redirected = $redirectUri;
+			$statusCode = $redirectStatusCode;
 		});
 
 		self::assertTrue($called, "Expected redirect when missing trailing slash");
 		self::assertSame("/section/", $redirected->getPath());
+		self::assertSame(StatusCode::PERMANENT_REDIRECT, $statusCode);
 	}
 
 	public function testForceTrailingSlash_noopWhenAlreadyPresent():void {
@@ -66,12 +70,15 @@ class PathNormaliserTest extends TestCase {
 			$uri = new Uri("https://example.test/section/");
 			$called = false;
 			$redirected = null;
-			$sut->normaliseTrailingSlash($uri, false, function(Uri $u) use (&$called, &$redirected) {
+			$statusCode = null;
+			$sut->normaliseTrailingSlash($uri, false, function(Uri $u, int $redirectStatusCode) use (&$called, &$redirected, &$statusCode) {
 				$called = true;
 				$redirected = $u;
+				$statusCode = $redirectStatusCode;
 			});
 			self::assertTrue($called);
 			self::assertSame("/section", $redirected->getPath());
+			self::assertSame(StatusCode::PERMANENT_REDIRECT, $statusCode);
 		}
 	}
 

@@ -271,6 +271,52 @@ class DefaultRouterTest extends TestCase {
 		self::assertSame(["page/article/read.html"], iterator_to_array($sut->getViewAssembly()));
 	}
 
+	public function testRoute_pageRequestWithTrailingSlash_ignoresDynamicCommonLogicWhenConcretePageExists():void {
+		mkdir($this->tmpDir . "/page/shop/@category", recursive: true);
+		file_put_contents(
+			$this->tmpDir . "/page/shop/@category/_common.php",
+			"<?php\nfunction dynamicCommon():void {}\n",
+		);
+		file_put_contents(
+			$this->tmpDir . "/page/shop/@category/index.php",
+			"<?php\nfunction dynamicPage():void {}\n",
+		);
+		file_put_contents(
+			$this->tmpDir . "/page/shop/static-product-page.html",
+			"<main>static product</main>",
+		);
+		file_put_contents(
+			$this->tmpDir . "/page/shop/static-product-page.php",
+			"<?php\nfunction staticPage():void {}\n",
+		);
+
+		chdir($this->tmpDir);
+
+		$request = self::createMock(Request::class);
+		$request->method("getMethod")->willReturn("GET");
+		$request->method("getHeaderLine")
+			->with("accept")
+			->willReturn("text/html");
+		$request->method("getUri")->willReturn(
+			new Uri("https://example.test/shop/static-product-page/"),
+		);
+
+		$sut = new DefaultRouter(new RouterConfig(307, "text/html"));
+		$container = new Container();
+		$container->set($request);
+		$sut->setContainer($container);
+		$sut->route($request);
+
+		self::assertSame(
+			["page/shop/static-product-page.php"],
+			iterator_to_array($sut->getLogicAssembly()),
+		);
+		self::assertSame(
+			["page/shop/static-product-page.html"],
+			iterator_to_array($sut->getViewAssembly()),
+		);
+	}
+
 	private function removeDirectory(string $dir):void {
 		if(!is_dir($dir)) {
 			return;

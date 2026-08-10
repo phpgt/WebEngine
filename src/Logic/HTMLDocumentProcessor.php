@@ -27,6 +27,14 @@ class HTMLDocumentProcessor extends ViewModelProcessor {
 			}
 			$bodyDirClass .= "--$pathPart";
 			$model->body->classList->add($bodyDirClass);
+			if(str_starts_with($pathPart, "_")) {
+				$dynamicValue = $dynamicPath->get(substr($pathPart, 1));
+				if($dynamicValue !== null) {
+					$model->body->classList->add(
+						"$pathPart--$dynamicValue",
+					);
+				}
+			}
 		}
 	}
 

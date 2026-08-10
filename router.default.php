@@ -183,7 +183,8 @@ class DefaultRouter extends BaseRouter {
 
 	public function pathMatcherFilter(PathMatcher $pathMatcher):void {
 		$pathMatcher->addFilter(function(string $filePath, string $uriPath, string $baseDir):bool {
-			foreach(glob($baseDir . $uriPath . ".*") as $globMatch) {
+			$staticUriPath = rtrim($uriPath, "/");
+			foreach(glob($baseDir . $staticUriPath . ".*") as $globMatch) {
 				$URI_CONTAINER = pathinfo($uriPath, PATHINFO_DIRNAME);
 				$TRIM_THIS = $baseDir . $URI_CONTAINER;
 				if(str_starts_with($globMatch, $TRIM_THIS)) {

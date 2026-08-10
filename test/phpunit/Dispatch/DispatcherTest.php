@@ -82,7 +82,7 @@ class DispatcherTest extends TestCase {
 
 		$response = $sut->generateResponse();
 
-		self::assertSame(303, $response->getStatusCode());
+		self::assertSame(StatusCode::PERMANENT_REDIRECT, $response->getStatusCode());
 		self::assertSame("https://example.test/redirect-me/", $response->getHeaderLine("Location"));
 		self::assertSame($response, $finishedResponse);
 		self::assertNull($sut->getSessionInit());

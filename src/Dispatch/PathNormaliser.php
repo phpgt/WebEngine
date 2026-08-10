@@ -2,6 +2,7 @@
 namespace GT\WebEngine\Dispatch;
 
 use Closure;
+use GT\Http\StatusCode;
 use Psr\Http\Message\UriInterface;
 
 class PathNormaliser {
@@ -14,12 +15,18 @@ class PathNormaliser {
 
 		if($forceTrailingSlash) {
 			if(!str_ends_with($path, "/")) {
-				$redirect($uri->withPath("$path/"));
+				$redirect(
+					$uri->withPath("$path/"),
+					StatusCode::PERMANENT_REDIRECT,
+				);
 			}
 		}
 		else {
 			if(str_ends_with($path, "/") && $path !== "/") {
-				$redirect($uri->withPath(rtrim($path, "/")));
+				$redirect(
+					$uri->withPath(rtrim($path, "/")),
+					StatusCode::PERMANENT_REDIRECT,
+				);
 			}
 		}
 	}

@@ -9,6 +9,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionProperty;
 use RuntimeException;
 use Sentry\ClientInterface;
@@ -75,12 +76,41 @@ class SentryReporterTest extends TestCase {
 		(new SentryReporter($client, new ServerRequest("GET", "/")))->report(new RuntimeException("test"));
 	}
 
-	public function testRealSdkReportsWithProtectedGlobalsAndSanitizedRequest():void {
+	/** @return array<string, array{?string, string, ?string}> */
+	public static function environments():array {
+		return [
+			"missing" => [null, "production", null],
+			"empty" => ["", "production", null],
+			"whitespace" => [" \t\n", "production", null],
+			"production" => ["production", "production", null],
+			"trimmed" => [" staging ", "staging", null],
+			"zero" => ["0", "0", null],
+			"sdk environment" => [null, "development", "development"],
+			"config overrides sdk" => ["staging", "staging", "development"],
+		];
+	}
+
+	#[DataProvider("environments")]
+	public function testRealSdkReportsWithProtectedGlobalsAndSanitizedRequest(
+		?string $environment,
+		string $expectedEnvironment,
+		?string $serverEnvironment,
+	):void {
 		$request = new ServerRequest("POST", "https://user:secret@example.com/error?token=secret#fragment", [
 			"Authorization" => "Bearer secret",
 			"Cookie" => "session=secret",
 		], "password=secret");
-		$reporter = SentryReporter::create($this->config(), $request);
+		$originalServer = $_SERVER;
+		try {
+			unset($_SERVER["SENTRY_ENVIRONMENT"]);
+			if($serverEnvironment !== null) {
+				$_SERVER["SENTRY_ENVIRONMENT"] = $serverEnvironment;
+			}
+			$reporter = SentryReporter::create($this->config(environment: $environment), $request);
+		}
+		finally {
+			$_SERVER = $originalServer;
+		}
 		self::assertNotNull($reporter);
 		$event = null;
 		$transport = self::createMock(TransportInterface::class);
@@ -111,14 +141,19 @@ class SentryReporterTest extends TestCase {
 			}
 		}
 		self::assertInstanceOf(Event::class, $event);
+		self::assertSame($expectedEnvironment, $event->getEnvironment());
 		self::assertSame(["url" => "https://example.com/error", "method" => "POST"], $event->getRequest());
 		self::assertSame("Protected globals exception", $event->getExceptions()[0]->getValue());
 	}
 
-	private function config(string $dsn = "https://key@example.com/1"):Config {
+	private function config(string $dsn = "https://key@example.com/1", ?string $environment = null):Config {
 		$config = self::createStub(Config::class);
 		$config->method("getString")->willReturnCallback(
-			fn(string $key):?string => $key === "sentry.dsn" ? $dsn : null,
+			fn(string $key):?string => match($key) {
+				"sentry.dsn" => $dsn,
+				"sentry.environment" => $environment,
+				default => null,
+			},
 		);
 		return $config;
 	}

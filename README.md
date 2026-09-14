@@ -98,9 +98,13 @@ provides it), then configure your project's `config.ini`:
 ```ini
 [sentry]
 dsn=https://YOUR_KEY@app.glitchtip.com/YOUR_PROJECT
+environment=production
 ```
 
 The DSN can point to Sentry or a compatible service such as GlitchTip.
+The optional `sentry.environment` is trimmed and included with reported errors.
+If missing, empty or whitespace-only, the SDK's default behavior applies:
+`SENTRY_ENVIRONMENT` if supplied by the server, otherwise `production`.
 
 WebEngine initializes an SDK client in `Application::start()` when both the SDK
 and a nonempty DSN are available. No Sentry initialization in `setup.php` is necessary. Leave the

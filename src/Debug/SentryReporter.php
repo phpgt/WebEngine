@@ -31,10 +31,15 @@ class SentryReporter {
 		}
 
 		try {
-			$client = ClientBuilder::create([
+			$environment = trim($config->getString("sentry.environment") ?? "");
+			$options = [
 				"dsn" => $dsn,
 				"default_integrations" => false,
-			])->getClient();
+			];
+			if($environment !== "") {
+				$options["environment"] = $environment;
+			}
+			$client = ClientBuilder::create($options)->getClient();
 			if($client->getOptions()->getDsn() === null) {
 				return null;
 			}

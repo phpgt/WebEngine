@@ -77,4 +77,8 @@ class SentryReporter {
 			error_log("WebEngine: Sentry exception reporting failed.");
 		}
 	}
+
+	public function connectLogHandler(SentryLogHandler $handler):void {
+		$handler->setClient($this->client);
+	}
 }

@@ -31,6 +31,120 @@ use PHPUnit\Framework\MockObject\InvocationHandler;
 use PHPUnit\Framework\TestCase;
 
 class ApplicationTest extends TestCase {
+	/** @return array<string, array{string, string, string, string}> */
+	public static function destinationLevels():array {
+		return [
+			"shared" => ["sentry,stdout", "WaRnInG", "WARNING", "WARNING"],
+			"individual" => ["sentry,stdout", "error,debug", "ERROR", "DEBUG"],
+			"reverse order" => ["stdout,sentry", "debug,error", "ERROR", "DEBUG"],
+			"mixed case and whitespace" => [" SENTRY , stdout ", " eRrOr , InFo ", "ERROR", "INFO"],
+			"local above stderr split" => ["sentry,stdout", "debug,critical", "DEBUG", "CRITICAL"],
+		];
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider("destinationLevels")]
+	public function testDestinationSpecificLevels(string $types, string $levels, string $sentryMinimum, string $localMinimum):void {
+		$this->resetApplicationLoggerState();
+		new Application(config: $this->createTestConfig([
+			"logger.type" => $types,
+			"logger.level" => $levels,
+			"logger.stderr_level" => " eRrOr ",
+		]));
+		foreach(\GT\Logger\LogLevel::ALL_LEVELS as $index => $level) {
+			$handlers = LogConfig::getHandlers($level);
+			$sentry = array_filter($handlers, fn($handler):bool => $handler instanceof \GT\WebEngine\Debug\SentryLogHandler);
+			$stdout = array_filter($handlers, fn($handler):bool => $handler instanceof \GT\Logger\LogHandler\StdOutHandler);
+			$stderr = array_filter($handlers, fn($handler):bool => $handler instanceof \GT\Logger\LogHandler\StdErrHandler);
+			self::assertCount($index >= array_search($sentryMinimum, \GT\Logger\LogLevel::ALL_LEVELS) ? 1 : 0, $sentry, $level);
+			$localEnabled = $index >= array_search($localMinimum, \GT\Logger\LogLevel::ALL_LEVELS);
+			self::assertCount($localEnabled && $index < 4 ? 1 : 0, $stdout, $level);
+			self::assertCount($localEnabled && $index >= 4 ? 1 : 0, $stderr, $level);
+		}
+	}
+
+	/** @return array<array{string, string}> */
+	public static function mismatchedLevels():array {
+		return [
+			["sentry", "error,debug"],
+			["sentry,stdout", "error,debug,info"],
+			["sentry,stdout,sentry", "error,debug"],
+		];
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider("mismatchedLevels")]
+	public function testMismatchedLevelCountsThrowEvenAfterLoggerInitialization(string $types, string $levels):void {
+		$this->resetApplicationLoggerState();
+		new Application(config: $this->createTestConfig([]));
+		$this->expectException(\GT\WebEngine\Debug\LoggerConfigurationException::class);
+		$this->expectExceptionMessage("one shared level or one level per logger.type destination");
+		new Application(config: $this->createTestConfig([
+			"logger.type" => $types,
+			"logger.level" => $levels,
+		]));
+	}
+
+	public function testStartConnectsAndFlushesSentryLogsAtSharedThreshold():void {
+		$this->resetApplicationLoggerState();
+		$client = self::createMock(\Sentry\ClientInterface::class);
+		$client->method("getOptions")->willReturn(new \Sentry\Options());
+		$client->expects(self::once())->method("captureEvent")->willReturnCallback(
+			function(\Sentry\Event $event):\Sentry\EventId {
+				self::assertCount(1, $event->getLogs());
+				self::assertSame("Report this", $event->getLogs()[0]->getBody());
+				return $event->getId();
+			},
+		);
+		$dispatcher = self::createMock(Dispatcher::class);
+		$dispatcher->expects(self::once())->method("generateResponse")->willReturnCallback(function():Response {
+			\GT\Logger\Log::warning("Do not report this");
+			\GT\Logger\Log::error("Report this");
+			return $this->createResponse();
+		});
+		$factory = self::createStub(DispatcherFactory::class);
+		$factory->method("create")->willReturn($dispatcher);
+		$sut = new Application(
+			config: $this->createTestConfig(["logger.type" => "sentry", "logger.level" => "ERROR"]),
+			requestFactory: $this->createRequestFactory(),
+			dispatcherFactory: $factory,
+			globalProtection: self::createStub(Protection::class),
+		);
+		$this->setPrivateProperty($sut, "sentryReporter", new SentryReporter($client, $this->createServerRequest("/")));
+		$sut->start();
+	}
+
+	public function testSentryOnlyDestinationUsesSharedLevel():void {
+		$this->resetApplicationLoggerState();
+		new Application(config: $this->createTestConfig([
+			"logger.type" => "sentry",
+			"logger.level" => "error",
+		]));
+		foreach(["DEBUG", "INFO", "NOTICE", "WARNING"] as $level) {
+			self::assertSame([], LogConfig::getHandlers($level));
+		}
+		foreach(["ERROR", "CRITICAL", "ALERT", "EMERGENCY"] as $level) {
+			$handlers = LogConfig::getHandlers($level);
+			self::assertCount(1, $handlers);
+			self::assertInstanceOf(\GT\WebEngine\Debug\SentryLogHandler::class, $handlers[0]);
+		}
+	}
+
+	public function testCombinedDestinationsUseSharedLevel():void {
+		$this->resetApplicationLoggerState();
+		new Application(config: $this->createTestConfig([
+			"logger.type" => " SENTRY , stdout , sentry ",
+			"logger.level" => "warning",
+		]));
+		self::assertSame([], LogConfig::getHandlers("INFO"));
+		$handlers = LogConfig::getHandlers("WARNING");
+		self::assertCount(2, $handlers);
+		self::assertInstanceOf(\GT\WebEngine\Debug\SentryLogHandler::class, $handlers[0]);
+		self::assertInstanceOf(\GT\Logger\LogHandler\StdOutHandler::class, $handlers[1]);
+		$handlers = LogConfig::getHandlers("ERROR");
+		self::assertCount(2, $handlers);
+		self::assertInstanceOf(\GT\WebEngine\Debug\SentryLogHandler::class, $handlers[0]);
+		self::assertInstanceOf(\GT\Logger\LogHandler\StdErrHandler::class, $handlers[1]);
+	}
+
 	protected function tearDown():void {
 		$this->resetApplicationLoggerState();
 		parent::tearDown();
@@ -41,6 +155,7 @@ class ApplicationTest extends TestCase {
 		$config = parse_ini_file($configFile, true, INI_SCANNER_RAW);
 
 		self::assertSame("text/html", $config["router"]["default_content_type"]);
+		self::assertSame("error", $config["logger"]["stderr_level"]);
 		self::assertSame("false", $config["logger"]["log_not_modified"]);
 		self::assertStringContainsString("password", $config["logger"]["ignore_post_fields"]);
 		self::assertStringContainsString("pass", $config["logger"]["ignore_post_fields"]);

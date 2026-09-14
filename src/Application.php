@@ -58,7 +58,7 @@ class Application {
 	private Dispatcher $dispatcher;
 	private static bool $loggerConfigured = false;
 	private bool $finished = false;
-	private SentryReporter $sentryReporter;
+	private ?SentryReporter $sentryReporter = null;
 
 	/**
 	 * @param null|array<string, array<string, string>> $globals
@@ -76,7 +76,6 @@ class Application {
 		?Protection $globalProtection = null,
 	) {
 		$this->config = $config ?? $this->loadConfig();
-		$this->sentryReporter = new SentryReporter($this->config);
 		$this->configureLoggerStreams();
 		$this->redirect = $this->createRedirect($redirect);
 		$application = $this;
@@ -122,11 +121,6 @@ class Application {
 // to any area of code will not accidentally send output to the web browser.
 		$this->outputBuffer->start();
 
-// PHP.GT provides object-oriented interfaces to all values stored in $_SERVER,
-// $_FILES, $_GET, and $_POST - to enforce good encapsulation and safe variable
-// usage, the globals are protected against accidental misuse.
-		$this->protectGlobals();
-
 // The RequestFactory takes the necessary global arrays to construct a
 // ServerRequest object. The $_SERVER array contains metadata about the request,
 // such as headers and server variables. $_FILES contains any uploaded files,
@@ -141,6 +135,11 @@ class Application {
 		);
 		assert($request instanceof Request);
 		$this->request = $request;
+
+// Initialise SDK options before protecting globals. Request context is injected
+// into the reporter, so reporting itself does not require global access.
+		$this->sentryReporter ??= SentryReporter::create($this->config, $request);
+		$this->protectGlobals();
 
 // The Dispatcher is a core component responsible for:
 // 1. Executing the application's routing logic to match the incoming request
@@ -187,7 +186,7 @@ class Application {
 	}
 
 	private function handleThrowable(Throwable $throwable):?Response {
-		$this->sentryReporter->report($throwable);
+		$this->sentryReporter?->report($throwable);
 		if ($errorScript = $this->config->getString('app.error_script')) {
 			$this->restoreGlobals();
 			require($errorScript);
@@ -217,7 +216,7 @@ class Application {
 			return $this->dispatcher->generateErrorResponse($throwable);
 		}
 		catch(Throwable $innerThrowable) {
-			$this->sentryReporter->report($innerThrowable);
+			$this->sentryReporter?->report($innerThrowable);
 			$this->logErrorMessage(
 				"Failed to render framework error response: " . (string)$innerThrowable,
 				[
@@ -387,6 +386,7 @@ class Application {
 			$error["file"],
 			$error["line"],
 		);
+		$this->sentryReporter?->report($throwable);
 		$this->logError($throwable);
 
 		if(!isset($this->dispatcher)) {

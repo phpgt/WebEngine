@@ -102,8 +102,8 @@ dsn=https://YOUR_KEY@app.glitchtip.com/YOUR_PROJECT
 
 The DSN can point to Sentry or a compatible service such as GlitchTip.
 
-WebEngine initializes the SDK when both the SDK functions and a nonempty DSN
-are available. No Sentry initialization in `setup.php` is necessary. Leave the
+WebEngine initializes an SDK client in `Application::start()` when both the SDK
+and a nonempty DSN are available. No Sentry initialization in `setup.php` is necessary. Leave the
 DSN empty in environments that should not report errors.
 
 Exceptions escaping request logic are reported before the normal error page or
@@ -112,11 +112,14 @@ reported. Expected HTTP responses below 500 are excluded. Reporting failures
 do not replace the application's error response. Exceptions caught and handled
 by application code still require explicit reporting if desired.
 
-The SDK's default handlers remain responsible for uncaught exceptions outside
-the request handler and fatal PHP errors; WebEngine does not separately report
-shutdown errors to avoid duplicate fatal events. Performance tracing is not
-enabled by this integration. Review SDK data filtering for sensitive application
-payloads before enabling reporting.
+The reporter uses an injected `Sentry\ClientInterface` and PSR-7 request, without
+the SDK's global hub or default integrations. WebEngine reports fatal errors
+through its shutdown handler once the reporter is initialized. Errors before
+initialization are not captured. Performance tracing is not enabled.
+
+Request context includes only the HTTP method and URL without credentials,
+query parameters or fragments. Headers, cookies and request bodies are omitted.
+Exception messages may still contain sensitive data; review what your application throws.
 
 # Proudly sponsored by
 

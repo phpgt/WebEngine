@@ -3,33 +3,51 @@ namespace GT\WebEngine\Debug;
 
 use GT\Config\Config;
 use GT\Http\ResponseStatusException\ResponseStatusException;
+use Psr\Http\Message\ServerRequestInterface;
+use Sentry\ClientBuilder;
+use Sentry\ClientInterface;
+use Sentry\Event;
+use Sentry\State\Scope;
 use Throwable;
 use WeakMap;
 
-/** Optional SDK bridge. Reporting must never prevent an application response. */
+/** Optional SDK bridge with explicit client and request dependencies. */
 class SentryReporter {
-	private bool $enabled = false;
 	/** @var WeakMap<Throwable, bool> */
 	private WeakMap $reported;
 
-	public function __construct(Config $config) {
+	public function __construct(
+		private ClientInterface $client,
+		private ServerRequestInterface $request,
+	) {
 		$this->reported = new WeakMap();
+	}
+
+	/** Must run before global protection: SDK option defaults read superglobals. */
+	public static function create(Config $config, ServerRequestInterface $request):?self {
 		$dsn = trim($config->getString("sentry.dsn") ?? "");
-		if(!$dsn || !function_exists("Sentry\\init") || !function_exists("Sentry\\captureException")) {
-			return;
+		if(!$dsn || !class_exists(ClientBuilder::class)) {
+			return null;
 		}
 
 		try {
-			\Sentry\init(["dsn" => $dsn]);
-			$this->enabled = true;
+			$client = ClientBuilder::create([
+				"dsn" => $dsn,
+				"default_integrations" => false,
+			])->getClient();
+			if($client->getOptions()->getDsn() === null) {
+				return null;
+			}
+			return new self($client, $request);
 		}
 		catch(Throwable) {
 			error_log("WebEngine: Sentry initialization failed.");
+			return null;
 		}
 	}
 
 	public function report(Throwable $throwable):void {
-		if(!$this->enabled || isset($this->reported[$throwable]) || !function_exists("Sentry\\captureException")) {
+		if(isset($this->reported[$throwable])) {
 			return;
 		}
 		if($throwable instanceof ResponseStatusException && $throwable->getHttpCode() < 500) {
@@ -38,7 +56,17 @@ class SentryReporter {
 
 		$this->reported[$throwable] = true;
 		try {
-			\Sentry\captureException($throwable);
+			$scope = new Scope();
+			$scope->addEventProcessor(function(Event $event):Event {
+				// Explicitly exclude credentials, query values, cookies and payloads.
+				$uri = $this->request->getUri()->withUserInfo("")->withQuery("")->withFragment("");
+				$event->setRequest([
+					"url" => (string)$uri,
+					"method" => $this->request->getMethod(),
+				]);
+				return $event;
+			});
+			$this->client->captureException($throwable, $scope);
 		}
 		catch(Throwable) {
 			error_log("WebEngine: Sentry exception reporting failed.");

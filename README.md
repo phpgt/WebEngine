@@ -90,6 +90,34 @@ It would be helpful if you could create your issue in the appropriate repository
 [contributing]: https://github.com/PhpGt/WebEngine/blob/master/CONTRIBUTING.md
 [issues]: https://github.com/PhpGt/WebEngine/issues
 
+## Optional Sentry error reporting
+
+Install `sentry/sentry` in your application (the `sentry/sdk` meta-package also
+provides it), then configure your project's `config.ini`:
+
+```ini
+[sentry]
+dsn=https://YOUR_KEY@app.glitchtip.com/YOUR_PROJECT
+```
+
+The DSN can point to Sentry or a compatible service such as GlitchTip.
+
+WebEngine initializes the SDK when both the SDK functions and a nonempty DSN
+are available. No Sentry initialization in `setup.php` is necessary. Leave the
+DSN empty in environments that should not report errors.
+
+Exceptions escaping request logic are reported before the normal error page or
+custom error script runs. Failures escaping error-page rendering are also
+reported. Expected HTTP responses below 500 are excluded. Reporting failures
+do not replace the application's error response. Exceptions caught and handled
+by application code still require explicit reporting if desired.
+
+The SDK's default handlers remain responsible for uncaught exceptions outside
+the request handler and fatal PHP errors; WebEngine does not separately report
+shutdown errors to avoid duplicate fatal events. Performance tracing is not
+enabled by this integration. Review SDK data filtering for sensitive application
+payloads before enabling reporting.
+
 # Proudly sponsored by
 
 [JetBrains Open Source sponsorship program](https://www.jetbrains.com/community/opensource/)

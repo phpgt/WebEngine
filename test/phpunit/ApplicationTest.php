@@ -19,6 +19,7 @@ use GT\ProtectedGlobal\Protection;
 use GT\WebEngine\Application;
 use GT\WebEngine\Debug\OutputBuffer;
 use GT\WebEngine\Debug\Timer;
+use GT\WebEngine\Debug\SentryReporter;
 use GT\WebEngine\Dispatch\Dispatcher;
 use GT\WebEngine\Dispatch\DispatcherFactory;
 use GT\WebEngine\Init\SessionInit;
@@ -511,6 +512,8 @@ class ApplicationTest extends TestCase {
 		$request = $this->createServerRequest("/broken");
 		$sessionInit = self::createStub(SessionInit::class);
 		$throwable = new Exception("page failed");
+		$reporter = self::createMock(SentryReporter::class);
+		$reporter->expects(self::once())->method("report")->with(self::identicalTo($throwable));
 		$errorResponse = $this->createResponse(500, "<body>error</body>");
 
 		$firstDispatcher = self::createMock(Dispatcher::class);
@@ -543,6 +546,7 @@ class ApplicationTest extends TestCase {
 			dispatcherFactory: $dispatcherFactory,
 			globalProtection: self::createStub(Protection::class),
 		);
+		$this->setPrivateProperty($sut, "sentryReporter", $reporter);
 		$this->setPrivateProperty($sut, "request", $request);
 		$this->setPrivateProperty($sut, "dispatcher", $firstDispatcher);
 

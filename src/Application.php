@@ -14,6 +14,7 @@ use ErrorException;
 use ReflectionMethod;
 use GT\WebEngine\Debug\OutputBuffer;
 use GT\WebEngine\Debug\Timer;
+use GT\WebEngine\Debug\SentryReporter;
 use GT\WebEngine\Redirection\Redirect;
 use GT\WebEngine\Redirection\RedirectUri;
 use GT\WebEngine\Dispatch\Dispatcher;
@@ -57,6 +58,7 @@ class Application {
 	private Dispatcher $dispatcher;
 	private static bool $loggerConfigured = false;
 	private bool $finished = false;
+	private SentryReporter $sentryReporter;
 
 	/**
 	 * @param null|array<string, array<string, string>> $globals
@@ -74,6 +76,7 @@ class Application {
 		?Protection $globalProtection = null,
 	) {
 		$this->config = $config ?? $this->loadConfig();
+		$this->sentryReporter = new SentryReporter($this->config);
 		$this->configureLoggerStreams();
 		$this->redirect = $this->createRedirect($redirect);
 		$application = $this;
@@ -184,6 +187,7 @@ class Application {
 	}
 
 	private function handleThrowable(Throwable $throwable):?Response {
+		$this->sentryReporter->report($throwable);
 		if ($errorScript = $this->config->getString('app.error_script')) {
 			$this->restoreGlobals();
 			require($errorScript);
@@ -213,6 +217,7 @@ class Application {
 			return $this->dispatcher->generateErrorResponse($throwable);
 		}
 		catch(Throwable $innerThrowable) {
+			$this->sentryReporter->report($innerThrowable);
 			$this->logErrorMessage(
 				"Failed to render framework error response: " . (string)$innerThrowable,
 				[

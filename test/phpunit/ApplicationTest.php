@@ -39,6 +39,8 @@ class ApplicationTest extends TestCase {
 			"reverse order" => ["stdout,sentry", "debug,error", "ERROR", "DEBUG"],
 			"mixed case and whitespace" => [" SENTRY , stdout ", " eRrOr , InFo ", "ERROR", "INFO"],
 			"local above stderr split" => ["sentry,stdout", "debug,critical", "DEBUG", "CRITICAL"],
+			"duplicate keeps lower threshold" => ["sentry,stdout,sentry", "warning,debug,error", "WARNING", "DEBUG"],
+			"duplicate lowers threshold" => ["sentry,stdout,sentry", "error,debug,warning", "WARNING", "DEBUG"],
 		];
 	}
 
@@ -143,6 +145,24 @@ class ApplicationTest extends TestCase {
 		self::assertCount(2, $handlers);
 		self::assertInstanceOf(\GT\WebEngine\Debug\SentryLogHandler::class, $handlers[0]);
 		self::assertInstanceOf(\GT\Logger\LogHandler\StdErrHandler::class, $handlers[1]);
+	}
+
+	public function testShutdownDoesNotReportNonFatalErrors():void {
+		$sut = new Application(config: $this->createTestConfig([]));
+		$reporter = self::createMock(SentryReporter::class);
+		$reporter->expects(self::never())->method("report");
+		$this->setPrivateProperty($sut, "sentryReporter", $reporter);
+		error_clear_last();
+		try {
+			$this->invokePrivateMethod($sut, "handleShutdown");
+			// A native warning records error_get_last() without terminating PHP.
+			@file_get_contents(__FILE__ . "/missing");
+			self::assertSame(E_WARNING, error_get_last()["type"]);
+			$this->invokePrivateMethod($sut, "handleShutdown");
+		}
+		finally {
+			error_clear_last();
+		}
 	}
 
 	protected function tearDown():void {

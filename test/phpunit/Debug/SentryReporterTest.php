@@ -56,6 +56,20 @@ class SentryReporterTest extends TestCase {
 		self::assertNull(SentryReporter::create($this->config(""), new ServerRequest("GET", "/")));
 	}
 
+	#[DataProvider("disabledDsns")]
+	public function testSdkDisabledDsnDoesNotCreateReporter(string $dsn):void {
+		self::assertNull(SentryReporter::create($this->config($dsn), new ServerRequest("GET", "/")));
+	}
+
+	/** @return array<string, array{string}> */
+	public static function disabledDsns():array {
+		return [
+			"false" => ["false"],
+			"null" => ["null"],
+			"empty" => ["empty"],
+		];
+	}
+
 	public function testReportsOriginalThrowableOnceAndSkipsClientErrors():void {
 		$error = new RuntimeException("Test exception");
 		$client = self::createMock(ClientInterface::class);
@@ -66,8 +80,27 @@ class SentryReporterTest extends TestCase {
 		$reporter->report(new HttpNotFound());
 	}
 
-	public function testInitialisationFailureDoesNotEscape():void {
+	public function testInvalidDsnDoesNotCreateReporter():void {
 		self::assertNull(SentryReporter::create($this->config("invalid"), new ServerRequest("GET", "/")));
+	}
+
+	public function testInitialisationFailureDoesNotEscape():void {
+		$config = self::createStub(Config::class);
+		$config->method("getString")->willReturnCallback(
+			fn(string $key):string => $key === "sentry.dsn"
+				? "https://key@example.com/1"
+				: throw new RuntimeException("Environment configuration unavailable"),
+		);
+		$logFile = tempnam(sys_get_temp_dir(), "sentry-initialisation-");
+		$originalLog = ini_set("error_log", $logFile);
+		try {
+			self::assertNull(SentryReporter::create($config, new ServerRequest("GET", "/")));
+			self::assertStringContainsString("WebEngine: Sentry initialization failed.", file_get_contents($logFile));
+		}
+		finally {
+			ini_set("error_log", $originalLog);
+			unlink($logFile);
+		}
 	}
 
 	public function testCaptureFailureDoesNotEscape():void {

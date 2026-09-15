@@ -16,6 +16,46 @@ use Sentry\Transport\ResultStatus;
 use RuntimeException;
 
 class SentryLogHandlerTest extends TestCase {
+	#[\PHPUnit\Framework\Attributes\DataProvider("unavailableClients")]
+	public function testUnavailableDeliveryFallsBackOnceWithoutContext(string $failure):void {
+		$handler = new SentryLogHandler();
+		if($failure !== "missing client") {
+			$client = self::createMock(ClientInterface::class);
+			$client->method("getOptions")->willReturn(new Options());
+			$capture = $client->expects(self::once())->method("captureEvent");
+			if($failure === "exception") {
+				$capture->willThrowException(new RuntimeException("offline"));
+			}
+			else {
+				$capture->willReturn(null);
+			}
+			$handler->setClient($client);
+		}
+		$logFile = tempnam(sys_get_temp_dir(), "sentry-fallback-");
+		$originalLog = ini_set("error_log", $logFile);
+		try {
+			$handler->handle("error", "Fallback message", ["password" => "secret"]);
+			$handler->flush();
+			$handler->flush();
+			$log = file_get_contents($logFile);
+			self::assertSame(1, substr_count($log, "WebEngine: Sentry log delivery unavailable: ERROR Fallback message"));
+			self::assertStringNotContainsString("secret", $log);
+		}
+		finally {
+			ini_set("error_log", $originalLog);
+			unlink($logFile);
+		}
+	}
+
+	/** @return array<string, array{string}> */
+	public static function unavailableClients():array {
+		return [
+			"missing client" => ["missing client"],
+			"rejected event" => ["rejected event"],
+			"exception" => ["exception"],
+		];
+	}
+
 	public function testRealSdkSendsStructuredLogsWithProtectedGlobals():void {
 		$payload = "";
 		$options = new Options([

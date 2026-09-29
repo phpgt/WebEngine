@@ -14,15 +14,34 @@ use GT\DomTemplate\HTMLAttributeCollection;
 use GT\DomTemplate\ListBinder;
 use GT\DomTemplate\PlaceholderBinder;
 use GT\DomTemplate\TableBinder;
+use GT\Http\Header\RequestHeaders;
 use GT\Http\Request;
 use GT\Http\Response;
 use GT\Http\Uri;
 use GT\ServiceContainer\Container;
+use GT\ServiceContainer\Injector;
 use GT\WebEngine\Service\DefaultServiceLoader;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 
 class DefaultServiceLoaderTest extends TestCase {
+	public function testLoadRequestHeaders_injectsHeadersFromRequestInContainer():void {
+		$headers = new RequestHeaders();
+		$headers->set("X-API-KEY", "test-api-key");
+		$request = new Request("GET", new Uri("https://example.test/search"), $headers);
+		$container = new Container();
+		$container->set($request);
+		$container->addLoaderClass(new DefaultServiceLoader($this->createStub(Config::class), $container));
+
+		$injector = new Injector($container);
+		$injectedHeaders = $injector->invoke(null, function(RequestHeaders $headers):RequestHeaders {
+			return $headers;
+		});
+
+		self::assertSame($headers, $injectedHeaders);
+		self::assertSame("test-api-key", $injectedHeaders->getString("x-api-key"));
+	}
+
 	public function testLoadResponseHeaders_returnsHeadersFromResponseInContainer():void {
 		$response = new Response();
 		$response = $response->withHeader("X-Test", "one");

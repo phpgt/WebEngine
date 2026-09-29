@@ -360,7 +360,8 @@ class Dispatcher {
 		if($errorStatusCode >= 500 && !$this->config->getBool("app.production")) {
 			$detail .= $this->getBasicDebugErrorDetail($throwable);
 		}
-		if(!$this->config->getBool("app.production")) {
+		if(!$this->config->getBool("app.production")
+		&& !($innerThrowable instanceof ErrorPageNotFoundException)) {
 			$detail .= $this->getBasicInnerThrowableDetail($innerThrowable);
 		}
 
@@ -378,7 +379,7 @@ class Dispatcher {
 		}
 
 		$errorPageDir = $this->config->getString("app.error_page_dir");
-		return " Additionally, there was no error page found in your "
+		return "Additionally, there was no error page found in your "
 			. "application at <strong>$errorPageDir/$errorStatusCode.html</strong>";
 	}
 

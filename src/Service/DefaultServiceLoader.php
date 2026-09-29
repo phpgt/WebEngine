@@ -16,6 +16,7 @@ use GT\DomTemplate\ListBinder;
 use GT\DomTemplate\ListElementCollection;
 use GT\DomTemplate\PlaceholderBinder;
 use GT\DomTemplate\TableBinder;
+use GT\Http\Header\RequestHeaders;
 use GT\Http\Header\ResponseHeaders;
 use GT\Http\Request;
 use GT\Http\Response;
@@ -39,6 +40,13 @@ class DefaultServiceLoader {
 	public function loadResponseHeaders():ResponseHeaders {
 		$response = $this->container->get(Response::class);
 		return $response->headers;
+	}
+
+	public function loadRequestHeaders():RequestHeaders {
+		$request = $this->container->get(Request::class);
+		/** @var RequestHeaders $headers */
+		$headers = $request->headers;
+		return $headers;
 	}
 
 	public function loadDatabase():Database {

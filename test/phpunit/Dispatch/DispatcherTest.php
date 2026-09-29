@@ -687,7 +687,21 @@ class DispatcherTest extends TestCase {
 		$body = (string)$response->getBody();
 		self::assertSame(404, $response->getStatusCode());
 		self::assertStringContainsString("The server could not find the requested resource.", $body);
+		self::assertStringContainsString("<p style=\"white-space: pre\">Additionally", $body);
 		self::assertStringContainsString("/error-pages/404.html", $body);
+	}
+
+	public function testGenerateBasicErrorResponse_forNotFoundOmitsMissingErrorPageDiagnostic():void {
+		$sut = $this->createDispatcher(production: false);
+		$this->setResponseStatus($sut, 404);
+
+		$response = $sut->generateBasicErrorResponse(
+			new HttpNotFound(),
+			new ErrorPageNotFoundException(),
+		);
+
+		$body = (string)$response->getBody();
+		self::assertStringNotContainsString("Failed to render framework error response", $body);
 	}
 
 	public function testGenerateBasicErrorResponse_inDevelopmentIncludesTraceUntilInjectorFrame():void {

@@ -1,6 +1,6 @@
 # Minimalistic, ergonomic PHP toolkit.
 
-<img align="right" src="https://raw.githubusercontent.com/phpgt/webengine/master/logo.png" alt="PHP.GT logo" />
+<img align="right" src="https://raw.githubusercontent.com/phpgt/webengine/master/logo.svg" alt="PHP.GT logo" />
 
 WebEngine is an ergonomic toolkit for building web applications. It follows a static-first approach: development begins using plain HTML files, with PHP introduced only when needed. Dynamic behaviour is handled through server-side DOM manipulation, mirroring well-known client-side techniques.
 

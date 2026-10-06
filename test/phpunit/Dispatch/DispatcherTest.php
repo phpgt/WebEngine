@@ -187,7 +187,13 @@ class DispatcherTest extends TestCase {
 		self::assertSame("/tmp/api:go", $response->getHeaderLine("X-Logic-Execution"));
 	}
 
-	public function testGenerateResponse_jsonDocumentErrorFinishesResponseAndInterruptsLogic():void {
+	#[\PHPUnit\Framework\Attributes\DataProvider("jsonErrorProvider")]
+	public function testGenerateResponse_jsonDocumentErrorFinishesResponseAndInterruptsLogic(
+		?array $context,
+		?int $existingStatus,
+		string $expectedJson,
+		?int $errorStatus = StatusCode::UNPROCESSABLE_ENTITY,
+	):void {
 		$stream = new Stream();
 		$view = new JSONView($stream);
 		$viewModel = new JSONDocument();
@@ -200,13 +206,18 @@ class DispatcherTest extends TestCase {
 
 		$logicExecutor = $this->createMock(LogicExecutor::class);
 		$logicExecutor->method("invoke")
-			->willReturnCallback(function(Assembly $assembly, string $name)use($logicAssembly, $viewModel):\Generator {
+			->willReturnCallback(function(Assembly $assembly, string $name)use($logicAssembly, $viewModel, $context, $errorStatus):\Generator {
 				self::assertSame($logicAssembly, $assembly);
 				if($name !== "go") {
 					return;
 				}
 
-				$viewModel->error("missing parameter: name", StatusCode::UNPROCESSABLE_ENTITY);
+				if($errorStatus === null) {
+					$viewModel->error("missing parameter: name");
+				}
+				else {
+					$viewModel->error("missing parameter: name", $errorStatus, $context);
+				}
 				$viewModel->set("hello", "Greg");
 				yield "/tmp/api.php::go()";
 			});
@@ -224,13 +235,25 @@ class DispatcherTest extends TestCase {
 			},
 		);
 
+		if($existingStatus !== null) {
+			$this->setPrivateProperty($sut, "response", new Response($existingStatus));
+		}
 		$response = $sut->generateResponse();
 
-		self::assertSame(StatusCode::UNPROCESSABLE_ENTITY, $response->getStatusCode());
+		self::assertSame($existingStatus ?? $errorStatus ?? StatusCode::BAD_REQUEST, $response->getStatusCode());
 		self::assertSame("application/json", $response->getHeaderLine("Content-Type"));
-		self::assertSame("{\"error\":\"missing parameter: name\"}\n", (string)$stream);
+		self::assertSame($expectedJson . "\n", (string)$stream);
 		self::assertSame($response, $finishedResponse);
 		self::assertSame("", $response->getHeaderLine("X-Logic-Execution"));
+	}
+
+	public static function jsonErrorProvider():array {
+		return [
+			"default status" => [null, null, '{"error":"missing parameter: name"}', null],
+			"no context" => [null, null, '{"error":"missing parameter: name"}'],
+			"context" => [["field" => "name"], null, '{"error":"missing parameter: name","errorContext":{"field":"name"}}'],
+			"existing status" => [null, StatusCode::BAD_REQUEST, '{"error":"missing parameter: name"}'],
+		];
 	}
 
 	public function testGenerateResponse_executesComponentAndPageLogicAndAppliesHeaders():void {

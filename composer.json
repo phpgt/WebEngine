@@ -43,7 +43,12 @@
 		"willdurand/negotiation": "^3.0"
 	},
 
+	"suggest": {
+		"sentry/sentry": "Automatically report application exceptions when config value sentry.dsn is configured"
+	},
+
 	"require-dev": {
+		"sentry/sentry": "^4.0",
 		"phpstan/phpstan": "^2.1",
 		"phpunit/phpunit": "^12.4",
 		"phpmd/phpmd": "^2.13",
@@ -66,14 +71,14 @@
 
 	"scripts": {
 		"phpunit": "vendor/bin/phpunit --configuration phpunit.xml",
-		"phpstan": "vendor/bin/phpstan analyse --memory-limit=512M --level 6 src",
 		"phpcs": "vendor/bin/phpcs src --standard=phpcs.xml",
 		"phpmd": "vendor/bin/phpmd src/ text phpmd.xml",
+		"phpstan": "vendor/bin/phpstan analyse --memory-limit=512M --level 6 src",
 		"test": [
 			"@phpunit",
-			"@phpstan",
 			"@phpcs",
-			"@phpmd"
+			"@phpmd",
+			"@phpstan"
 		]
 	},
 

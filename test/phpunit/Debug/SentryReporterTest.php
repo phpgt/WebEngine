@@ -1,0 +1,193 @@
+<?php
+namespace GT\WebEngine\Test\Debug;
+
+use GT\Config\Config;
+use GT\Http\ResponseStatusException\ClientError\HttpNotFound;
+use Gt\ProtectedGlobal\Protection;
+use GT\WebEngine\Debug\SentryReporter;
+use GuzzleHttp\Psr7\ServerRequest;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\DataProvider;
+use ReflectionProperty;
+use RuntimeException;
+use Sentry\ClientInterface;
+use Sentry\Event;
+use Sentry\Transport\TransportInterface;
+use Sentry\Transport\Result;
+use Sentry\Transport\ResultStatus;
+
+class SentryReporterTest extends TestCase {
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState(false)]
+	public function testMissingSdkIsSafe():void {
+		$config = $this->config();
+		$request = new ServerRequest("GET", "/");
+		class_exists(SentryReporter::class);
+		$autoloaders = spl_autoload_functions();
+		foreach($autoloaders as $autoloader) {
+			spl_autoload_unregister($autoloader);
+		}
+		$withoutSentry = static function(string $class) use ($autoloaders):void {
+			if(str_starts_with($class, "Sentry\\")) {
+				return;
+			}
+			foreach($autoloaders as $autoloader) {
+				$autoloader($class);
+			}
+		};
+		spl_autoload_register($withoutSentry);
+		try {
+			$hasSdk = class_exists(\Sentry\ClientBuilder::class);
+			$reporter = SentryReporter::create($config, $request);
+		}
+		finally {
+			spl_autoload_unregister($withoutSentry);
+			foreach($autoloaders as $autoloader) {
+				spl_autoload_register($autoloader);
+			}
+		}
+		self::assertFalse($hasSdk);
+		self::assertNull($reporter);
+	}
+
+	public function testMissingDsnDoesNotInitialiseSdk():void {
+		self::assertNull(SentryReporter::create($this->config(""), new ServerRequest("GET", "/")));
+	}
+
+	#[DataProvider("disabledDsns")]
+	public function testSdkDisabledDsnDoesNotCreateReporter(string $dsn):void {
+		self::assertNull(SentryReporter::create($this->config($dsn), new ServerRequest("GET", "/")));
+	}
+
+	/** @return array<string, array{string}> */
+	public static function disabledDsns():array {
+		return [
+			"false" => ["false"],
+			"null" => ["null"],
+			"empty" => ["empty"],
+		];
+	}
+
+	public function testReportsOriginalThrowableOnceAndSkipsClientErrors():void {
+		$error = new RuntimeException("Test exception");
+		$client = self::createMock(ClientInterface::class);
+		$client->expects(self::once())->method("captureException")->with($error);
+		$reporter = new SentryReporter($client, new ServerRequest("GET", "/"));
+		$reporter->report($error);
+		$reporter->report($error);
+		$reporter->report(new HttpNotFound());
+	}
+
+	public function testInvalidDsnDoesNotCreateReporter():void {
+		self::assertNull(SentryReporter::create($this->config("invalid"), new ServerRequest("GET", "/")));
+	}
+
+	public function testInitialisationFailureDoesNotEscape():void {
+		$config = self::createStub(Config::class);
+		$config->method("getString")->willReturnCallback(
+			fn(string $key):string => $key === "sentry.dsn"
+				? "https://key@example.com/1"
+				: throw new RuntimeException("Environment configuration unavailable"),
+		);
+		$logFile = tempnam(sys_get_temp_dir(), "sentry-initialisation-");
+		$originalLog = ini_set("error_log", $logFile);
+		try {
+			self::assertNull(SentryReporter::create($config, new ServerRequest("GET", "/")));
+			self::assertStringContainsString("WebEngine: Sentry initialization failed.", file_get_contents($logFile));
+		}
+		finally {
+			ini_set("error_log", $originalLog);
+			unlink($logFile);
+		}
+	}
+
+	public function testCaptureFailureDoesNotEscape():void {
+		$client = self::createMock(ClientInterface::class);
+		$client->expects(self::once())->method("captureException")->willThrowException(new RuntimeException("offline"));
+		(new SentryReporter($client, new ServerRequest("GET", "/")))->report(new RuntimeException("test"));
+	}
+
+	/** @return array<string, array{?string, string, ?string}> */
+	public static function environments():array {
+		return [
+			"missing" => [null, "production", null],
+			"empty" => ["", "production", null],
+			"whitespace" => [" \t\n", "production", null],
+			"production" => ["production", "production", null],
+			"trimmed" => [" staging ", "staging", null],
+			"zero" => ["0", "0", null],
+			"sdk environment" => [null, "development", "development"],
+			"config overrides sdk" => ["staging", "staging", "development"],
+		];
+	}
+
+	#[DataProvider("environments")]
+	public function testRealSdkReportsWithProtectedGlobalsAndSanitizedRequest(
+		?string $environment,
+		string $expectedEnvironment,
+		?string $serverEnvironment,
+	):void {
+		$request = new ServerRequest("POST", "https://user:secret@example.com/error?token=secret#fragment", [
+			"Authorization" => "Bearer secret",
+			"Cookie" => "session=secret",
+		], "password=secret");
+		$originalServer = $_SERVER;
+		try {
+			unset($_SERVER["SENTRY_ENVIRONMENT"]);
+			if($serverEnvironment !== null) {
+				$_SERVER["SENTRY_ENVIRONMENT"] = $serverEnvironment;
+			}
+			$reporter = SentryReporter::create($this->config(environment: $environment), $request);
+		}
+		finally {
+			$_SERVER = $originalServer;
+		}
+		self::assertNotNull($reporter);
+		$event = null;
+		$transport = self::createMock(TransportInterface::class);
+		$transport->expects(self::once())->method("send")->willReturnCallback(
+			function(Event $captured) use (&$event):Result {
+				$event = $captured;
+				return new Result(ResultStatus::success(), $captured);
+			},
+		);
+		$client = (new ReflectionProperty(SentryReporter::class, "client"))->getValue($reporter);
+		(new ReflectionProperty($client, "transport"))->setValue($client, $transport);
+		$originalGlobals = [];
+		foreach(Protection::GLOBAL_KEYS as $key) {
+			$originalGlobals[$key] = $GLOBALS[$key] ?? null;
+		}
+		try {
+			(new Protection())->overrideInternals([]);
+			$reporter->report(new RuntimeException("Protected globals exception"));
+		}
+		finally {
+			foreach($originalGlobals as $key => $value) {
+				if($value === null) {
+					unset($GLOBALS[$key]);
+				}
+				else {
+					$GLOBALS[$key] = $value;
+				}
+			}
+		}
+		self::assertInstanceOf(Event::class, $event);
+		self::assertSame($expectedEnvironment, $event->getEnvironment());
+		self::assertSame(["url" => "https://example.com/error", "method" => "POST"], $event->getRequest());
+		self::assertSame("Protected globals exception", $event->getExceptions()[0]->getValue());
+	}
+
+	private function config(string $dsn = "https://key@example.com/1", ?string $environment = null):Config {
+		$config = self::createStub(Config::class);
+		$config->method("getString")->willReturnCallback(
+			fn(string $key):?string => match($key) {
+				"sentry.dsn" => $dsn,
+				"sentry.environment" => $environment,
+				default => null,
+			},
+		);
+		return $config;
+	}
+}

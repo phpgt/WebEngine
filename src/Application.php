@@ -14,6 +14,9 @@ use ErrorException;
 use ReflectionMethod;
 use GT\WebEngine\Debug\OutputBuffer;
 use GT\WebEngine\Debug\Timer;
+use GT\WebEngine\Debug\SentryReporter;
+use GT\WebEngine\Debug\SentryLogHandler;
+use GT\WebEngine\Debug\LoggerConfigurationException;
 use GT\WebEngine\Redirection\Redirect;
 use GT\WebEngine\Redirection\RedirectUri;
 use GT\WebEngine\Dispatch\Dispatcher;
@@ -57,6 +60,8 @@ class Application {
 	private Dispatcher $dispatcher;
 	private static bool $loggerConfigured = false;
 	private bool $finished = false;
+	private ?SentryReporter $sentryReporter = null;
+	private ?SentryLogHandler $sentryLogHandler = null;
 
 	/**
 	 * @param null|array<string, array<string, string>> $globals
@@ -97,6 +102,9 @@ class Application {
 		], $globals ?? $GLOBALS);
 		$this->globalProtection = $globalProtection ?? new Protection();
 		register_shutdown_function($handleShutdown ?? $this->handleShutdown(...));
+		if($this->sentryLogHandler) {
+			register_shutdown_function($this->sentryLogHandler->flush(...));
+		}
 	}
 
 	public function start():void {
@@ -119,11 +127,6 @@ class Application {
 // to any area of code will not accidentally send output to the web browser.
 		$this->outputBuffer->start();
 
-// PHP.GT provides object-oriented interfaces to all values stored in $_SERVER,
-// $_FILES, $_GET, and $_POST - to enforce good encapsulation and safe variable
-// usage, the globals are protected against accidental misuse.
-		$this->protectGlobals();
-
 // The RequestFactory takes the necessary global arrays to construct a
 // ServerRequest object. The $_SERVER array contains metadata about the request,
 // such as headers and server variables. $_FILES contains any uploaded files,
@@ -138,6 +141,11 @@ class Application {
 		);
 		assert($request instanceof Request);
 		$this->request = $request;
+
+// Initialise SDK options before protecting globals. Request context is injected
+// into the reporter, so reporting itself does not require global access.
+		$this->initializeSentry();
+		$this->protectGlobals();
 
 // The Dispatcher is a core component responsible for:
 // 1. Executing the application's routing logic to match the incoming request
@@ -184,6 +192,7 @@ class Application {
 	}
 
 	private function handleThrowable(Throwable $throwable):?Response {
+		$this->sentryReporter?->report($throwable);
 		if ($errorScript = $this->config->getString('app.error_script')) {
 			$this->restoreGlobals();
 			require($errorScript);
@@ -213,6 +222,7 @@ class Application {
 			return $this->dispatcher->generateErrorResponse($throwable);
 		}
 		catch(Throwable $innerThrowable) {
+			$this->sentryReporter?->report($innerThrowable);
 			$this->logErrorMessage(
 				"Failed to render framework error response: " . (string)$innerThrowable,
 				[
@@ -259,6 +269,7 @@ class Application {
 
 		$this->timer->stop();
 		$this->timer->logDelta();
+		$this->sentryLogHandler?->flush();
 	}
 
 	private function protectGlobals():void {
@@ -308,19 +319,8 @@ class Application {
 	}
 
 	private function configureLoggerStreams():void {
+		$destinations = $this->getLoggerDestinations();
 		if(self::$loggerConfigured) {
-			return;
-		}
-
-		$minimumLogLevel = $this->getMinimumLogLevel();
-		$minimumLogLevelIndex = array_search($minimumLogLevel, LogLevel::ALL_LEVELS, true);
-		if($minimumLogLevelIndex === false) {
-			return;
-		}
-
-		$stderrMinLevel = $this->getStderrMinimumLogLevel();
-		$stderrMinLevelIndex = array_search($stderrMinLevel, LogLevel::ALL_LEVELS, true);
-		if($stderrMinLevelIndex === false) {
 			return;
 		}
 
@@ -334,7 +334,25 @@ class Application {
 			return;
 		}
 
-		LogConfig::setDefaultHandlerLevel($minimumLogLevel);
+		LogConfig::setDefaultHandlerLevel($this->getMinimumLogLevel());
+		foreach($destinations as $destination => $level) {
+			if($destination === "sentry") {
+				$this->sentryLogHandler = new SentryLogHandler();
+				LogConfig::addHandler($this->sentryLogHandler, $level);
+			}
+			else {
+				$this->configureLocalLogger($level);
+			}
+		}
+		self::$loggerConfigured = true;
+	}
+
+	private function configureLocalLogger(string $minimumLogLevel):void {
+		$minimumLogLevelIndex = array_search($minimumLogLevel, LogLevel::ALL_LEVELS, true);
+		$stderrMinLevelIndex = array_search($this->getStderrMinimumLogLevel(), LogLevel::ALL_LEVELS, true);
+		if($minimumLogLevelIndex === false || $stderrMinLevelIndex === false) {
+			return;
+		}
 
 		if($stderrMinLevelIndex > $minimumLogLevelIndex) {
 			$stdoutMaxLevel = LogLevel::ALL_LEVELS[$stderrMinLevelIndex - 1];
@@ -349,7 +367,13 @@ class Application {
 			LogLevel::ALL_LEVELS[max($stderrMinLevelIndex, $minimumLogLevelIndex)],
 			LogLevel::EMERGENCY,
 		);
-		self::$loggerConfigured = true;
+	}
+
+	private function initializeSentry():void {
+		$this->sentryReporter ??= SentryReporter::create($this->config, $this->request);
+		if($this->sentryLogHandler) {
+			$this->sentryReporter?->connectLogHandler($this->sentryLogHandler);
+		}
 	}
 
 	private function handleShutdown():void {
@@ -382,6 +406,7 @@ class Application {
 			$error["file"],
 			$error["line"],
 		);
+		$this->sentryReporter?->report($throwable);
 		$this->logError($throwable);
 
 		if(!isset($this->dispatcher)) {
@@ -451,9 +476,9 @@ class Application {
 	}
 
 	private function getStderrMinimumLogLevel():string {
-		$configuredLevel = strtoupper(
+		$configuredLevel = strtoupper(trim(
 			$this->config->getString("logger.stderr_level") ?: LogLevel::ERROR
-		);
+		));
 		if(in_array($configuredLevel, LogLevel::ALL_LEVELS, true)) {
 			return $configuredLevel;
 		}
@@ -462,14 +487,39 @@ class Application {
 	}
 
 	private function getMinimumLogLevel():string {
-		$configuredLevel = $this->config->getString("logger.level")
-			?: LogLevel::DEBUG;
-		$configuredLevel = strtoupper($configuredLevel);
-		if(in_array($configuredLevel, LogLevel::ALL_LEVELS, true)) {
-			return $configuredLevel;
+		$levels = $this->getLoggerDestinations();
+		foreach(LogLevel::ALL_LEVELS as $level) {
+			if(in_array($level, $levels, true)) {
+				return $level;
+			}
 		}
-
 		return LogLevel::DEBUG;
+	}
+
+	/** @return array<string, string> */
+	private function getLoggerDestinations():array {
+		$types = array_map("trim", explode(",", strtolower($this->config->getString("logger.type") ?: "stdout")));
+		$levels = array_map("trim", explode(",", strtoupper($this->config->getString("logger.level") ?: "debug")));
+		if(count($levels) !== 1 && count($levels) !== count($types)) {
+			throw new LoggerConfigurationException(
+				"logger.level must contain one shared level or one level per logger.type destination; "
+				. count($levels) . " levels supplied for " . count($types) . " destinations."
+			);
+		}
+		$destinations = [];
+		foreach($types as $index => $type) {
+			$level = $levels[count($levels) === 1 ? 0 : $index];
+			if(!in_array($level, LogLevel::ALL_LEVELS, true)) {
+				$level = LogLevel::DEBUG;
+			}
+			// A repeated destination needs only one handler, at its lowest threshold.
+			if(isset($destinations[$type]) && array_search($destinations[$type], LogLevel::ALL_LEVELS, true)
+				< array_search($level, LogLevel::ALL_LEVELS, true)) {
+				continue;
+			}
+			$destinations[$type] = $level;
+		}
+		return $destinations;
 	}
 
 	/**

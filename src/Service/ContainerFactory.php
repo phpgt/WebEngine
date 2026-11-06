@@ -28,18 +28,16 @@ class ContainerFactory {
 	private function getLoaderClassNames(Config $config):array {
 		$trimCharacters = " \t\n\r\0\x0B\\";
 		$appNamespace = trim((string)$config->get("app.namespace"), $trimCharacters);
-		if($appNamespace === "") {
-			return [];
-		}
 
 		$classes = [];
 		foreach(explode(",", (string)$config->get("app.service_loader")) as $loaderClass) {
+			$absolute = str_starts_with(ltrim($loaderClass), "\\");
 			$loaderClass = trim($loaderClass, $trimCharacters);
-			if($loaderClass === "") {
+			if($loaderClass === "" || (!$absolute && $appNamespace === "")) {
 				continue;
 			}
 
-			$className = $appNamespace . "\\" . $loaderClass;
+			$className = $absolute ? $loaderClass : $appNamespace . "\\" . $loaderClass;
 			$classes[strtolower($className)] ??= $className;
 		}
 

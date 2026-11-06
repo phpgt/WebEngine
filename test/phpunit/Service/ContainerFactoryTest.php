@@ -4,6 +4,7 @@ namespace GT\WebEngine\Test\Service;
 require_once __DIR__ . "/Fixture/CustomBindableCache.php";
 require_once __DIR__ . "/Fixture/CustomServiceLoader.php";
 require_once __DIR__ . "/Fixture/AdditionalServiceLoader.php";
+require_once __DIR__ . "/Fixture/ExternalServiceLoader.php";
 
 use Example\App\CustomBindableCache;
 use Example\App\AdditionalServiceLoader;
@@ -45,6 +46,7 @@ class ContainerFactoryTest extends TestCase {
 		self::assertInstanceOf(CustomBindableCache::class, $container->get(BindableCache::class));
 		self::assertFalse($container->has(ResponseHeaders::class));
 	}
+
 	#[DataProvider("loaderLists")]
 	public function testCreate_registersAllAvailableLoadersInOrder(string $loaders, string $expectedCache):void {
 		$config = $this->createStub(Config::class);
@@ -64,9 +66,44 @@ class ContainerFactoryTest extends TestCase {
 		yield "last loader overrides" => ["CustomServiceLoader,AdditionalServiceLoader", BindableCache::class];
 		yield "reversed order" => ["AdditionalServiceLoader,CustomServiceLoader", CustomBindableCache::class];
 		yield "missing aliases and whitespace" => [
-			" MissingLoader, \\AdditionalServiceLoader\\ , , CustomServiceLoader, MissingClassLoader ",
+			" MissingLoader, AdditionalServiceLoader , , CustomServiceLoader, MissingClassLoader ",
 			CustomBindableCache::class,
 		];
+	}
+
+	public function testCreate_mixesRelativeAndFullyQualifiedLoaderNames():void {
+		$config = $this->createStub(Config::class);
+		$config->method("get")->willReturnMap([
+			["app.namespace", "Example\\App"],
+			["app.service_loader", "CustomServiceLoader, \\Example\\External\\ExternalServiceLoader"],
+		]);
+		$container = (new ContainerFactory())->create($config);
+		self::assertSame(BindableCache::class, get_class($container->get(BindableCache::class)));
+		self::assertSame($container, $container->get(ArrayObject::class)["container"]);
+		self::assertFalse($container->has(ResponseHeaders::class));
+	}
+
+	public function testCreate_fullyQualifiedLoaderWorksWithoutAnApplicationNamespace():void {
+		$config = $this->createStub(Config::class);
+		$config->method("get")->willReturnMap([
+			["app.namespace", ""],
+			["app.service_loader", "MissingRelativeLoader, \\Example\\External\\ExternalServiceLoader"],
+		]);
+		$container = (new ContainerFactory())->create($config);
+		self::assertSame($config, $container->get(ArrayObject::class)["config"]);
+		self::assertFalse($container->has(ResponseHeaders::class));
+	}
+
+	public function testCreate_relativeAndAbsoluteReferencesToSameLoaderAreDeduplicated():void {
+		AdditionalServiceLoader::$constructions = 0;
+		$config = $this->createStub(Config::class);
+		$config->method("get")->willReturnMap([
+			["app.namespace", "Example\\App"],
+			["app.service_loader", "AdditionalServiceLoader, \\Example\\App\\AdditionalServiceLoader"],
+		]);
+		$container = (new ContainerFactory())->create($config);
+		self::assertTrue($container->has(ArrayObject::class));
+		self::assertSame(1, AdditionalServiceLoader::$constructions);
 	}
 
 	public function testCreate_doesNotConstructDuplicateLoaderNamesTwice():void {
@@ -95,8 +132,8 @@ class ContainerFactoryTest extends TestCase {
 
 	public static function unavailableLoaders():iterable {
 		yield "missing aliases" => ["Example\\App", "ServiceLoader,ClassLoader"];
+		yield "missing absolute loader" => ["", "\\Missing\\Loader"];
 		yield "blank entries" => ["Example\\App", " , , "];
 		yield "no application namespace" => ["", "CustomServiceLoader,AdditionalServiceLoader"];
 	}
-
 }

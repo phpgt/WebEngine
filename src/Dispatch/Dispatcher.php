@@ -34,6 +34,8 @@ use GT\Routing\BaseRouter;
 use GT\Routing\Path\DynamicPath;
 use GT\ServiceContainer\Container;
 use GT\ServiceContainer\Injector;
+use GT\WebEngine\Debug\ExceptionContext;
+use GT\WebEngine\Debug\ExceptionContextProvider;
 use GT\WebEngine\Init\RequestInit;
 use GT\WebEngine\Init\RouterInit;
 use GT\WebEngine\Init\SessionInit;
@@ -297,6 +299,7 @@ class Dispatcher {
 	):Response {
 		$errorStatusCode = $this->getBasicErrorStatusCode($actualThrowable);
 		$errorType = get_class($actualThrowable);
+		$context = $this->getExceptionContext($actualThrowable);
 		$errorMessage = $this->getBasicErrorMessage(
 			$actualThrowable,
 			$errorStatusCode,
@@ -313,6 +316,7 @@ class Dispatcher {
 				$errorType,
 				$errorMessage,
 				$detail,
+				$context,
 			);
 		}
 
@@ -321,7 +325,16 @@ class Dispatcher {
 			$errorType,
 			$errorMessage,
 			$detail,
+			$context,
 		);
+	}
+
+	private function getExceptionContext(Throwable $throwable):?ExceptionContext {
+		if($this->config->getBool("app.production")) {
+			return null;
+		}
+
+		return (new ExceptionContextProvider())->getContext($throwable);
 	}
 
 	private function getBasicErrorStatusCode(Throwable $throwable):int {
@@ -419,6 +432,7 @@ class Dispatcher {
 		string $errorType,
 		string $errorMessage,
 		string $detail,
+		?ExceptionContext $context,
 	):Response {
 		$error = [
 			"error" => $errorMessage,
@@ -427,6 +441,9 @@ class Dispatcher {
 		];
 		if($detail !== "") {
 			$error["detail"] = $detail;
+		}
+		if($context) {
+			$error["context"] = $context;
 		}
 
 		$body = new Stream();
@@ -442,11 +459,22 @@ class Dispatcher {
 		string $errorType,
 		string $errorMessage,
 		string $detail,
+		?ExceptionContext $context,
 	):Response {
+		$friendlyHtml = "";
+		if($context) {
+			$message = htmlspecialchars($context->message, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+			$suggestion = htmlspecialchars($context->suggestion, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+			$url = htmlspecialchars($context->documentationUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+			$friendlyHtml = "<section><p>$message</p><p>$suggestion</p>"
+				. "<p><a href=\"$url\">Read more in the documentation</a></p></section>";
+		}
+		$errorMessage = htmlspecialchars($errorMessage, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
 		// TODO: Load this HTML from a file in the root of WebEngine!
 		$html = <<<HTML
 		<!doctype html>
 		<h1>Error $errorStatusCode</h1>
+		$friendlyHtml
 		<h2>$errorType</h2>
 		<p>$errorMessage</p>
 		<p style="white-space: pre">$detail</p>
@@ -866,6 +894,12 @@ class Dispatcher {
 
 		$binder = $this->serviceContainer->get(Binder::class);
 		$binder->bindValue($throwable->getMessage());
+		$context = $this->getExceptionContext($throwable);
+		if($context) {
+			$binder->bindKeyValue("errorContext", $context->message);
+			$binder->bindKeyValue("errorSuggestion", $context->suggestion);
+			$binder->bindKeyValue("errorDocumentationUrl", $context->documentationUrl);
+		}
 		if(!$this->config->getBool("app.production")) {
 			$traceString = "";
 			foreach($trace as $i => $traceItem) {

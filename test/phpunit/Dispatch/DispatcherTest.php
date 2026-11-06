@@ -31,6 +31,7 @@ use GT\Routing\Assembly;
 use GT\Routing\BaseRouter;
 use GT\Routing\Path\DynamicPath;
 use GT\Session\Session;
+use GT\ServiceContainer\ServiceNotFoundException;
 use GT\WebEngine\Dispatch\Dispatcher;
 use GT\WebEngine\Dispatch\ErrorPageNotFoundException;
 use GT\WebEngine\Dispatch\HeaderManager;
@@ -696,6 +697,91 @@ class DispatcherTest extends TestCase {
 
 		self::assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
 		self::assertStringContainsString("post failed", (string)$viewModel);
+	}
+
+	public function testGenerateBasicErrorResponse_missingImportHasFriendlyContext():void {
+		$sut = $this->createDispatcher();
+		$throwable = new ServiceNotFoundException('GT\\AppLogic\\page\\index_php\\AnotherThing');
+		$this->setExceptionProperty($throwable, "trace", []);
+		$response = $sut->generateBasicErrorResponse($throwable, new ErrorPageNotFoundException());
+		$document = new HTMLDocument((string)$response->getBody());
+
+		self::assertSame(500, $response->getStatusCode());
+		self::assertStringContainsString("AnotherThing could not be found", $document->textContent);
+		self::assertStringContainsString("use statement", $document->textContent);
+		self::assertSame(
+			"https://www.php.gt/docs/WebEngine/Class-imports-in-page-logic/",
+			$document->querySelector("a")->getAttribute("href"),
+		);
+		self::assertStringContainsString($throwable->getMessage(), $document->textContent);
+		self::assertStringContainsString($throwable->getFile(), $document->textContent);
+	}
+
+	public function testGenerateBasicErrorResponse_escapesFriendlyContext():void {
+		$sut = $this->createDispatcher();
+		$throwable = new ServiceNotFoundException('GT\\AppLogic\\page\\index_php\\<strong>AnotherThing</strong>');
+		$this->setExceptionProperty($throwable, "trace", []);
+		$response = $sut->generateBasicErrorResponse($throwable, new ErrorPageNotFoundException());
+		$document = new HTMLDocument((string)$response->getBody());
+
+		self::assertNull($document->querySelector("strong"));
+		self::assertStringContainsString("<strong>AnotherThing</strong> could not be found", $document->textContent);
+		self::assertStringContainsString($throwable->getMessage(), $document->textContent);
+	}
+
+	public function testGenerateBasicErrorResponse_missingImportContextIsDevelopmentOnly():void {
+		foreach([false, true] as $production) {
+			$sut = $this->createDispatcher(
+				production: $production,
+				view: new JSONView(new Stream()),
+				viewModel: new JSONDocument(),
+			);
+			$throwable = new ServiceNotFoundException('GT\\AppLogic\\page\\_common_php\\AnotherThing');
+			$this->setExceptionProperty($throwable, "trace", []);
+			$response = $sut->generateBasicErrorResponse($throwable, new ErrorPageNotFoundException());
+			$error = json_decode((string)$response->getBody(), true);
+			self::assertSame($throwable->getMessage(), $error["error"]);
+			self::assertSame(get_class($throwable), $error["type"]);
+			self::assertSame(!$production, isset($error["context"]));
+			if(!$production) {
+				self::assertStringContainsString("AnotherThing could not be found", $error["context"]["message"]);
+				self::assertStringContainsString("use statement", $error["context"]["suggestion"]);
+				self::assertSame(
+					"https://www.php.gt/docs/WebEngine/Class-imports-in-page-logic/",
+					$error["context"]["documentationUrl"],
+				);
+			}
+
+			$sut = $this->createDispatcher(production: $production);
+			$this->setExceptionProperty($throwable, "trace", []);
+			$response = $sut->generateBasicErrorResponse($throwable, new ErrorPageNotFoundException());
+			self::assertSame(!$production, str_contains((string)$response->getBody(), "use statement"));
+		}
+	}
+
+	public function testGenerateErrorResponse_bindsFriendlyContextInDevelopmentOnly():void {
+		foreach([false, true] as $production) {
+			$viewModel = new HTMLDocument('<body><p id="original" data-bind:text></p>'
+				. '<section data-element="errorContext"><p data-bind:text="errorContext"></p>'
+				. '<p data-bind:text="errorSuggestion"></p><a data-bind:href="errorDocumentationUrl">Docs</a></section></body>');
+			$sut = $this->createDispatcher(
+				production: $production,
+				viewModel: $viewModel,
+				viewAssembly: $this->createAssembly("/tmp/error.html"),
+				viewModelInit: $this->createViewModelInit($this->createMock(ViewModelProcessor::class), true),
+			);
+			$throwable = new ServiceNotFoundException('GT\\AppLogic\\page\\index_php\\AnotherThing');
+			$sut->generateErrorResponse($throwable);
+
+			self::assertSame($throwable->getMessage(), $viewModel->querySelector("#original")->textContent);
+			self::assertSame(!$production, str_contains($viewModel->textContent, "use statement"));
+			if(!$production) {
+				self::assertSame(
+					"https://www.php.gt/docs/WebEngine/Class-imports-in-page-logic/",
+					$viewModel->querySelector("a")->getAttribute("href"),
+				);
+			}
+		}
 	}
 
 	public function testGenerateBasicErrorResponse_forNotFoundIncludesHelpfulDevelopmentDetail():void {

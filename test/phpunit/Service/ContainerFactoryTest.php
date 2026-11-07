@@ -54,7 +54,8 @@ class ContainerFactoryTest extends TestCase {
 			["app.namespace", "Example\\App"],
 			["app.service_loader", $loaders],
 		]);
-		$container = (new ContainerFactory())->create($config);
+		$sut = new ContainerFactory();
+		$container = $sut->create($config);
 		self::assertSame($expectedCache, get_class($container->get(BindableCache::class)));
 		$additional = $container->get(ArrayObject::class);
 		self::assertSame($config, $additional["config"]);
@@ -77,7 +78,8 @@ class ContainerFactoryTest extends TestCase {
 			["app.namespace", "Example\\App"],
 			["app.service_loader", "CustomServiceLoader, \\Example\\External\\ExternalServiceLoader"],
 		]);
-		$container = (new ContainerFactory())->create($config);
+		$sut = new ContainerFactory();
+		$container = $sut->create($config);
 		self::assertSame(BindableCache::class, get_class($container->get(BindableCache::class)));
 		self::assertSame($container, $container->get(ArrayObject::class)["container"]);
 		self::assertFalse($container->has(ResponseHeaders::class));
@@ -89,7 +91,8 @@ class ContainerFactoryTest extends TestCase {
 			["app.namespace", ""],
 			["app.service_loader", "MissingRelativeLoader, \\Example\\External\\ExternalServiceLoader"],
 		]);
-		$container = (new ContainerFactory())->create($config);
+		$sut = new ContainerFactory();
+		$container = $sut->create($config);
 		self::assertSame($config, $container->get(ArrayObject::class)["config"]);
 		self::assertFalse($container->has(ResponseHeaders::class));
 	}
@@ -101,7 +104,8 @@ class ContainerFactoryTest extends TestCase {
 			["app.namespace", "Example\\App"],
 			["app.service_loader", "AdditionalServiceLoader, \\Example\\App\\AdditionalServiceLoader"],
 		]);
-		$container = (new ContainerFactory())->create($config);
+		$sut = new ContainerFactory();
+		$container = $sut->create($config);
 		self::assertTrue($container->has(ArrayObject::class));
 		self::assertSame(1, AdditionalServiceLoader::$constructions);
 	}
@@ -113,7 +117,8 @@ class ContainerFactoryTest extends TestCase {
 			["app.namespace", "Example\\App"],
 			["app.service_loader", "AdditionalServiceLoader, additionalserviceloader"],
 		]);
-		$container = (new ContainerFactory())->create($config);
+		$sut = new ContainerFactory();
+		$container = $sut->create($config);
 		self::assertTrue($container->has(ArrayObject::class));
 		self::assertSame(1, AdditionalServiceLoader::$constructions);
 	}
@@ -125,7 +130,8 @@ class ContainerFactoryTest extends TestCase {
 			["app.namespace", $namespace],
 			["app.service_loader", $loaders],
 		]);
-		$container = (new ContainerFactory())->create($config);
+		$sut = new ContainerFactory();
+		$container = $sut->create($config);
 		self::assertTrue($container->has(ResponseHeaders::class));
 		self::assertInstanceOf(BindableCache::class, $container->get(BindableCache::class));
 	}

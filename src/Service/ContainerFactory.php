@@ -33,7 +33,11 @@ class ContainerFactory {
 		foreach(explode(",", (string)$config->get("app.service_loader")) as $loaderClass) {
 			$absolute = str_starts_with(ltrim($loaderClass), "\\");
 			$loaderClass = trim($loaderClass, $trimCharacters);
-			if($loaderClass === "" || (!$absolute && $appNamespace === "")) {
+			if($loaderClass === "") {
+				continue;
+			}
+
+			if(!$absolute && $appNamespace === "") {
 				continue;
 			}
 

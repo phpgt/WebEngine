@@ -79,7 +79,7 @@ class Application {
 		?Closure $handleShutdown = null,
 		?Protection $globalProtection = null,
 	) {
-		$this->initializeConfig($config);
+		$this->initConfig($config);
 		$this->configureLoggerStreams();
 		$this->redirect = $this->createRedirect($redirect);
 		$application = $this;
@@ -311,7 +311,7 @@ class Application {
 		}
 	}
 
-	private function initializeConfig(?Config $config):void {
+	private function initConfig(?Config $config):void {
 		$this->config = $config ? $this->resolveTimezones($config) : $this->loadConfig();
 		if($timezone = $this->config->getString("app.timezone")) {
 			date_default_timezone_set($timezone);

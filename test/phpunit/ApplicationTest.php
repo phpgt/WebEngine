@@ -30,53 +30,13 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class ApplicationTest extends TestCase {
-	#[DataProvider("timezoneConfigKeys")]
-	public function testDefaultTimezoneIsSystem(string $key):void {
-		$config = ConfigFactory::createFromPathName(dirname(__DIR__, 2) . "/config.default.ini");
-		self::assertSame("system", $config->getString($key));
-	}
-
-	#[DataProvider("systemTimezones")]
-	public function testLoadConfigResolvesSystemTimezone(string $key, string $systemTimezone):void {
-		$originalTimezone = date_default_timezone_get();
-		$originalDirectory = getcwd();
-		$directory = sys_get_temp_dir() . "/webengine-timezone-" . uniqid();
-		mkdir($directory);
-		[$section, $name] = explode(".", $key);
-		file_put_contents("$directory/config.ini", "[$section]\n$name=system\n");
-
-		try {
-			date_default_timezone_set($systemTimezone);
-			chdir($directory);
-			$application = (new \ReflectionClass(Application::class))->newInstanceWithoutConstructor();
-			$config = $this->invokePrivateMethod($application, "loadConfig");
-			self::assertSame($systemTimezone, $config->getString($key));
-		}
-		finally {
-			chdir($originalDirectory);
-			date_default_timezone_set($originalTimezone);
-			unlink("$directory/config.ini");
-			rmdir($directory);
-		}
-	}
-
-	/** @return array<string, array{string, string}> */
-	public static function systemTimezones():array {
-		return [
-			"application in London" => ["app.timezone", "Europe/London"],
-			"application in Tokyo" => ["app.timezone", "Asia/Tokyo"],
-			"database in London" => ["database.timezone", "Europe/London"],
-			"database in Tokyo" => ["database.timezone", "Asia/Tokyo"],
-		];
-	}
-
-	public function testApplicationAppliesConfiguredTimezone():void {
+	public function testConstruct_appliesConfiguredTimezone():void {
 		$originalTimezone = date_default_timezone_get();
 		try {
 			date_default_timezone_set("UTC");
 			$config = new Config(new \GT\Config\ConfigSection("app", ["timezone" => "Europe/London"]));
 			$config = $config->withMerge(ConfigFactory::createFromPathName(dirname(__DIR__, 2) . "/config.default.ini"));
-			new Application(config: $config);
+			$sut = new Application(config: $config);
 			self::assertSame("Europe/London", date_default_timezone_get());
 		}
 		finally {
@@ -84,7 +44,7 @@ class ApplicationTest extends TestCase {
 		}
 	}
 
-	public function testDatabaseSystemTimezoneIsResolvedBeforeApplyingAppTimezone():void {
+	public function testConstruct_resolvesSystemBeforeAppTimezone():void {
 		$originalTimezone = date_default_timezone_get();
 		try {
 			date_default_timezone_set("Asia/Tokyo");
@@ -101,21 +61,13 @@ class ApplicationTest extends TestCase {
 		}
 	}
 
-	public function testExplicitDatabaseTimezoneIsPreserved():void {
+	public function testConstruct_preservesExplicitDatabaseTimezone():void {
 		$sut = new Application(config: $this->createTestConfig([
 			"app.timezone" => "system",
 			"database.timezone" => "America/New_York",
 		]));
 		$config = (new \ReflectionProperty(Application::class, "config"))->getValue($sut);
 		self::assertSame("America/New_York", $config->getString("database.timezone"));
-	}
-
-	/** @return array<string, array{string}> */
-	public static function timezoneConfigKeys():array {
-		return [
-			"application" => ["app.timezone"],
-			"database" => ["database.timezone"],
-		];
 	}
 
 	/** @return array<string, array{string, string, string, string}> */

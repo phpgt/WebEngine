@@ -320,10 +320,12 @@ class Application {
 
 	private function loadConfig():Config {
 		$configFactory = new ConfigFactory();
-		return $this->resolveTimezones($configFactory->createForProject(
+		$config = $configFactory->createForProject(
 			getcwd(),
 			"vendor/phpgt/webengine/config.default.ini"
-		));
+		);
+
+		return $this->resolveTimezones($config);
 	}
 
 	private function resolveTimezones(Config $config):Config {
@@ -334,7 +336,12 @@ class Application {
 				$sections []= new ConfigSection($section, ["timezone" => $systemTimezone]);
 			}
 		}
-		return $sections ? (new Config(...$sections))->withMerge($config) : $config;
+
+		if(!$sections) {
+			return $config;
+		}
+
+		return (new Config(...$sections))->withMerge($config);
 	}
 
 	private function configureLoggerStreams():void {

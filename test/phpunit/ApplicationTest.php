@@ -26,11 +26,50 @@ use GT\WebEngine\Init\SessionInit;
 use GT\WebEngine\Redirection\Redirect;
 use GT\WebEngine\Redirection\RedirectUri;
 use GT\WebEngine\Test\Fixture\TestLogHandler;
-use PHPUnit\Framework\MockObject\Invocation;
-use PHPUnit\Framework\MockObject\InvocationHandler;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class ApplicationTest extends TestCase {
+	public function testConstruct_appliesConfiguredTimezone():void {
+		$originalTimezone = date_default_timezone_get();
+		try {
+			date_default_timezone_set("UTC");
+			$config = new Config(new \GT\Config\ConfigSection("app", ["timezone" => "Europe/London"]));
+			$config = $config->withMerge(ConfigFactory::createFromPathName(dirname(__DIR__, 2) . "/config.default.ini"));
+			$sut = new Application(config: $config);
+			self::assertSame("Europe/London", date_default_timezone_get());
+		}
+		finally {
+			date_default_timezone_set($originalTimezone);
+		}
+	}
+
+	public function testConstruct_resolvesSystemBeforeAppTimezone():void {
+		$originalTimezone = date_default_timezone_get();
+		try {
+			date_default_timezone_set("Asia/Tokyo");
+			$sut = new Application(config: $this->createTestConfig([
+				"app.timezone" => "Europe/London",
+				"database.timezone" => "system",
+			]));
+			$config = (new \ReflectionProperty(Application::class, "config"))->getValue($sut);
+			self::assertSame("Asia/Tokyo", $config->getString("database.timezone"));
+			self::assertSame("Europe/London", date_default_timezone_get());
+		}
+		finally {
+			date_default_timezone_set($originalTimezone);
+		}
+	}
+
+	public function testConstruct_preservesExplicitDatabaseTimezone():void {
+		$sut = new Application(config: $this->createTestConfig([
+			"app.timezone" => "system",
+			"database.timezone" => "America/New_York",
+		]));
+		$config = (new \ReflectionProperty(Application::class, "config"))->getValue($sut);
+		self::assertSame("America/New_York", $config->getString("database.timezone"));
+	}
+
 	/** @return array<string, array{string, string, string, string}> */
 	public static function destinationLevels():array {
 		return [
@@ -44,7 +83,7 @@ class ApplicationTest extends TestCase {
 		];
 	}
 
-	#[\PHPUnit\Framework\Attributes\DataProvider("destinationLevels")]
+	#[DataProvider("destinationLevels")]
 	public function testDestinationSpecificLevels(string $types, string $levels, string $sentryMinimum, string $localMinimum):void {
 		$this->resetApplicationLoggerState();
 		new Application(config: $this->createTestConfig([
@@ -73,7 +112,7 @@ class ApplicationTest extends TestCase {
 		];
 	}
 
-	#[\PHPUnit\Framework\Attributes\DataProvider("mismatchedLevels")]
+	#[DataProvider("mismatchedLevels")]
 	public function testMismatchedLevelCountsThrowEvenAfterLoggerInitialization(string $types, string $levels):void {
 		$this->resetApplicationLoggerState();
 		new Application(config: $this->createTestConfig([]));
@@ -643,7 +682,11 @@ class ApplicationTest extends TestCase {
 		LogConfig::addHandler(new TestLogHandler());
 		$this->setApplicationLoggerConfigured(true);
 
-		$config = $this->createTestConfig(["app.error_script" => ""]);
+		$config = $this->createTestConfig([
+			"app.error_script" => "",
+			"app.timezone" => date_default_timezone_get(),
+			"database.timezone" => date_default_timezone_get(),
+		]);
 		$request = $this->createServerRequest("/broken");
 		$sessionInit = self::createStub(SessionInit::class);
 		$throwable = new Exception("page failed");
@@ -1800,36 +1843,18 @@ class ApplicationTest extends TestCase {
 	}
 
 	private function createTestConfig(array $mockedValues):Config {
-		$config = self::createStub(Config::class);
-
-		$configFile = dirname(__DIR__, 2) . "/config.default.ini";
-		$configContents = parse_ini_file($configFile, true);
-
-		$map = [];
-		foreach($configContents as $section => $kvp) {
-			foreach($kvp as $key => $value) {
-				$map["$section.$key"] = $value;
-			}
+		$sections = [];
+		foreach($mockedValues as $key => $value) {
+			[$section, $name] = explode(".", $key, 2);
+			$sections[$section][$name] = (string)$value;
 		}
-
-		$map = array_merge($map, $mockedValues);
-
-		$config->method(self::anything())->willReturnCallback(function($key) use ($map) {
-			$type = null;
-			$bt = debug_backtrace();
-			if(isset($bt[1]) && ($bt[1]["args"][0] ?? null) instanceof Invocation) {
-				$type = strtolower(substr($bt[1]["args"][0]->methodName(), 3));
-			}
-
-			return match ($type) {
-				"bool" => (bool)$map[$key],
-				"int" => (int)$map[$key],
-				"float" => (float)$map[$key],
-				default => $map[$key],
-			};
-		});
-
-		return $config;
+		$configSections = [];
+		foreach($sections as $name => $values) {
+			$configSections []= new \GT\Config\ConfigSection($name, $values);
+		}
+		return (new Config(...$configSections))->withMerge(
+			ConfigFactory::createFromPathName(dirname(__DIR__, 2) . "/config.default.ini"),
+		);
 	}
 
 	private function createRequestFactory(?ServerRequest $request = null):RequestFactory {

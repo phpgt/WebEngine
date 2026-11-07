@@ -23,6 +23,7 @@ use GT\WebEngine\Dispatch\Dispatcher;
 use GT\WebEngine\Dispatch\DispatcherFactory;
 use GT\Config\Config;
 use GT\Config\ConfigFactory;
+use GT\Config\ConfigSection;
 use GT\Http\Request;
 use GT\Http\RequestFactory;
 use GT\Http\Response;
@@ -78,7 +79,7 @@ class Application {
 		?Closure $handleShutdown = null,
 		?Protection $globalProtection = null,
 	) {
-		$this->config = $config ?? $this->loadConfig();
+		$this->initConfig($config);
 		$this->configureLoggerStreams();
 		$this->redirect = $this->createRedirect($redirect);
 		$application = $this;
@@ -310,12 +311,37 @@ class Application {
 		}
 	}
 
+	private function initConfig(?Config $config):void {
+		$this->config = $config ? $this->resolveTimezones($config) : $this->loadConfig();
+		if($timezone = $this->config->getString("app.timezone")) {
+			date_default_timezone_set($timezone);
+		}
+	}
+
 	private function loadConfig():Config {
 		$configFactory = new ConfigFactory();
-		return $configFactory->createForProject(
+		$config = $configFactory->createForProject(
 			getcwd(),
 			"vendor/phpgt/webengine/config.default.ini"
 		);
+
+		return $this->resolveTimezones($config);
+	}
+
+	private function resolveTimezones(Config $config):Config {
+		$systemTimezone = date_default_timezone_get();
+		$sections = [];
+		foreach(["app", "database"] as $section) {
+			if($config->getString("$section.timezone") === "system") {
+				$sections []= new ConfigSection($section, ["timezone" => $systemTimezone]);
+			}
+		}
+
+		if(!$sections) {
+			return $config;
+		}
+
+		return (new Config(...$sections))->withMerge($config);
 	}
 
 	private function configureLoggerStreams():void {

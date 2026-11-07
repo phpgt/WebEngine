@@ -11,8 +11,9 @@ use Throwable;
 
 class ExceptionContextProviderTest extends TestCase {
 	#[DataProvider("missingImports")]
-	public function testMissingImportProvidesGuidance(Throwable $throwable):void {
-		$context = (new ExceptionContextProvider())->getContext($throwable);
+	public function testGetContext_missingImportProvidesGuidance(Throwable $throwable):void {
+		$sut = new ExceptionContextProvider();
+		$context = $sut->getContext($throwable);
 
 		self::assertNotNull($context);
 		self::assertStringContainsString("AnotherThing could not be found", $context->message);
@@ -34,8 +35,9 @@ class ExceptionContextProviderTest extends TestCase {
 	}
 
 	#[DataProvider("unrelatedErrors")]
-	public function testUnrelatedErrorsHaveNoContext(Throwable $throwable):void {
-		self::assertNull((new ExceptionContextProvider())->getContext($throwable));
+	public function testGetContext_unrelatedErrorsHaveNoContext(Throwable $throwable):void {
+		$sut = new ExceptionContextProvider();
+		self::assertNull($sut->getContext($throwable));
 	}
 
 	public static function unrelatedErrors():iterable {

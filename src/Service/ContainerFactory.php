@@ -7,26 +7,44 @@ use GT\ServiceContainer\Container;
 class ContainerFactory {
 	public function create(Config $config):Container {
 		$container = new Container();
+		$registered = false;
+		foreach($this->getLoaderClassNames($config) as $loaderClass) {
+			if(!class_exists($loaderClass)) {
+				continue;
+			}
 
-			// Optionally, register an application-provided service loader.
-			$appNamespace = trim((string)$config->get("app.namespace"), "\\");
-			$serviceLoaderClass = trim((string)$config->get("app.service_loader"), "\\");
-		$customLoaderClass = "";
-		if($appNamespace !== "" && $serviceLoaderClass !== "") {
-			$customLoaderClass = implode("\\", [
-				$appNamespace,
-				$serviceLoaderClass,
-			]);
+			$container->addLoaderClass(new $loaderClass($config, $container));
+			$registered = true;
 		}
 
-		if($customLoaderClass !== "" && class_exists($customLoaderClass)) {
-			$container->addLoaderClass(new $customLoaderClass($config, $container));
-			}
-			else {
-				// Always register the DefaultServiceLoader for core WebEngine services.
-				$container->addLoaderClass(new DefaultServiceLoader($config, $container));
+		if(!$registered) {
+			$container->addLoaderClass(new DefaultServiceLoader($config, $container));
 		}
 
 		return $container;
+	}
+
+	/** @return array<int, string> */
+	private function getLoaderClassNames(Config $config):array {
+		$trimCharacters = " \t\n\r\0\x0B\\";
+		$appNamespace = trim((string)$config->get("app.namespace"), $trimCharacters);
+
+		$classes = [];
+		foreach(explode(",", (string)$config->get("app.service_loader")) as $loaderClass) {
+			$absolute = str_starts_with(ltrim($loaderClass), "\\");
+			$loaderClass = trim($loaderClass, $trimCharacters);
+			if($loaderClass === "") {
+				continue;
+			}
+
+			if(!$absolute && $appNamespace === "") {
+				continue;
+			}
+
+			$className = $absolute ? $loaderClass : $appNamespace . "\\" . $loaderClass;
+			$classes[strtolower($className)] ??= $className;
+		}
+
+		return array_values($classes);
 	}
 }

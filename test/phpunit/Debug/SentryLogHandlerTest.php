@@ -17,7 +17,7 @@ use RuntimeException;
 
 class SentryLogHandlerTest extends TestCase {
 	#[\PHPUnit\Framework\Attributes\DataProvider("logMessages")]
-	public function testNullBytesAreEscapedBeforeMessagesAreBounded(string $message, string $expected):void {
+	public function testNullBytesAreReplacedBeforeMessagesAreBounded(string $message, string $expected):void {
 		$client = self::createMock(ClientInterface::class);
 		$client->method("getOptions")->willReturn(new Options());
 		$client->expects(self::once())->method("captureEvent")->willReturnCallback(
@@ -38,11 +38,13 @@ class SentryLogHandlerTest extends TestCase {
 		$exception = new class("CSRF Token not found") extends RuntimeException {};
 		$message = get_class($exception) . ": " . $exception->getMessage();
 		return [
-			"anonymous exception" => [$message, str_replace("\0", "\\0", $message)],
-			"multiple null bytes" => ["\0before\0after\0", "\\0before\\0after\\0"],
+			"anonymous exception" => [$message, str_replace("\0", "␀", $message)],
+			"multiple null bytes" => ["\0before\0after\0", "␀before␀after␀"],
 			"ordinary message" => ["Ordinary message", "Ordinary message"],
 			"literal escape" => ["Already escaped \\0", "Already escaped \\0"],
-			"expanded message stays bounded" => [str_repeat("\0", 8192), str_repeat("\\0", 4096)],
+			"symbol stays unchanged" => ["Visible ␀ marker", "Visible ␀ marker"],
+			"symbol crossing byte limit" => [str_repeat("a", 8191) . "\0", str_repeat("a", 8191)],
+			"expanded message stays bounded" => [str_repeat("\0", 8192), str_repeat("␀", 2730)],
 		];
 	}
 

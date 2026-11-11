@@ -24,11 +24,11 @@ class SentryLogHandler extends LogHandler {
 	/** @param array<string, mixed> $context */
 	public function handle(string $level, string $message, array $context = []):void {
 		// Anonymous PHP class names contain null bytes that log storage can reject.
-		$message = str_replace("\0", "\\0", $message);
+		$message = str_replace("\0", "␀", $message);
 		// Context is deliberately excluded: arbitrary values can contain secrets.
 		$this->pending []= [
 			"level" => strtoupper($level),
-			"message" => substr($message, 0, 8192),
+			"message" => mb_strcut($message, 0, 8192, "UTF-8"),
 			"timestamp" => microtime(true),
 		];
 		if(count($this->pending) >= self::BATCH_SIZE) {

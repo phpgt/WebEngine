@@ -16,6 +16,36 @@ use Sentry\Transport\ResultStatus;
 use RuntimeException;
 
 class SentryLogHandlerTest extends TestCase {
+	#[\PHPUnit\Framework\Attributes\DataProvider("logMessages")]
+	public function testNullBytesAreEscapedBeforeMessagesAreBounded(string $message, string $expected):void {
+		$client = self::createMock(ClientInterface::class);
+		$client->method("getOptions")->willReturn(new Options());
+		$client->expects(self::once())->method("captureEvent")->willReturnCallback(
+			function(Event $event) use ($expected):EventId {
+				self::assertSame($expected, $event->getLogs()[0]->getBody());
+				self::assertStringNotContainsString("\0", $event->getLogs()[0]->getBody());
+				return $event->getId();
+			},
+		);
+		$handler = new SentryLogHandler();
+		$handler->setClient($client);
+		$handler->handle("ERROR", $message);
+		$handler->flush();
+	}
+
+	/** @return array<string, array{string, string}> */
+	public static function logMessages():array {
+		$exception = new class("CSRF Token not found") extends RuntimeException {};
+		$message = get_class($exception) . ": " . $exception->getMessage();
+		return [
+			"anonymous exception" => [$message, str_replace("\0", "\\0", $message)],
+			"multiple null bytes" => ["\0before\0after\0", "\\0before\\0after\\0"],
+			"ordinary message" => ["Ordinary message", "Ordinary message"],
+			"literal escape" => ["Already escaped \\0", "Already escaped \\0"],
+			"expanded message stays bounded" => [str_repeat("\0", 8192), str_repeat("\\0", 4096)],
+		];
+	}
+
 	#[\PHPUnit\Framework\Attributes\DataProvider("unavailableClients")]
 	public function testUnavailableDeliveryFallsBackOnceWithoutContext(string $failure):void {
 		$handler = new SentryLogHandler();

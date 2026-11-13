@@ -1085,6 +1085,269 @@ class DispatcherTest extends TestCase {
 		self::assertSame("/page/", TestLogHandler::$records[0]["context"]["uri"]);
 	}
 
+	#[DataProvider("lifecycleFailures")]
+	public function testProcessResponse_attemptsEveryLifecycleBeforeRethrowingFirstFailure(
+		string $failedAssembly,
+		string $failedFunction,
+		bool $phpError,
+	):void {
+		$viewModel = new HTMLDocument("<!doctype html><body><widget-one></widget-one><widget-two></widget-two><widget-three></widget-three></body>");
+		$processor = $this->createComponentProcessor($viewModel, "widget-one", "widget-two", "widget-three");
+		$failure = $phpError ? new \Error("logic failed") : new Exception("logic failed");
+		$invocations = [];
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name)use(&$invocations, $failedAssembly, $failedFunction, $failure):\Generator {
+				$path = $assembly->current();
+				$invocations[] = [$path, $name];
+				if($path === "/tmp/$failedAssembly.php" && $name === $failedFunction) {
+					throw $failure;
+				}
+
+				yield "$path::$name()";
+			});
+		$viewStreamer = $this->createMock(ViewStreamer::class);
+		$viewStreamer->expects(self::never())->method("stream");
+		$sut = $this->createDispatcher(
+			input: new Input(["do" => "save"]),
+			viewModel: $viewModel,
+			logicAssembly: $this->createAssembly("/tmp/page.php"),
+			viewModelProcessor: $processor,
+			logicExecutor: $logicExecutor,
+			viewStreamer: $viewStreamer,
+		);
+
+		$caught = null;
+		try {
+			$sut->processResponse();
+		}
+		catch(\Throwable $throwable) {
+			$caught = $throwable;
+		}
+
+		$expectedInvocations = [];
+		foreach(["widget-one", "widget-two", "widget-three", "page"] as $assemblyName) {
+			foreach(["go_before", "do_save", "go", "go_after"] as $functionName) {
+				$expectedInvocations[] = ["/tmp/$assemblyName.php", $functionName];
+				if($assemblyName === $failedAssembly && $functionName === $failedFunction) {
+					break;
+				}
+			}
+		}
+
+		self::assertSame($expectedInvocations, $invocations);
+		self::assertSame($failure, $caught);
+	}
+
+	public static function lifecycleFailures():iterable {
+		foreach(["widget-one", "widget-two", "widget-three", "page"] as $assembly) {
+			foreach(["go_before", "do_save", "go", "go_after"] as $function) {
+				foreach([false, true] as $phpError) {
+					$type = $phpError ? "Error" : "Exception";
+					yield "$assembly $function $type" => [$assembly, $function, $phpError];
+				}
+			}
+		}
+	}
+
+	public function testProcessResponse_preservesFirstFailureAndLogsLaterFailures():void {
+		$this->resetLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$viewModel = new HTMLDocument("<!doctype html><body><widget-one></widget-one><widget-two></widget-two><widget-three></widget-three></body>");
+		$processor = $this->createComponentProcessor($viewModel, "widget-one", "widget-two", "widget-three");
+		$firstFailure = new Exception("first component failed");
+		$failures = [
+			"/tmp/widget-one.php" => $firstFailure,
+			"/tmp/widget-two.php" => new \Error("second component failed"),
+			"/tmp/page.php" => new Exception("page failed afterwards"),
+		];
+		$completed = [];
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name)use($failures, &$completed):\Generator {
+				$path = $assembly->current();
+				if($name === "go" && isset($failures[$path])) {
+					throw $failures[$path];
+				}
+				if($name === "go_after") {
+					$completed[] = $path;
+				}
+
+				yield "$path::$name()";
+			});
+		$viewStreamer = $this->createMock(ViewStreamer::class);
+		$viewStreamer->expects(self::never())->method("stream");
+		$sut = $this->createDispatcher(
+			viewModel: $viewModel,
+			logicAssembly: $this->createAssembly("/tmp/page.php"),
+			viewModelProcessor: $processor,
+			logicExecutor: $logicExecutor,
+			viewStreamer: $viewStreamer,
+		);
+
+		$caught = null;
+		try {
+			$sut->processResponse();
+		}
+		catch(\Throwable $throwable) {
+			$caught = $throwable;
+		}
+
+		self::assertSame($firstFailure, $caught);
+		self::assertSame(["/tmp/widget-three.php"], $completed);
+		$loggedFailures = print_r(TestLogHandler::$records, true);
+		self::assertStringContainsString("second component failed", $loggedFailures);
+		self::assertStringContainsString("page failed afterwards", $loggedFailures);
+	}
+
+	#[DataProvider("errorPageActions")]
+	public function testGenerateErrorResponse_rendersAllLifecyclesWithoutReplayingActions(?string $submittedComponent):void {
+		$viewModel = new HTMLDocument("<!doctype html><body><widget-one></widget-one><widget-two></widget-two></body>");
+		$processor = $this->createComponentProcessor($viewModel, "widget-one", "widget-two");
+		$body = ["do" => "save"];
+		if($submittedComponent !== null) {
+			$body["__component"] = $submittedComponent;
+		}
+
+		$invocations = [];
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name)use(&$invocations):\Generator {
+				$invocations[] = [$assembly->current(), $name];
+				yield "{$assembly->current()}::$name()";
+			});
+		$viewStreamer = $this->createMock(ViewStreamer::class);
+		$viewStreamer->expects(self::once())->method("stream");
+		$sut = $this->createDispatcher(
+			request: $this->createRequest("/page/", "POST"),
+			input: new Input([], $body, requestMethod: "POST"),
+			viewModel: $viewModel,
+			viewAssembly: $this->createAssembly("/tmp/500.html"),
+			logicAssembly: $this->createAssembly("/tmp/page.php"),
+			viewModelInit: $this->createViewModelInit($processor, true),
+			logicExecutor: $logicExecutor,
+			viewStreamer: $viewStreamer,
+		);
+
+		$response = $sut->generateErrorResponse(new Exception("original failure"));
+
+		self::assertSame(StatusCode::INTERNAL_SERVER_ERROR, $response->getStatusCode());
+		self::assertSame([
+			["/tmp/widget-one.php", "go_before"],
+			["/tmp/widget-one.php", "go"],
+			["/tmp/widget-one.php", "go_after"],
+			["/tmp/widget-two.php", "go_before"],
+			["/tmp/widget-two.php", "go"],
+			["/tmp/widget-two.php", "go_after"],
+			["/tmp/page.php", "go_before"],
+			["/tmp/page.php", "go"],
+			["/tmp/page.php", "go_after"],
+		], $invocations);
+	}
+
+	public static function errorPageActions():iterable {
+		yield "page form" => [null];
+		yield "component form" => ["widget-one"];
+	}
+
+	#[DataProvider("errorResponseStatuses")]
+	public function testGenerateErrorResponse_logsSecondaryFailureAndContinuesRendering(\Throwable $originalFailure, int $expectedStatus):void {
+		$this->resetLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$viewModel = new HTMLDocument("<!doctype html><body><widget-one></widget-one><global-header></global-header><p data-bind:text></p></body>");
+		$processor = $this->createComponentProcessor($viewModel, "widget-one", "global-header");
+		$completed = [];
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name)use(&$completed):\Generator {
+				$path = $assembly->current();
+				if($path === "/tmp/widget-one.php" && $name === "go") {
+					throw new Exception("error-page component failed");
+				}
+				if($name === "go_after") {
+					$completed[] = $path;
+				}
+
+				yield "$path::$name()";
+			});
+		$viewStreamer = $this->createMock(ViewStreamer::class);
+		$viewStreamer->expects(self::once())->method("stream");
+		$sut = $this->createDispatcher(
+			viewModel: $viewModel,
+			viewAssembly: $this->createAssembly("/tmp/error.html"),
+			logicAssembly: $this->createAssembly("/tmp/page.php"),
+			viewModelInit: $this->createViewModelInit($processor, true),
+			logicExecutor: $logicExecutor,
+			viewStreamer: $viewStreamer,
+		);
+
+		$response = $sut->generateErrorResponse($originalFailure);
+
+		self::assertSame(["/tmp/global-header.php", "/tmp/page.php"], $completed);
+		self::assertSame($expectedStatus, $response->getStatusCode());
+		self::assertSame($originalFailure->getMessage(), $viewModel->querySelector("p")->textContent);
+		self::assertStringContainsString("error-page component failed", print_r(TestLogHandler::$records, true));
+	}
+
+	public static function errorResponseStatuses():iterable {
+		yield "server error" => [new Exception("original server failure"), StatusCode::INTERNAL_SERVER_ERROR];
+		yield "HTTP error" => [new HttpNotFound("original missing resource"), StatusCode::NOT_FOUND];
+	}
+
+	#[DataProvider("redirectModes")]
+	public function testProcessResponse_componentRedirectInterruptsImmediately(bool $errorMode):void {
+		$viewModel = new HTMLDocument("<!doctype html><body><widget-one></widget-one><widget-two></widget-two></body>");
+		$processor = $this->createComponentProcessor($viewModel, "widget-one", "widget-two");
+		$invocations = [];
+		$response = null;
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name)use(&$invocations, &$response):\Generator {
+				$invocations[] = [$assembly->current(), $name];
+				if($assembly->current() === "/tmp/widget-one.php" && $name === "go") {
+					$response->redirect("/destination/");
+				}
+
+				yield "{$assembly->current()}::$name()";
+			});
+		$viewStreamer = $this->createMock(ViewStreamer::class);
+		$viewStreamer->expects(self::never())->method("stream");
+		$sut = $this->createDispatcher(
+			viewModel: $viewModel,
+			logicAssembly: $this->createAssembly("/tmp/page.php"),
+			viewModelInit: $this->createViewModelInit($processor, true),
+			logicExecutor: $logicExecutor,
+			viewStreamer: $viewStreamer,
+		);
+		$response = $this->getPrivateProperty($sut, "response");
+
+		$sut->processResponse($errorMode ? new Exception("original failure") : null);
+
+		self::assertSame([
+			["/tmp/widget-one.php", "go_before"],
+			["/tmp/widget-one.php", "go"],
+		], $invocations);
+		self::assertSame("/destination/", $response->getHeaderLine("Location"));
+	}
+
+	public static function redirectModes():iterable {
+		yield "normal response" => [false];
+		yield "error response" => [true];
+	}
+
+	private function createComponentProcessor(HTMLDocument $viewModel, string ...$names):ViewModelProcessor {
+		$componentList = new LogicAssemblyComponentList();
+		foreach($names as $name) {
+			$component = $viewModel->querySelector($name);
+			self::assertInstanceOf(Element::class, $component);
+			$componentList->addAssemblyComponent($this->createAssembly("/tmp/$name.php"), $component);
+		}
+
+		$processor = $this->createMock(ViewModelProcessor::class);
+		$processor->method("processPartialContent")->willReturn($componentList);
+		return $processor;
+	}
+
 	private function createDispatcher(
 		bool $production = false,
 		?Config $config = null,

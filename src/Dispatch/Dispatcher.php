@@ -29,6 +29,7 @@ use GT\Input\Input;
 use GT\Input\InputData\InputData;
 use GT\Json\Schema\JSONDocument;
 use GT\Logger\Log;
+use GT\WebEngine\Debug\DebugLogger;
 use GT\Routing\Assembly;
 use GT\Routing\BaseRouter;
 use GT\Routing\Path\DynamicPath;
@@ -56,6 +57,7 @@ use Throwable;
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 class Dispatcher {
+	private DebugLogger $debugLogger;
 	private const LOGIC_EXECUTION_HEADER = "X-Logic-Execution";
 	private const COMPONENT_INPUT_NAME = "__component";
 
@@ -117,6 +119,7 @@ class Dispatcher {
 // Set the first Dispatcher dependencies - these are required to be passed from
 // the Application, so come first as non-nullable:
 		$this->config = $config;
+		$this->debugLogger = new DebugLogger($this->config);
 		$this->request = $request;
 		$this->globals = $globals;
 		$this->finishCallback = $finishCallback;
@@ -159,10 +162,12 @@ class Dispatcher {
 			$this->globals["_FILES"],
 			$this->globals["_SERVER"],
 		);
+		$this->debugLogger->log("routing", "Request path normalisation completed");
 		$this->input = $requestInit->getInput();
 		$this->serviceContainer->set($this->input);
 		$this->serviceContainer->set($requestInit->getServerInfo());
 		if($this->isRedirectPrepared()) {
+			$this->debugLogger->log("routing", "Path normalisation prepared a redirect");
 			$this->redirectPrepared = true;
 			return;
 		}
@@ -191,6 +196,12 @@ class Dispatcher {
 		$this->serviceContainer->set($dynamicPath);
 		$this->viewAssembly = $routerInit->getViewAssembly();
 		$this->logicAssembly = $routerInit->getLogicAssembly();
+		$this->debugLogger->log("routing", "Route selected", [
+			"router" => get_class($this->router),
+			"view" => get_class($this->view),
+			"view_files" => iterator_to_array(clone $this->viewAssembly),
+			"logic_files" => iterator_to_array(clone $this->logicAssembly),
+		]);
 
 		$sessionInit = $sessionInit ?? new SessionInit(
 			$this->config->getString("session.name"),
@@ -215,6 +226,7 @@ class Dispatcher {
 			$this->viewModel,
 			$this->config->getString("view.component_directory"),
 			$this->config->getString("view.partial_directory"),
+			$this->debugLogger,
 		);
 		$this->viewModelProcessor = $viewModelInit->getViewModelProcessor();
 		$this->viewInitCb = $this->viewModel instanceof HTMLDocument
@@ -238,6 +250,7 @@ class Dispatcher {
 		$this->logicExecutor = $logicExecutor ?? new LogicExecutor(
 			$appNamespace,
 			$this->injector,
+			$this->debugLogger,
 		);
 		$this->viewStreamer = $viewStreamer ?? new ViewStreamer();
 		$this->headerManager = $headerManager ?? new HeaderManager();
@@ -256,6 +269,7 @@ class Dispatcher {
 // step individually to ensure proper error handling throughout the process.
 		if(!$this->viewAssembly->containsDistinctFile() && !$this->logicAssembly->containsDistinctFile()) {
 			$this->response = $this->response->withStatus(StatusCode::NOT_FOUND);
+			$this->debugLogger->log("routing", "No distinct view or logic file matched");
 			throw new HttpNotFound();
 		}
 
@@ -517,7 +531,9 @@ class Dispatcher {
 				);
 			}
 
+			$this->debugLogger->log("views", "Streaming prepared view", ["view" => get_class($this->view)]);
 			$this->viewStreamer->stream($this->view, $this->viewModel);
+			$this->debugLogger->log("views", "View streaming completed");
 			($this->finishCallback)($this->response);
 
 			if($this->interruptResponse) {
@@ -531,6 +547,7 @@ class Dispatcher {
 		Input $input,
 		?Element $component = null,
 	):void {
+		$this->debugLogger->log("logic", "Starting logic lifecycle", ["component" => $component?->tagName]);
 		$extraArgs = [];
 
 		if($component) {
@@ -668,10 +685,13 @@ class Dispatcher {
 			$this->applyResponseHeaders();
 			$this->prepareViewModelForStreaming();
 
+			$this->debugLogger->log("views", "Streaming prepared view", ["view" => get_class($this->view)]);
 			$this->viewStreamer->stream($this->view, $this->viewModel);
+			$this->debugLogger->log("views", "View streaming completed");
 			$this->consumeCsrfToken($csrfToken);
 		}
 		catch(ResponseInterrupt) {
+			$this->debugLogger->log("logic", "Response interrupted by logic");
 			$this->consumeCsrfToken($csrfToken);
 			return;
 		}
@@ -716,6 +736,7 @@ class Dispatcher {
 
 	private function recordLogicExecution(string $functionReference):void {
 		$refWithoutAttributes = explode("#", $functionReference, 2)[0];
+		$this->debugLogger->log("logic", "Logic function completed", ["function" => $refWithoutAttributes]);
 		$separatorPosition = strrpos($refWithoutAttributes, "::");
 		if($separatorPosition === false) {
 			return;
@@ -750,10 +771,12 @@ class Dispatcher {
 
 	private function verifyCsrfRequest(string $method, InputData $inputData):?string {
 		if(!($this->viewModel instanceof HTMLDocument)) {
+			$this->debugLogger->log("csrf", "CSRF verification skipped for non-HTML response");
 			return null;
 		}
 
 		if($method !== "POST" || $this->isIgnoredCsrfPath()) {
+			$this->debugLogger->log("csrf", "CSRF verification skipped for method or ignored path");
 			return null;
 		}
 
@@ -771,6 +794,7 @@ class Dispatcher {
 
 			$token = $postData[HTMLDocumentProtector::TOKEN_NAME];
 			$tokenStore->verifyToken($token);
+			$this->debugLogger->log("csrf", "CSRF verification succeeded");
 			return $token;
 		}
 		catch(CsrfException $exception) {

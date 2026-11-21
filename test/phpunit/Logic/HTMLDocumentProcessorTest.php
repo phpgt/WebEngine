@@ -4,6 +4,10 @@ namespace GT\WebEngine\Test\Logic;
 require_once __DIR__ . "/../Fixture/TestLogHandler.php";
 
 use GT\WebEngine\Logic\HTMLDocumentProcessor;
+use GT\Config\Config;
+use GT\Config\ConfigSection;
+use GT\WebEngine\Debug\DebugLogger;
+use PHPUnit\Framework\Attributes\DataProvider;
 use GT\Dom\Element;
 use GT\Dom\HTMLDocument;
 use GT\Logger\LogConfig;
@@ -58,7 +62,12 @@ class HTMLDocumentProcessorTest extends TestCase {
 		self::assertContains("_item--macbook-pro", $classes);
 	}
 
-	public function testProcessPartialContent_expandsComponentsAndPartialsAndRegistersOnlyLogicBackedComponents():void {
+	public static function componentDebugFlags():array {
+		return [[null], [false], [true]];
+	}
+
+	#[DataProvider("componentDebugFlags")]
+	public function testProcessPartialContent_expandsComponentsAndPartialsAndRegistersOnlyLogicBackedComponents(?bool $enabled):void {
 		LogConfig::addHandler(new TestLogHandler());
 		file_put_contents(
 			$this->componentDir . "/site-card.html",
@@ -77,6 +86,7 @@ class HTMLDocumentProcessorTest extends TestCase {
 		$processor = new HTMLDocumentProcessor(
 			ltrim(substr($this->componentDir, strlen(getcwd())), "/"),
 			ltrim(substr($this->partialDir, strlen(getcwd())), "/"),
+			new DebugLogger(new Config(new ConfigSection("logger", $enabled === null ? [] : ["debug_html_components" => $enabled ? "true" : "false"]))),
 		);
 
 		$componentList = $processor->processPartialContent($document);
@@ -94,7 +104,12 @@ class HTMLDocumentProcessorTest extends TestCase {
 		self::assertSame("section", strtolower($document->body->firstElementChild->tagName));
 		self::assertStringContainsString("<main>Page</main>", (string)$document);
 		self::assertStringContainsString("<aside>No logic</aside>", (string)$document);
-		self::assertCount(1, TestLogHandler::$records);
+		if(!$enabled) {
+			self::assertSame([], TestLogHandler::$records);
+			return;
+		}
+		self::assertCount(2, TestLogHandler::$records);
+		array_shift(TestLogHandler::$records);
 		self::assertSame("DEBUG", TestLogHandler::$records[0]["level"]);
 		self::assertSame("Component detected without matching logic file", TestLogHandler::$records[0]["message"]);
 		self::assertSame("no-logic", TestLogHandler::$records[0]["context"]["component"]);

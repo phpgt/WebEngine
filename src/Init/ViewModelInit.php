@@ -2,6 +2,7 @@
 namespace GT\WebEngine\Init;
 
 use GT\Dom\HTMLDocument;
+use GT\WebEngine\Debug\DebugLogger;
 use GT\DomTemplate\BindableCache;
 use GT\DomTemplate\DocumentBinder;
 use GT\DomTemplate\ElementBinder;
@@ -23,11 +24,13 @@ class ViewModelInit {
 		HTMLDocument|JSONDocument $model,
 		string $componentDirectory,
 		string $partialDirectory,
+		?DebugLogger $debugLogger = null,
 	) {
 		if($model instanceof HTMLDocument) {
 			$this->viewModelProcessor = new HTMLDocumentProcessor(
 				$componentDirectory,
 				$partialDirectory,
+				$debugLogger,
 			);
 		}
 // TODO: Handle other view model types.

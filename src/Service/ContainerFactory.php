@@ -2,22 +2,27 @@
 namespace GT\WebEngine\Service;
 
 use GT\Config\Config;
+use GT\WebEngine\Debug\DebugLogger;
 use GT\ServiceContainer\Container;
 
 class ContainerFactory {
 	public function create(Config $config):Container {
+		$debug = new DebugLogger($config);
 		$container = new Container();
 		$registered = false;
 		foreach($this->getLoaderClassNames($config) as $loaderClass) {
 			if(!class_exists($loaderClass)) {
+				$debug->log("services", "Service loader class not found", ["class" => $loaderClass]);
 				continue;
 			}
 
 			$container->addLoaderClass(new $loaderClass($config, $container));
+			$debug->log("services", "Service loader registered", ["class" => $loaderClass]);
 			$registered = true;
 		}
 
 		if(!$registered) {
+			$debug->log("services", "Using default service loader");
 			$container->addLoaderClass(new DefaultServiceLoader($config, $container));
 		}
 

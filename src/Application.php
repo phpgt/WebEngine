@@ -6,6 +6,7 @@ use GT\Http\ResponseStatusException\ClientError\HttpNotFound;
 use GT\Http\ResponseStatusException\ClientError\ClientErrorException;
 use GT\Http\ResponseStatusException\ResponseStatusException;
 use GT\Logger\Log;
+use GT\WebEngine\Debug\DebugLogger;
 use GT\Logger\LogConfig;
 use GT\Logger\LogHandler\StdErrHandler;
 use GT\Logger\LogLevel;
@@ -45,6 +46,7 @@ use Psr\Http\Message\ServerRequestInterface;
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 class Application {
+	private DebugLogger $debugLogger;
 	private const string REDACTED_LOG_VALUE = "[redacted]";
 
 	private Redirect $redirect;
@@ -80,6 +82,7 @@ class Application {
 		?Protection $globalProtection = null,
 	) {
 		$this->initConfig($config);
+		$this->debugLogger = new DebugLogger($this->config);
 		$this->configureLoggerStreams();
 		$this->redirect = $this->createRedirect($redirect);
 		$application = $this;
@@ -111,9 +114,11 @@ class Application {
 	public function start():void {
 // Before we start, we check if the current URI should be redirected. If it
 // should, we won't go any further into the lifecycle.
+		$this->debugLogger->log("requests", "Request lifecycle started");
 		$requestedPath = $this->getRequestedPath();
 		$redirectUri = $this->redirect->execute($requestedPath);
 		if($redirectUri) {
+			$this->debugLogger->log("requests", "Redirect rule matched", ["status" => $redirectUri->code]);
 			$this->logRedirect($redirectUri, $requestedPath);
 			return;
 		}
@@ -193,6 +198,7 @@ class Application {
 	}
 
 	private function handleThrowable(Throwable $throwable):?Response {
+		$this->debugLogger->log("requests", "Handling request exception", ["exception" => get_class($throwable)]);
 		$this->sentryReporter?->report($throwable);
 		if ($errorScript = $this->config->getString('app.error_script')) {
 			$this->restoreGlobals();
@@ -270,6 +276,10 @@ class Application {
 
 		$this->timer->stop();
 		$this->timer->logDelta();
+		$this->debugLogger->log("requests", "Request lifecycle completed", [
+			"status" => $response->getStatusCode(),
+			"seconds" => $this->timer->getDelta(),
+		]);
 		$this->sentryLogHandler?->flush();
 	}
 

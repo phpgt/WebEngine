@@ -3,3 +3,5 @@
 /test/behaviour/project/*/vendor
 /test/phpunit/.phpunit.cache
 .phpunit*.cache
+
+config.*.ini

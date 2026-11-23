@@ -6,7 +6,6 @@ use GT\DomTemplate\ComponentExpander;
 use GT\DomTemplate\PartialContent;
 use GT\DomTemplate\PartialContentDirectoryNotFoundException;
 use GT\DomTemplate\PartialExpander;
-use GT\Logger\Log;
 use GT\Routing\Assembly;
 use GT\Routing\Path\DynamicPath;
 use GT\WebEngine\View\HeaderFooterPartialConflictException;
@@ -63,8 +62,13 @@ class HTMLDocumentProcessor extends ViewModelProcessor {
 				$partial,
 			);
 			$partialExpander->expand();
+			$this->debugLogger->log("html_partials", "HTML partial expansion completed");
 		}
-		catch(PartialContentDirectoryNotFoundException) {}
+		catch(PartialContentDirectoryNotFoundException) {
+			$this->debugLogger->log("html_partials", "HTML partial directory not found", [
+				"directory" => $this->partialDirectory,
+			]);
+		}
 
 		try {
 // TODO: Handle other model types in sub-functions.
@@ -84,7 +88,8 @@ class HTMLDocumentProcessor extends ViewModelProcessor {
 				$filePath .= ".php";
 
 				if(!is_file($filePath)) {
-					Log::debug(
+					$this->debugLogger->log(
+						"html_components",
 						"Component detected without matching logic file",
 						[
 							"component" => strtolower($componentElement->tagName),
@@ -94,6 +99,7 @@ class HTMLDocumentProcessor extends ViewModelProcessor {
 					continue;
 				}
 
+				$this->debugLogger->log("html_components", "Component logic file found", ["logic_file" => $filePath]);
 				$componentAssembly = new Assembly();
 				$componentAssembly->add($filePath);
 				$componentList->addAssemblyComponent(
@@ -102,7 +108,11 @@ class HTMLDocumentProcessor extends ViewModelProcessor {
 				);
 			}
 		}
-		catch(PartialContentDirectoryNotFoundException) {}
+		catch(PartialContentDirectoryNotFoundException) {
+			$this->debugLogger->log("html_components", "HTML component directory not found", [
+				"directory" => $this->componentDirectory,
+			]);
+		}
 
 		return $componentList;
 	}

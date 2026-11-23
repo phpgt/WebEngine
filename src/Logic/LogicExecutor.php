@@ -2,6 +2,7 @@
 namespace GT\WebEngine\Logic;
 
 use Generator;
+use GT\WebEngine\Debug\DebugLogger;
 use GT\Routing\Assembly;
 use GT\Routing\LogicStream\LogicStreamNamespace;
 use GT\Routing\LogicStream\LogicStreamWrapper;
@@ -12,6 +13,7 @@ class LogicExecutor {
 	public function __construct(
 		private string $appNamespace,
 		private Injector $injector,
+		private ?DebugLogger $debugLogger = null,
 	) {
 	}
 
@@ -23,6 +25,7 @@ class LogicExecutor {
 	// phpcs:disable Generic.Metrics.NestingLevel.TooHigh
 	public function invoke(Assembly $logicAssembly, string $name, array $extraArgs = []):Generator {
 		foreach($logicAssembly as $file) {
+			$this->debugLogger?->log("logic", "Loading logic file", ["file" => $file]);
 			$this->loadLogicFile($file);
 		}
 
@@ -43,6 +46,7 @@ class LogicExecutor {
 
 			if($instance) {
 				if(method_exists($instance, $name)) {
+					$this->debugLogger?->log("logic", "Invoking logic method", ["file" => $file, "method" => $name]);
 					$this->injector->invoke(
 						$instance,
 						$name,
@@ -61,6 +65,7 @@ class LogicExecutor {
 
 				foreach($fnReferenceArray as $fnReference) {
 					if(function_exists($fnReference)) {
+						$this->debugLogger?->log("logic", "Invoking logic function", ["file" => $file, "function" => $name]);
 						$refFunction = new ReflectionFunction($fnReference);
 						foreach($refFunction->getAttributes() as $refAttr) {
 							$functionReference .= "#";

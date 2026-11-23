@@ -544,7 +544,7 @@ class Dispatcher {
 
 	private function handleLogicExecution(
 		Assembly $logicAssembly,
-		Input $input,
+		?Input $input,
 		?Element $component = null,
 	):void {
 		$this->debugLogger->log("logic", "Starting logic lifecycle", ["component" => $component?->tagName]);
@@ -574,7 +574,8 @@ class Dispatcher {
 			$this->recordLogicExecution($functionReference);
 		}
 
-		if($doAction = $this->getDoActionForLogic($input, $component)) {
+		$doAction = $input ? $this->getDoActionForLogic($input, $component) : null;
+		if($doAction) {
 			$doName = "do_" . str_replace("-", "_", $doAction);
 
 			foreach($this->logicExecutor->invoke($logicAssembly, $doName, $extraArgs) as $functionReference) {
@@ -623,6 +624,7 @@ class Dispatcher {
 		$this->logicExecutionOrder = [];
 		$this->interruptResponse = true;
 		$csrfToken = null;
+		$firstThrowable = $errorThrowable;
 
 		try {
 			$dynamicPath = $this->serviceContainer->get(DynamicPath::class);
@@ -659,27 +661,27 @@ class Dispatcher {
 				try {
 					$this->handleLogicExecution(
 						$assembly,
-						$this->input,
+						$errorThrowable ? null : $this->input,
 						$componentElement,
 					);
 				}
 				catch(Throwable $throwable) {
-					if(!$errorThrowable) {
-						throw $throwable;
-					}
+					$firstThrowable = $this->deferLogicFailure($throwable, $firstThrowable);
 				}
 			}
 
 			try {
 				$this->handleLogicExecution(
 					$this->logicAssembly,
-					$this->input,
+					$errorThrowable ? null : $this->input,
 				);
 			}
 			catch(Throwable $throwable) {
-				if(!$errorThrowable) {
-					throw $throwable;
-				}
+				$firstThrowable = $this->deferLogicFailure($throwable, $firstThrowable);
+			}
+
+			if(!$errorThrowable && $firstThrowable) {
+				throw $firstThrowable;
 			}
 
 			$this->applyResponseHeaders();
@@ -700,6 +702,21 @@ class Dispatcher {
 		}
 	}
 	// phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
+
+	private function deferLogicFailure(Throwable $throwable, ?Throwable $firstThrowable):Throwable {
+		if($throwable instanceof ResponseInterrupt) {
+			throw $throwable;
+		}
+
+		if($firstThrowable) {
+			Log::error(
+				"Additional logic failure: " . (string)$throwable,
+				$this->getLogContext(),
+			);
+		}
+
+		return $firstThrowable ?? $throwable;
+	}
 
 	private function applyResponseHeaders():void {
 		if($this->logicExecutionOrder) {

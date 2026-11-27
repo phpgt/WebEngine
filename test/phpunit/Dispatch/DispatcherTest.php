@@ -1335,6 +1335,42 @@ class DispatcherTest extends TestCase {
 		yield "error response" => [true];
 	}
 
+	#[DataProvider("nativeStatusPhases")]
+	public function testGenerateResponse_importsNativeStatusChanges(string $phase):void {
+		$originalStatus = http_response_code();
+		http_response_code(StatusCode::OK);
+		$sut = null;
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name)use($phase, &$sut):\Generator {
+				if($name === $phase) {
+					http_response_code(StatusCode::ACCEPTED);
+				}
+				elseif(http_response_code() === StatusCode::ACCEPTED) {
+					$container = $this->getPrivateProperty($sut, "serviceContainer");
+					self::assertSame(StatusCode::ACCEPTED, $container->get(Response::class)->getStatusCode());
+				}
+				yield "{$assembly->current()}::$name()";
+			});
+
+		try {
+			$sut = $this->createDispatcher(
+				logicAssembly: $this->createAssembly("/tmp/page.php"),
+				logicExecutor: $logicExecutor,
+			);
+			self::assertSame(StatusCode::ACCEPTED, $sut->generateResponse()->getStatusCode());
+		}
+		finally {
+			http_response_code($originalStatus ?: StatusCode::OK);
+		}
+	}
+
+	public static function nativeStatusPhases():iterable {
+		yield "before" => ["go_before"];
+		yield "main" => ["go"];
+		yield "after" => ["go_after"];
+	}
+
 	private function createComponentProcessor(HTMLDocument $viewModel, string ...$names):ViewModelProcessor {
 		$componentList = new LogicAssemblyComponentList();
 		foreach($names as $name) {

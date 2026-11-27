@@ -56,6 +56,12 @@ use PHPUnit\Framework\TestCase;
 
 #[AllowMockObjectsWithoutExpectations]
 class DispatcherTest extends TestCase {
+	protected function setUp():void {
+		parent::setUp();
+		$this->resetLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+	}
+
 	protected function tearDown():void {
 		$this->resetLoggerState();
 		parent::tearDown();

@@ -1377,6 +1377,37 @@ class DispatcherTest extends TestCase {
 		yield "after" => ["go_after"];
 	}
 
+	public function testGenerateResponse_preservesResponseWhenNativeStatusChangesToMatch():void {
+		$originalStatus = http_response_code();
+		http_response_code(StatusCode::OK);
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name):\Generator {
+				if($name === "go") {
+					http_response_code(StatusCode::ACCEPTED);
+				}
+				yield from [];
+			});
+
+		try {
+			$sut = $this->createDispatcher(
+				logicAssembly: $this->createAssembly("/tmp/page.php"),
+				logicExecutor: $logicExecutor,
+			);
+			$response = new Response(StatusCode::ACCEPTED);
+			$this->setPrivateProperty($sut, "response", $response);
+			$container = $this->getPrivateProperty($sut, "serviceContainer");
+			$container->set($response);
+
+			self::assertSame($response, $sut->generateResponse());
+			self::assertSame($response, $container->get(Response::class));
+			self::assertSame(StatusCode::ACCEPTED, $response->getStatusCode());
+		}
+		finally {
+			http_response_code($originalStatus ?: StatusCode::OK);
+		}
+	}
+
 	private function createComponentProcessor(HTMLDocument $viewModel, string ...$names):ViewModelProcessor {
 		$componentList = new LogicAssemblyComponentList();
 		foreach($names as $name) {

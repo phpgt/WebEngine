@@ -56,6 +56,12 @@ use PHPUnit\Framework\TestCase;
 
 #[AllowMockObjectsWithoutExpectations]
 class DispatcherTest extends TestCase {
+	protected function setUp():void {
+		parent::setUp();
+		$this->resetLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+	}
+
 	protected function tearDown():void {
 		$this->resetLoggerState();
 		parent::tearDown();
@@ -1333,6 +1339,73 @@ class DispatcherTest extends TestCase {
 	public static function redirectModes():iterable {
 		yield "normal response" => [false];
 		yield "error response" => [true];
+	}
+
+	#[DataProvider("nativeStatusPhases")]
+	public function testGenerateResponse_importsNativeStatusChanges(string $phase):void {
+		$originalStatus = http_response_code();
+		http_response_code(StatusCode::OK);
+		$sut = null;
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name)use($phase, &$sut):\Generator {
+				if($name === $phase) {
+					http_response_code(StatusCode::ACCEPTED);
+				}
+				elseif(http_response_code() === StatusCode::ACCEPTED) {
+					$container = $this->getPrivateProperty($sut, "serviceContainer");
+					self::assertSame(StatusCode::ACCEPTED, $container->get(Response::class)->getStatusCode());
+				}
+				yield "{$assembly->current()}::$name()";
+			});
+
+		try {
+			$sut = $this->createDispatcher(
+				logicAssembly: $this->createAssembly("/tmp/page.php"),
+				logicExecutor: $logicExecutor,
+			);
+			self::assertSame(StatusCode::ACCEPTED, $sut->generateResponse()->getStatusCode());
+		}
+		finally {
+			http_response_code($originalStatus ?: StatusCode::OK);
+		}
+	}
+
+	public static function nativeStatusPhases():iterable {
+		yield "before" => ["go_before"];
+		yield "main" => ["go"];
+		yield "after" => ["go_after"];
+	}
+
+	public function testGenerateResponse_preservesResponseWhenNativeStatusChangesToMatch():void {
+		$originalStatus = http_response_code();
+		http_response_code(StatusCode::OK);
+		$logicExecutor = $this->createMock(LogicExecutor::class);
+		$logicExecutor->method("invoke")
+			->willReturnCallback(function(Assembly $assembly, string $name):\Generator {
+				if($name === "go") {
+					http_response_code(StatusCode::ACCEPTED);
+				}
+				yield from [];
+			});
+
+		try {
+			$sut = $this->createDispatcher(
+				logicAssembly: $this->createAssembly("/tmp/page.php"),
+				logicExecutor: $logicExecutor,
+			);
+			$response = new Response(StatusCode::ACCEPTED);
+			$this->setPrivateProperty($sut, "response", $response);
+			$container = $this->getPrivateProperty($sut, "serviceContainer");
+			$container->set($response);
+
+			self::assertSame($response, $sut->generateResponse());
+			self::assertSame($response, $container->get(Response::class));
+			self::assertSame(StatusCode::ACCEPTED, $response->getStatusCode());
+		}
+		finally {
+			http_response_code($originalStatus ?: StatusCode::OK);
+		}
 	}
 
 	private function createComponentProcessor(HTMLDocument $viewModel, string ...$names):ViewModelProcessor {

@@ -106,7 +106,16 @@ class SentryReporterTest extends TestCase {
 	public function testCaptureFailureDoesNotEscape():void {
 		$client = self::createMock(ClientInterface::class);
 		$client->expects(self::once())->method("captureException")->willThrowException(new RuntimeException("offline"));
-		(new SentryReporter($client, new ServerRequest("GET", "/")))->report(new RuntimeException("test"));
+		$logFile = tempnam(sys_get_temp_dir(), "sentry-capture-");
+		$originalLog = ini_set("error_log", $logFile);
+		try {
+			(new SentryReporter($client, new ServerRequest("GET", "/")))->report(new RuntimeException("test"));
+			self::assertStringContainsString("WebEngine: Sentry exception reporting failed.", file_get_contents($logFile));
+		}
+		finally {
+			ini_set("error_log", $originalLog);
+			unlink($logFile);
+		}
 	}
 
 	/** @return array<string, array{?string, string, ?string}> */

@@ -71,6 +71,7 @@ class Dispatcher {
 	private LogicStreamHandler $logicStreamHandler;
 	private Input $input;
 	private Response $response;
+	private int|false $nativeStatusCode;
 	private Container $serviceContainer;
 
 	private Injector $injector;
@@ -127,6 +128,7 @@ class Dispatcher {
 // Next, we set up the response and service container, which will be used by the
 // Dispatcher dependencies throughout the request-response lifecycle.
 		$this->response = $this->setupResponse();
+		$this->nativeStatusCode = http_response_code();
 		$containerFactory = new ContainerFactory();
 		$this->serviceContainer = $containerFactory->create($this->config);
 		$this->injector = new Injector($this->serviceContainer);
@@ -570,9 +572,13 @@ class Dispatcher {
 			$extraArgs[$legacyElementClass] = $component;
 		}
 
+		$this->updateResponse();
+
 		foreach($this->logicExecutor->invoke($logicAssembly, "go_before", $extraArgs) as $functionReference) {
 			$this->recordLogicExecution($functionReference);
 		}
+
+		$this->updateResponse();
 
 		$doAction = $input ? $this->getDoActionForLogic($input, $component) : null;
 		if($doAction) {
@@ -583,13 +589,35 @@ class Dispatcher {
 			}
 		}
 
+		$this->updateResponse();
+
 		foreach($this->logicExecutor->invoke($logicAssembly, "go", $extraArgs) as $functionReference) {
 			$this->recordLogicExecution($functionReference);
 		}
 
+		$this->updateResponse();
+
 		foreach($this->logicExecutor->invoke($logicAssembly, "go_after", $extraArgs) as $functionReference) {
 			$this->recordLogicExecution($functionReference);
 		}
+
+		$this->updateResponse();
+	}
+
+	private function updateResponse():void {
+		$nativeStatusCode = http_response_code();
+
+		// Only import changes made during this request, not PHP's initial status.
+		if($nativeStatusCode === false || $this->nativeStatusCode === $nativeStatusCode) {
+			return;
+		}
+		$this->nativeStatusCode = $nativeStatusCode;
+		if($this->response->getStatusCode() === $nativeStatusCode) {
+			return;
+		}
+
+		$this->response = $this->response->withStatus($nativeStatusCode);
+		$this->serviceContainer->set($this->response);
 	}
 
 	private function getDoActionForLogic(Input $input, ?Element $component):?string {

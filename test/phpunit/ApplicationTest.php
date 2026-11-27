@@ -30,6 +30,13 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class ApplicationTest extends TestCase {
+	protected function setUp():void {
+		parent::setUp();
+		$this->resetApplicationLoggerState();
+		LogConfig::addHandler(new TestLogHandler());
+		$this->setApplicationLoggerConfigured(true);
+	}
+
 	public function testConstruct_appliesConfiguredTimezone():void {
 		$originalTimezone = date_default_timezone_get();
 		try {

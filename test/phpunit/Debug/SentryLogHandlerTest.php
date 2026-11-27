@@ -164,8 +164,20 @@ class SentryLogHandlerTest extends TestCase {
 		$client->expects(self::once())->method("captureEvent")->willThrowException(new RuntimeException("offline"));
 		$handler = new SentryLogHandler();
 		$handler->setClient($client);
-		$handler->handle("ERROR", "Test delivery failure");
-		$handler->flush();
-		$handler->flush();
+		$logFile = tempnam(sys_get_temp_dir(), "sentry-delivery-");
+		$originalLog = ini_set("error_log", $logFile);
+		try {
+			$handler->handle("ERROR", "Test delivery failure");
+			$handler->flush();
+			$handler->flush();
+			self::assertSame(1, substr_count(
+				file_get_contents($logFile),
+				"WebEngine: Sentry log delivery unavailable: ERROR Test delivery failure",
+			));
+		}
+		finally {
+			ini_set("error_log", $originalLog);
+			unlink($logFile);
+		}
 	}
 }

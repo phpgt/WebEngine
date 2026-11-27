@@ -570,9 +570,13 @@ class Dispatcher {
 			$extraArgs[$legacyElementClass] = $component;
 		}
 
+		$this->updateResponse();
+
 		foreach($this->logicExecutor->invoke($logicAssembly, "go_before", $extraArgs) as $functionReference) {
 			$this->recordLogicExecution($functionReference);
 		}
+
+		$this->updateResponse();
 
 		$doAction = $input ? $this->getDoActionForLogic($input, $component) : null;
 		if($doAction) {
@@ -583,13 +587,29 @@ class Dispatcher {
 			}
 		}
 
+		$this->updateResponse();
+
 		foreach($this->logicExecutor->invoke($logicAssembly, "go", $extraArgs) as $functionReference) {
 			$this->recordLogicExecution($functionReference);
 		}
 
+		$this->updateResponse();
+
 		foreach($this->logicExecutor->invoke($logicAssembly, "go_after", $extraArgs) as $functionReference) {
 			$this->recordLogicExecution($functionReference);
 		}
+	}
+
+	private function updateResponse():void {
+		$responseStatusCode = $this->response->getStatusCode();
+		$nativeStatusCode = http_response_code();
+
+		if($responseStatusCode === $nativeStatusCode) {
+			return;
+		}
+
+		$this->response = $this->response->withStatus($nativeStatusCode);
+		$this->serviceContainer->set($this->response);
 	}
 
 	private function getDoActionForLogic(Input $input, ?Element $component):?string {
